@@ -390,3 +390,24 @@ export async function fsSavePaymentStatuses(statuses: Record<number, 'pendente' 
   await setDoc(PAYMENTS_DOC, { statuses, updatedAt: new Date().toISOString() });
 }
 
+// --- CLEAR ALL TEST DATA FROM FIREBASE DATABASE ---
+export async function fsClearAllTestData(): Promise<void> {
+  // Clear all fichas collection in Firestore
+  const fichasSnap = await getDocs(collection(db, COLS.FICHAS));
+  for (const docSnap of fichasSnap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+
+  // Clear all mobilizadores collection in Firestore
+  const mobSnap = await getDocs(collection(db, COLS.MOBILIZADORES));
+  for (const docSnap of mobSnap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+
+  // Clear audit logs in Firestore
+  const auditSnap = await getDocs(collection(db, COLS.AUDIT_LOGS));
+  for (const docSnap of auditSnap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+}
+

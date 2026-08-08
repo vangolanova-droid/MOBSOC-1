@@ -24,6 +24,10 @@ import {
   Filter,
   DollarSign,
   AlertCircle,
+  ShieldCheck,
+  CheckCheck,
+  BellRing,
+  Send,
 } from 'lucide-react';
 import { Coordination, Ficha, Mobilizador, User } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -34,6 +38,7 @@ import { exportFinancasExcel } from '../utils/excelExporter';
 
 interface MobilizadoresViewProps {
   user: User;
+  users?: User[];
   mobilizadores: Mobilizador[];
   coordenacoes: Coordination[];
   fichas?: Ficha[];
@@ -46,6 +51,7 @@ interface MobilizadoresViewProps {
 
 export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
   user,
+  users = [],
   mobilizadores,
   coordenacoes,
   fichas = [],
@@ -109,6 +115,159 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
     setPaymentStatuses(updated);
     await api.savePaymentStatuses(updated);
     showToast(`Estado de pagamento alterado para "${next.toUpperCase()}"`, 'info');
+  };
+
+  // Notification modal for pendencies (< 4 fichas)
+  const [showNotificarPendenciasModal, setShowNotificarPendenciasModal] = useState(false);
+  const [isSendingNotif, setIsSendingNotif] = useState(false);
+
+  // Auto-validation rule: 4 or more fichas = PAGO, less than 4 fichas = PENDENTE
+  const handleValidar4Fichas = async () => {
+    let pagoCount = 0;
+    let pendenteCount = 0;
+    const updated: Record<number, 'pendente' | 'pago'> = { ...paymentStatuses };
+
+    mobilizadores.forEach((mob) => {
+      const mobF = fichas.filter(
+        (f) =>
+          (f.mobilizadorId && f.mobilizadorId === mob.id) ||
+          (f.mobilizador && f.mobilizador.trim().toLowerCase() === mob.nome.trim().toLowerCase())
+      );
+      const count = mobF.length;
+
+      if (count >= 4) {
+        updated[mob.id] = 'pago';
+        pagoCount++;
+      } else {
+        updated[mob.id] = 'pendente';
+        pendenteCount++;
+      }
+    });
+
+    setPaymentStatuses(updated);
+    await api.savePaymentStatuses(updated);
+    showToast(
+      `Validação de 4 Fichas executada! ${pagoCount} mobilizadores com 4+ fichas foram marcados como PAGO. ${pendenteCount} ficaram PENDENTES.`,
+      'success'
+    );
+  };
+
+  // Calculate mobilizadores with < 4 fichas
+  const pendingMobilizadoresList = useMemo(() => {
+    return mobilizadores
+      .map((mob) => {
+        const mobF = fichas.filter(
+          (f) =>
+            (f.mobilizadorId && f.mobilizadorId === mob.id) ||
+            (f.mobilizador && f.mobilizador.trim().toLowerCase() === mob.nome.trim().toLowerCase())
+        );
+        return {
+          mob,
+          count: mobF.length,
+        };
+      })
+      .filter((item) => item.count < 4);
+  }, [mobilizadores, fichas]);
+
+  // Group mobilizadores with < 4 fichas by Supervisor
+  const pendingBySupervisor = useMemo(() => {
+    const groups: Record<
+      string,
+      {
+        supervisorNome: string;
+        coordNome: string;
+        supervisorId?: number;
+        mobilizadores: Array<{ mob: Mobilizador; count: number }>;
+      }
+    > = {};
+
+    pendingMobilizadoresList.forEach((item) => {
+      const supNome = item.mob.supervisorNome || 'Supervisor Geral';
+      const coordNome = item.mob.coordNome || 'Sem Coordenação';
+
+      const supUser = users.find(
+        (u) => u.tipo === 'supervisor' && u.nome.trim().toLowerCase() === supNome.trim().toLowerCase()
+      );
+
+      const key = `${coordNome}_${supNome}`;
+      if (!groups[key]) {
+        groups[key] = {
+          supervisorNome: supNome,
+          coordNome,
+          supervisorId: supUser ? supUser.id : undefined,
+          mobilizadores: [],
+        };
+      }
+      groups[key].mobilizadores.push(item);
+    });
+
+    return Object.values(groups);
+  }, [pendingMobilizadoresList, users]);
+
+  // Send alert to a specific supervisor
+  const handleNotificarSupervisorGroup = async (group: {
+    supervisorNome: string;
+    coordNome: string;
+    supervisorId?: number;
+    mobilizadores: Array<{ mob: Mobilizador; count: number }>;
+  }) => {
+    const mobListStr = group.mobilizadores.map((m) => `${m.mob.nome} (${m.count}/4 fichas)`).join(', ');
+    const msgText = `AVISO DE PENDÊNCIA FINANCEIRA: Os seguintes mobilizadores sob sua supervisão (${group.coordNome}) não atingiram as 4 fichas completas e estão PENDENTES: ${mobListStr}. Por favor, regularize o lançamento de fichas.`;
+
+    const newMsg = {
+      id: Date.now() + Math.random(),
+      supervisorId: group.supervisorId || 0,
+      supervisorNome: group.supervisorNome,
+      dataAtraso: new Date().toLocaleDateString('pt-PT'),
+      mensagem: msgText,
+      enviadoEm: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    await api.addAdminMessage(newMsg);
+    showToast(`Notificação enviada com sucesso para o supervisor ${group.supervisorNome}!`, 'success');
+  };
+
+  // Send alert to all supervisors with pendencies
+  const handleNotificarTodosSupervisores = async () => {
+    if (pendingBySupervisor.length === 0) {
+      showToast('Não existem mobilizadores com pendências (< 4 fichas).', 'info');
+      return;
+    }
+
+    setIsSendingNotif(true);
+    try {
+      for (const group of pendingBySupervisor) {
+        await handleNotificarSupervisorGroup(group);
+      }
+      showToast('Notificações enviadas a todos os supervisores com pendências!', 'success');
+      setShowNotificarPendenciasModal(false);
+    } catch {
+      showToast('Erro ao enviar notificações.', 'error');
+    } finally {
+      setIsSendingNotif(false);
+    }
+  };
+
+  // Quick single notification for a specific mobilizador's supervisor
+  const handleNotifySingleMobSupervisor = async (mob: Mobilizador, count: number) => {
+    const supNome = mob.supervisorNome || 'Supervisor Geral';
+    const supUser = users.find(
+      (u) => u.tipo === 'supervisor' && u.nome.trim().toLowerCase() === supNome.trim().toLowerCase()
+    );
+
+    const msgText = `AVISO DE PENDÊNCIA INDIVIDUAL: O mobilizador ${mob.nome} (${mob.coordNome || 'Coordenação'}) apresenta apenas ${count}/4 fichas completas e encontra-se PENDENTE. Por favor complete os lançamentos.`;
+
+    const newMsg = {
+      id: Date.now() + Math.random(),
+      supervisorId: supUser ? supUser.id : 0,
+      supervisorNome: supNome,
+      dataAtraso: new Date().toLocaleDateString('pt-PT'),
+      mensagem: msgText,
+      enviadoEm: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    await api.addAdminMessage(newMsg);
+    showToast(`Notificação enviada para ${supNome} referente a ${mob.nome}!`, 'success');
   };
 
   // Delete modal state
@@ -906,7 +1065,34 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 border-l border-white/20 pl-3">
+                  <div className="flex flex-wrap items-center gap-1.5 border-l border-white/20 pl-3">
+                    <button
+                      type="button"
+                      onClick={handleValidar4Fichas}
+                      className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95"
+                      title="Validar estados: 4 ou mais fichas = PAGO, menos de 4 fichas = PENDENTE"
+                      id="btn-validar-4-fichas"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-blue-200" />
+                      <span>Validar 4 Fichas</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowNotificarPendenciasModal(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 relative"
+                      title="Notificar supervisores de mobilizadores com menos de 4 fichas"
+                      id="btn-notificar-pendencias-sup"
+                    >
+                      <BellRing className="h-3.5 w-3.5" />
+                      <span>Notificar Pendências</span>
+                      {pendingMobilizadoresList.length > 0 && (
+                        <span className="ml-0.5 rounded-full bg-red-600 text-[10px] font-black px-1.5 py-0.2 text-white">
+                          {pendingMobilizadoresList.length}
+                        </span>
+                      )}
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => exportFinancasPDF(visibleMobilizadores, fichas, diarioRate, paymentStatuses)}
@@ -1139,15 +1325,26 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
                               </span>
                             </td>
                             <td className="p-3 text-center">
-                              <span
-                                className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 font-mono font-extrabold text-xs ${
-                                  fichasCount > 0
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : 'bg-slate-100 text-slate-400'
-                                }`}
-                              >
-                                {fichasCount} {fichasCount === 1 ? 'ficha' : 'fichas'}
-                              </span>
+                              <div className="flex flex-col items-center gap-1">
+                                <span
+                                  className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 font-mono font-extrabold text-xs ${
+                                    fichasCount > 0
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                      : 'bg-slate-100 text-slate-400'
+                                  }`}
+                                >
+                                  {fichasCount} {fichasCount === 1 ? 'ficha' : 'fichas'}
+                                </span>
+                                {fichasCount >= 4 ? (
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                    ✓ 4/4 Completo
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                    ⚠️ {fichasCount}/4 Incompleto
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-3 text-center font-bold text-slate-700">
                               {diasTrabalhados > 0 ? (
@@ -1169,35 +1366,49 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
                               )}
                             </td>
                             <td className="p-3 text-center">
-                              {totalKwanzas > 0 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => togglePaymentStatus(mob.id)}
-                                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black shadow-2xs transition ${
-                                    paymentStatus === 'pago'
-                                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                      : 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200'
-                                  }`}
-                                  title="Clique para mudar estado de pagamento"
-                                >
-                                  {paymentStatus === 'pago' ? (
-                                    <>
-                                      <CheckCircle2 className="h-3.5 w-3.5" />
-                                      <span>PAGO</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="h-3.5 w-3.5 text-amber-600" />
-                                      <span>PENDENTE</span>
-                                    </>
-                                  )}
-                                </button>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-400">
-                                  <AlertCircle className="h-3 w-3" />
-                                  <span>Sem Fichas</span>
-                                </span>
-                              )}
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                {totalKwanzas > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => togglePaymentStatus(mob.id)}
+                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black shadow-2xs transition active:scale-95 ${
+                                      paymentStatus === 'pago'
+                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                        : 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200'
+                                    }`}
+                                    title="Clique para mudar estado de pagamento"
+                                  >
+                                    {paymentStatus === 'pago' ? (
+                                      <>
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        <span>PAGO</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                                        <span>PENDENTE</span>
+                                      </>
+                                    )}
+                                  </button>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-400">
+                                    <AlertCircle className="h-3 w-3" />
+                                    <span>Sem Fichas</span>
+                                  </span>
+                                )}
+
+                                {fichasCount < 4 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNotifySingleMobSupervisor(mob, fichasCount)}
+                                    className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1.5 text-xs font-bold transition shadow-2xs active:scale-95"
+                                    title={`Notificar supervisor (${mob.supervisorNome || 'Supervisão'}) referente à pendência (< 4 fichas)`}
+                                  >
+                                    <BellRing className="h-3.5 w-3.5" />
+                                    <span>Notificar</span>
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1379,6 +1590,120 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
         onClose={() => setShowEditRestrictionModal(false)}
         actionType="edit"
       />
+
+      {/* Modal: Notificar Supervisores com Pendência (< 4 Fichas) */}
+      {showNotificarPendenciasModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                  <BellRing className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800">
+                    Notificar Supervisores com Pendência
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Mobilizadores com menos de 4 fichas lançadas ({pendingMobilizadoresList.length} no total)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNotificarPendenciasModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="my-4 overflow-y-auto space-y-4 pr-1 flex-1">
+              {pendingBySupervisor.length === 0 ? (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                  <p className="font-bold text-emerald-800 text-sm">
+                    Excelente! Não existem mobilizadores com pendência (&lt; 4 fichas).
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Todos os mobilizadores atingiram o requisito mínimo de 4 fichas completas.
+                  </p>
+                </div>
+              ) : (
+                pendingBySupervisor.map((group, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-2"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/60 pb-2">
+                      <div>
+                        <div className="text-xs font-black text-slate-800">
+                          Supervisor: <span className="text-amber-900 font-extrabold">{group.supervisorNome}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          Coordenação: {group.coordNome}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleNotificarSupervisorGroup(group)}
+                        className="flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition active:scale-95"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        <span>Notificar Supervisor</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 pt-1">
+                      <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                        Mobilizadores PENDENTES ({group.mobilizadores.length}):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {group.mobilizadores.map((item) => (
+                          <div
+                            key={item.mob.id}
+                            className="flex items-center justify-between rounded-lg bg-white p-2 border border-amber-200 text-xs"
+                          >
+                            <span className="font-bold text-slate-800 truncate mr-2">
+                              {item.mob.nome}
+                            </span>
+                            <span className="font-mono text-[10px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap">
+                              {item.count}/4 fichas
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
+              <button
+                type="button"
+                onClick={() => setShowNotificarPendenciasModal(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+              {pendingBySupervisor.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleNotificarTodosSupervisores}
+                  disabled={isSendingNotif}
+                  className="flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-md transition disabled:opacity-50 active:scale-95"
+                >
+                  <BellRing className="h-4 w-4" />
+                  <span>
+                    {isSendingNotif ? 'A Enviar...' : 'Notificar Todos os Supervisores'}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

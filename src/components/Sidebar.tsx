@@ -172,20 +172,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate flex items-center justify-between gap-1">
+              <div className={`text-xs font-extrabold truncate flex items-center justify-between gap-1 ${textContrastClass}`}>
                 <span className="truncate group-hover:opacity-80 transition">{user.nome}</span>
                 <span
-                  className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold border"
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold border"
                   style={{
-                    backgroundColor: `${primaryColor}15`,
-                    color: primaryColor,
-                    borderColor: `${primaryColor}30`,
+                    backgroundColor: currentSidebarPreset.isDark ? 'rgba(255,255,255,0.2)' : `${primaryColor}15`,
+                    color: currentSidebarPreset.isDark ? '#FFFFFF' : primaryColor,
+                    borderColor: currentSidebarPreset.isDark ? 'rgba(255,255,255,0.4)' : `${primaryColor}30`,
                   }}
                 >
                   {user.tipo === 'admin' ? 'Admin' : 'Sup'}
                 </span>
               </div>
-              <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+              <div className={`text-[10px] font-semibold truncate ${subtextContrastClass}`}>
                 {user.coordNome || 'Direção Geral'}
               </div>
             </div>

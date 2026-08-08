@@ -20,6 +20,7 @@ import {
   Check,
   XCircle,
   AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Ficha, User, Coordination, Mobilizador, FichaTableData } from '../types';
@@ -28,10 +29,12 @@ import { exportFichaPDF, exportFichasListPDF } from '../utils/pdfExporter';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal } from './ConfirmModal';
 import { RestrictionModal } from './RestrictionModal';
+import { ValidacaoSupervisorModal } from './ValidacaoSupervisorModal';
 import { isFichaPendingOver48h } from '../utils/fichaUtils';
 
 interface FichasListViewProps {
   user: User;
+  users?: User[];
   fichas: Ficha[];
   coordenacoes?: Coordination[];
   mobilizadores?: Mobilizador[];
@@ -39,10 +42,12 @@ interface FichasListViewProps {
   onDeleteFicha: (id: number) => Promise<void>;
   onUpdateFicha?: (id: number, fields: Partial<Ficha>) => Promise<void>;
   onRefresh: () => void;
+  onClearTestData?: () => Promise<void>;
 }
 
 export const FichasListView: React.FC<FichasListViewProps> = ({
   user,
+  users = [],
   fichas,
   coordenacoes = [],
   mobilizadores = [],
@@ -50,9 +55,14 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
   onDeleteFicha,
   onUpdateFicha,
   onRefresh,
+  onClearTestData,
 }) => {
   const { showToast } = useToast();
   const isAdmin = user.tipo === 'admin';
+
+  const [isValidacaoModalOpen, setIsValidacaoModalOpen] = useState(false);
+  const [isClearTestModalOpen, setIsClearTestModalOpen] = useState(false);
+  const [isClearingTest, setIsClearingTest] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [rondaFilter, setRondaFilter] = useState('');
@@ -286,8 +296,34 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
     }
   };
 
+  const handleConfirmClearTestData = async () => {
+    if (!onClearTestData) return;
+    setIsClearingTest(true);
+    try {
+      await onClearTestData();
+      showToast('Dados de teste eliminados com sucesso da base de dados Firebase!', 'success');
+      setIsClearTestModalOpen(false);
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao eliminar dados de teste.', 'error');
+    } finally {
+      setIsClearingTest(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Confirm Clear Test Data Modal */}
+      <ConfirmModal
+        isOpen={isClearTestModalOpen}
+        user={user}
+        title="Eliminar Dados de Teste da Base de Dados"
+        message="Tem a certeza que deseja eliminar permanentemente todos os registos e fichas de teste da base de dados Firebase? Esta ação limpa a base de dados do sistema."
+        confirmText="Eliminar Dados de Teste"
+        isSubmitting={isClearingTest}
+        onConfirm={handleConfirmClearTestData}
+        onClose={() => setIsClearTestModalOpen(false)}
+      />
+
       {/* Confirm Delete Modal */}
       <ConfirmModal
         isOpen={!!deletingFicha}
@@ -338,6 +374,26 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
             <RefreshCw className="h-4 w-4 text-slate-500" />
             <span>Atualizar</span>
           </button>
+          <button
+            onClick={() => setIsValidacaoModalOpen(true)}
+            className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 text-xs font-bold text-white transition shadow-sm active:scale-95"
+            id="btn-validacao-supervisor"
+            title="Validação de dados lançados por supervisor"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>Validação por Supervisor</span>
+          </button>
+          {isAdmin && onClearTestData && (
+            <button
+              onClick={() => setIsClearTestModalOpen(true)}
+              className="flex h-10 items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-3.5 text-xs font-bold text-white transition shadow-xs"
+              id="btn-clear-test-data"
+              title="Eliminar dados de teste do Firebase"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Eliminar Dados de Teste</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -927,6 +983,19 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
         isOpen={showEditRestrictionModal}
         onClose={() => setShowEditRestrictionModal(false)}
         actionType="edit"
+      />
+
+      {/* Validation by Supervisor Modal */}
+      <ValidacaoSupervisorModal
+        isOpen={isValidacaoModalOpen}
+        onClose={() => setIsValidacaoModalOpen(false)}
+        currentUser={user}
+        users={users}
+        fichas={fichas}
+        coordenacoes={coordenacoes}
+        mobilizadores={mobilizadores}
+        onUpdateFicha={onUpdateFicha}
+        onRefresh={onRefresh}
       />
     </div>
   );

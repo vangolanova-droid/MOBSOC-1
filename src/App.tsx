@@ -30,6 +30,12 @@ import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { AuditLog } from './types';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
 
+function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
+  const map = new Map<number | string, T>();
+  items.forEach((item) => map.set(item.id, item));
+  return Array.from(map.values());
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -92,9 +98,10 @@ export default function App() {
       unsubUsers = fsSubscribeCollection<User>(
         'users',
         (items) => {
-          setUsers(items);
+          const deduped = deduplicateById(items);
+          setUsers(deduped);
           if (sid) {
-            const found = items.find((u) => u.id === sid);
+            const found = deduped.find((u) => u.id === sid);
             if (found) setCurrentUser(found);
           }
           setLoading(false);
@@ -104,19 +111,19 @@ export default function App() {
 
       unsubCoords = fsSubscribeCollection<Coordination>(
         'coordenacoes',
-        (items) => setCoordenacoes(items),
+        (items) => setCoordenacoes(deduplicateById(items)),
         (a, b) => a.id - b.id
       );
 
       unsubMobs = fsSubscribeCollection<Mobilizador>(
         'mobilizadores',
-        (items) => setMobilizadores(items),
+        (items) => setMobilizadores(deduplicateById(items)),
         (a, b) => a.id - b.id
       );
 
       unsubFichas = fsSubscribeCollection<Ficha>(
         'fichas',
-        (items) => setFichas(items),
+        (items) => setFichas(deduplicateById(items)),
         (a, b) => Number(b.id) - Number(a.id)
       );
 
@@ -240,7 +247,15 @@ export default function App() {
     setMobilizadores((prev) => prev.filter((m) => m.id !== id));
   };
 
-  // Ficha Actions
+  // Clear test data
+  const handleClearTestData = async () => {
+    if (currentUser?.tipo !== 'admin') {
+      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+    }
+    await api.clearAllTestData(currentUser);
+    setFichas([]);
+    setMobilizadores([]);
+  };
   const handleSaveFicha = async (fichaPartial: Partial<Ficha>) => {
     const created = await api.createFicha(fichaPartial, currentUser);
     setFichas((prev) => [created, ...prev]);
@@ -372,6 +387,7 @@ export default function App() {
             activeTab === 'verMobilizadores') && (
             <MobilizadoresView
               user={currentUser}
+              users={users}
               mobilizadores={mobilizadores}
               coordenacoes={coordenacoes}
               fichas={fichas}
@@ -387,6 +403,7 @@ export default function App() {
             (currentUser.tipo === 'admin' ? (
               <MobilizadoresView
                 user={currentUser}
+                users={users}
                 mobilizadores={mobilizadores}
                 coordenacoes={coordenacoes}
                 fichas={fichas}
@@ -415,6 +432,7 @@ export default function App() {
           {activeTab === 'listFichas' && (
             <FichasListView
               user={currentUser}
+              users={users}
               fichas={fichas}
               coordenacoes={coordenacoes}
               mobilizadores={mobilizadores}
@@ -422,6 +440,7 @@ export default function App() {
               onDeleteFicha={handleDeleteFicha}
               onUpdateFicha={handleUpdateFicha}
               onRefresh={handleRefresh}
+              onClearTestData={handleClearTestData}
             />
           )}
 
@@ -482,6 +501,7 @@ export default function App() {
               themeConfig={themeConfig}
               onUpdateThemeConfig={handleUpdateThemeConfig}
               onUpdateUser={handleUpdateUser}
+              onClearTestData={handleClearTestData}
             />
           )}
         </main>

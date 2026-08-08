@@ -31,6 +31,7 @@ import {
   fsAddAdminMessage,
   fsGetPaymentStatuses,
   fsSavePaymentStatuses,
+  fsClearAllTestData,
   getNextMobilizadorCodigoId,
 } from './firebaseService';
 
@@ -74,7 +75,27 @@ export const api = {
   },
 
   async createCoordination(nome: string, coordenador?: string, bairros?: string[], currentUser?: User | null): Promise<Coordination> {
-    const newCoord: Coordination = { id: Date.now(), nome, coordenador: coordenador || '', bairros: bairros || [] };
+    const list = await this.getCoordenacoes();
+    const cleanName = nome.trim();
+    const existing = list.find((c) => c.nome.toLowerCase().trim() === cleanName.toLowerCase());
+
+    if (existing) {
+      const mergedBairros = bairros && bairros.length > 0
+        ? Array.from(new Set([...(existing.bairros || []), ...bairros]))
+        : existing.bairros;
+
+      return await this.updateCoordination(
+        existing.id,
+        {
+          nome: cleanName,
+          coordenador: coordenador?.trim() || existing.coordenador,
+          bairros: mergedBairros,
+        },
+        currentUser
+      );
+    }
+
+    const newCoord: Coordination = { id: Date.now(), nome: cleanName, coordenador: coordenador?.trim() || '', bairros: bairros || [] };
     await fsSaveCoordination(newCoord);
 
     await this.addAuditLog({
@@ -85,7 +106,7 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Criação',
       entidade: 'Coordenação',
-      detalhes: `Coordenação "${nome}" criada com coordenador "${coordenador || 'N/A'}".`,
+      detalhes: `Coordenação "${cleanName}" criada com coordenador "${coordenador || 'N/A'}".`,
     });
 
     return newCoord;
@@ -432,6 +453,21 @@ export const api = {
 
   async savePaymentStatuses(statuses: Record<number, 'pendente' | 'pago'>): Promise<void> {
     await fsSavePaymentStatuses(statuses);
+  },
+
+  // Clear Test Data
+  async clearAllTestData(currentUser?: User | null): Promise<void> {
+    await fsClearAllTestData();
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Base de Dados de Teste',
+      detalhes: `Os dados de teste foram eliminados com sucesso da base de dados Firebase por ${currentUser?.nome || 'Administrador'}.`,
+    });
   },
 
   // AI Insights
