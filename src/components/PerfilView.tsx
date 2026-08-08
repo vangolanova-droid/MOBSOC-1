@@ -121,20 +121,56 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('A imagem selecionada é muito grande. Escolha uma foto com menos de 5MB.', 'error');
+    if (!file.type.startsWith('image/')) {
+      showToast('Por favor escolha um ficheiro de imagem válido.', 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('A imagem selecionada é muito grande. Escolha uma foto com menos de 10MB.', 'error');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      try {
-        await onUpdateUser(user.id, { fotoUrl: base64 });
-        showToast('Foto de perfil atualizada com sucesso!', 'success');
-      } catch (err: any) {
-        showToast(err.message || 'Erro ao carregar foto de perfil.', 'error');
-      }
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, Math.round(width), Math.round(height));
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          try {
+            await onUpdateUser(user.id, { fotoUrl: compressedBase64 });
+            showToast('Foto de perfil atualizada e guardada no Firebase com sucesso!', 'success');
+          } catch (err: any) {
+            showToast(err.message || 'Erro ao guardar foto de perfil no Firebase.', 'error');
+          }
+        }
+      };
+      img.onerror = () => {
+        showToast('Erro ao processar imagem de perfil.', 'error');
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
