@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package sismob;
+
+option java_multiple_files = true;
+option java_package = "com.sismob.sumbe";
+option java_outer_classname = "SismobProto";
+
+// User / Supervisor / Administrator model
+message User {
+  int64 id = 1;
+  string nome = 2;
+  string email = 3;
+  string senha = 4;
+  string tipo = 5; // "admin" | "supervisor"
+  optional int64 coord_id = 6;
+  string coord_nome = 7;
+  string coordenador_nome = 8;
+  string foto_url = 9;
+  string created_at = 10;
+}
+
+// Coordination entity
+message Coordination {
+  int64 id = 1;
+  string nome = 2;
+  string coordenador = 3;
+  string contacto = 4;
+  string localizacao = 5;
+  string cor = 6;
+}
+
+// Community Mobilizer model
+message Mobilizador {
+  int64 id = 1;
+  string nome = 2;
+  string morada = 3;
+  string telefone = 4;
+  string funcao = 5;
+  optional int64 coord_id = 6;
+  string coord_nome = 7;
+  string created_at = 8;
+}
+
+// Mobilization Record / Ficha
+message Ficha {
+  int64 id = 1;
+  string data = 2;
+  string supervisor_id = 3;
+  string supervisor_nome = 4;
+  int64 coord_id = 5;
+  string coord_nome = 6;
+  int64 mobilizador_id = 7;
+  string mobilizador = 8;
+  string telefone = 9;
+  string provincia = 10;
+  string municipio = 11;
+  string comuna = 12;
+  string bairro = 13;
+  int32 total_locais = 14;
+  int32 total_pessoas = 15;
+  int32 sim = 16;
+  int32 nao = 17;
+  string motivo = 18;
+  bool synced = 19;
+  string created_at = 20;
+}
+
+// Geographic Consolidation Summary
+message ConsolidadoGeografico {
+  string provincia = 1;
+  string municipio = 2;
+  string comuna = 3;
+  string bairro = 4;
+  int32 total_fichas = 5;
+  int32 total_locais = 6;
+  int32 total_pessoas = 7;
+  int32 total_sim = 8;
+  int32 total_nao = 9;
+  float taxa_aceitacao = 10;
+}
+
+// Synchronization payloads
+message SyncRequest {
+  string last_sync_timestamp = 1;
+  repeated Ficha fichas_pendentes = 2;
+}
+
+message SyncResponse {
+  bool success = 1;
+  string message = 2;
+  int32 synced_count = 3;
+  repeated Ficha updated_fichas = 4;
+}

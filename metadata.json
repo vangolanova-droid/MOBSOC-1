@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix SisMob — Sistema de Mobilização de Saúde",
+  "description": "Sistema completo de mobilização comunitária para recolha de dados no terreno, acompanhamento de vacinação, estatísticas em tempo real, relatórios consolidados e gestão de mobilizadores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

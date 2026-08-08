@@ -1,0 +1,174 @@
+{
+  "entities": {
+    "users": {
+      "title": "Utilizadores",
+      "description": "Supervisores e Administradores do sistema",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "email": { "type": "string" },
+        "senha": { "type": "string" },
+        "tipo": { "type": "string" },
+        "coordId": { "type": "number" },
+        "coordNome": { "type": "string" },
+        "coordenadorNome": { "type": "string" },
+        "fotoUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "nome", "email", "tipo"]
+    },
+    "coordenacoes": {
+      "title": "Coordenações",
+      "description": "Coordenações territoriais de saúde pública",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "nome": { "type": "string" },
+        "coordenador": { "type": "string" },
+        "contacto": { "type": "string" },
+        "localizacao": { "type": "string" },
+        "cor": { "type": "string" }
+      },
+      "required": ["id", "nome"]
+    },
+    "mobilizadores": {
+      "title": "Mobilizadores",
+      "description": "Mobilizadores comunitários de saúde",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "nome": { "type": "string" },
+        "morada": { "type": "string" },
+        "telefone": { "type": "string" },
+        "funcao": { "type": "string" },
+        "coordId": { "type": "number" },
+        "coordNome": { "type": "string" },
+        "codigoId": { "type": "string" }
+      },
+      "required": ["id", "nome"]
+    },
+    "fichas": {
+      "title": "Fichas de Mobilização",
+      "description": "Registos diários das equipas de terreno",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "data": { "type": "string" },
+        "supervisorId": { "type": "string" },
+        "supervisorNome": { "type": "string" },
+        "coordId": { "type": "number" },
+        "coordNome": { "type": "string" },
+        "mobilizadorId": { "type": "number" },
+        "mobilizadorNome": { "type": "string" },
+        "bairro": { "type": "string" },
+        "casasVisitadas": { "type": "number" },
+        "pessoasSensibilizadas": { "type": "number" },
+        "vacinadosProcurados": { "type": "number" },
+        "vacinadosEfetivos": { "type": "number" },
+        "hesitantes": { "type": "number" },
+        "recusados": { "type": "number" },
+        "observacoes": { "type": "string" },
+        "synced": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "data", "supervisorId", "coordId"]
+    },
+    "audit_logs": {
+      "title": "Registos de Auditoria",
+      "description": "Logs de ações e eventos do sistema",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "usuarioId": { "type": "number" },
+        "usuarioNome": { "type": "string" },
+        "usuarioTipo": { "type": "string" },
+        "acao": { "type": "string" },
+        "entidade": { "type": "string" },
+        "detalhes": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "usuarioNome", "acao"]
+    },
+    "goals": {
+      "title": "Metas da Coordenação",
+      "description": "Metas operacionais para cada coordenação",
+      "type": "object",
+      "properties": {
+        "coordId": { "type": "number" },
+        "targetPessoas": { "type": "number" },
+        "targetLocais": { "type": "number" },
+        "targetFichas": { "type": "number" }
+      },
+      "required": ["coordId"]
+    },
+    "system_config": {
+      "title": "Configuração do Sistema",
+      "description": "Notas, alertas e estados do sistema",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "alerts": { "type": "object" },
+        "statuses": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "admin_messages": {
+      "title": "Mensagens Admin",
+      "description": "Comunicações administrativas do sistema",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "texto": { "type": "string" },
+        "data": { "type": "string" }
+      }
+    },
+    "system_metadata": {
+      "title": "Metadados do Sistema",
+      "description": "Estado de inicialização e seed",
+      "type": "object",
+      "properties": {
+        "seeded": { "type": "boolean" },
+        "timestamp": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/users" },
+      "description": "Coleção de utilizadores"
+    },
+    "/coordenacoes/{coordId}": {
+      "schema": { "$ref": "#/entities/coordenacoes" },
+      "description": "Coleção de coordenações"
+    },
+    "/mobilizadores/{mobId}": {
+      "schema": { "$ref": "#/entities/mobilizadores" },
+      "description": "Coleção de mobilizadores"
+    },
+    "/fichas/{fichaId}": {
+      "schema": { "$ref": "#/entities/fichas" },
+      "description": "Coleção de fichas de mobilização"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/audit_logs" },
+      "description": "Coleção de registos de auditoria"
+    },
+    "/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/goals" },
+      "description": "Coleção de metas"
+    },
+    "/system_config/{configId}": {
+      "schema": { "$ref": "#/entities/system_config" },
+      "description": "Coleção de definições de sistema"
+    },
+    "/admin_messages/{msgId}": {
+      "schema": { "$ref": "#/entities/admin_messages" },
+      "description": "Coleção de mensagens"
+    },
+    "/system_metadata/{metaId}": {
+      "schema": { "$ref": "#/entities/system_metadata" },
+      "description": "Metadados de sistema"
+    }
+  }
+}
