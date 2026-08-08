@@ -1,9 +1,10 @@
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User } from '../types';
+import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission } from '../types';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
   INITIAL_MOBILIZADORES,
   INITIAL_USERS,
+  INITIAL_ODK_SUBMISSIONS,
 } from '../data/initialData';
 import {
   fsGetCoordenacoes,
@@ -33,6 +34,10 @@ import {
   fsSavePaymentStatuses,
   fsClearAllTestData,
   getNextMobilizadorCodigoId,
+  fsGetOdkSubmissions,
+  fsSaveOdkSubmission,
+  fsUpdateOdkSubmission,
+  fsDeleteOdkSubmission,
 } from './firebaseService';
 
 // In-memory session store (no localStorage persistence of application data)
@@ -455,7 +460,96 @@ export const api = {
     await fsSavePaymentStatuses(statuses);
   },
 
+  // ODK SUBMISSIONS
+  async getOdkSubmissions(): Promise<ODKSubmission[]> {
+    return await fsGetOdkSubmissions();
+  },
+
+  async createOdkSubmission(
+    subData: Partial<ODKSubmission>,
+    currentUser?: User | null
+  ): Promise<ODKSubmission> {
+    const newSub: ODKSubmission = {
+      id: 'odk_' + Date.now(),
+      supervisorId: currentUser?.id || subData.supervisorId || 0,
+      supervisorNome: currentUser?.nome || subData.supervisorNome || 'Supervisor',
+      coordId: subData.coordId ?? currentUser?.coordId ?? null,
+      coordNome: subData.coordNome || currentUser?.coordNome || 'Sem Coordenação',
+      formId: subData.formId || 'form_odk_general',
+      formNome: subData.formNome || 'Formulário ODK Collect',
+      dataEnvio: subData.dataEnvio || new Date().toISOString().split('T')[0],
+      horaEnvio: subData.horaEnvio || new Date().toTimeString().slice(0, 5),
+      totalFormularios: subData.totalFormularios || 1,
+      dispositivoAndroid: subData.dispositivoAndroid || 'Android Mobile (ODK Collect)',
+      codigoReciboODK: subData.codigoReciboODK || `ODK-${Date.now().toString().slice(-6)}`,
+      status: subData.status || 'pendente',
+      confirmadoPorAdmin: false,
+      observacoes: subData.observacoes || '',
+      createdAt: new Date().toISOString(),
+    };
+
+    await fsSaveOdkSubmission(newSub);
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Utilizador',
+      usuarioTipo: currentUser?.tipo || 'supervisor',
+      acao: 'Criação',
+      entidade: 'Submissão ODK',
+      detalhes: `Confirmado envio de ${newSub.totalFormularios} formulários do ODK Collect (${newSub.formNome}) com recibo ${newSub.codigoReciboODK}.`,
+    });
+
+    return newSub;
+  },
+
+  async updateOdkSubmissionStatus(
+    id: string,
+    status: 'confirmado' | 'divergencia' | 'pendente',
+    adminNotes?: string,
+    currentUser?: User | null
+  ): Promise<void> {
+    const updateObj: Partial<ODKSubmission> = {
+      status,
+      confirmadoPorAdmin: status === 'confirmado',
+      adminConfirmadorNome: currentUser?.nome || 'Administrador',
+      dataConfirmacaoAdmin: new Date().toISOString().replace('T', ' ').slice(0, 16),
+    };
+    if (adminNotes !== undefined) {
+      updateObj.observacoes = adminNotes;
+    }
+
+    await fsUpdateOdkSubmission(id, updateObj);
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Edição',
+      entidade: 'Submissão ODK',
+      detalhes: `Status da submissão ODK ${id} alterado para "${status.toUpperCase()}" por ${currentUser?.nome || 'Administrador'}.`,
+    });
+  },
+
+  async deleteOdkSubmission(id: string, currentUser?: User | null): Promise<void> {
+    await fsDeleteOdkSubmission(id);
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Submissão ODK',
+      detalhes: `Submissão ODK ${id} eliminada por ${currentUser?.nome || 'Administrador'}.`,
+    });
+  },
+
   // Clear Test Data
+
   async clearAllTestData(currentUser?: User | null): Promise<void> {
     await fsClearAllTestData();
     await this.addAuditLog({

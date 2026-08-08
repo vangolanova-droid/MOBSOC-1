@@ -10,12 +10,13 @@ import {
   getDocFromServer,
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User } from '../types';
+import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission } from '../types';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
   INITIAL_MOBILIZADORES,
   INITIAL_USERS,
+  INITIAL_ODK_SUBMISSIONS,
 } from '../data/initialData';
 
 // Firestore collection names
@@ -28,6 +29,7 @@ const COLS = {
   GOALS: 'goals',
   SYSTEM_CONFIG: 'system_config',
   ADMIN_MESSAGES: 'admin_messages',
+  ODK_SUBMISSIONS: 'odk_submissions',
 };
 
 const META_DOC = doc(db, 'system_metadata', 'initial_seed');
@@ -390,7 +392,38 @@ export async function fsSavePaymentStatuses(statuses: Record<number, 'pendente' 
   await setDoc(PAYMENTS_DOC, { statuses, updatedAt: new Date().toISOString() });
 }
 
+// --- ODK COLLECT SUBMISSIONS ---
+export async function fsGetOdkSubmissions(): Promise<ODKSubmission[]> {
+  try {
+    const snap = await getDocs(collection(db, COLS.ODK_SUBMISSIONS));
+    if (snap.empty) {
+      // Seed initial sample ODK submissions
+      for (const item of INITIAL_ODK_SUBMISSIONS) {
+        await setDoc(doc(db, COLS.ODK_SUBMISSIONS, String(item.id)), cleanData(item));
+      }
+      return INITIAL_ODK_SUBMISSIONS as ODKSubmission[];
+    }
+    return snap.docs.map((d) => d.data() as ODKSubmission);
+  } catch (err) {
+    console.warn('fsGetOdkSubmissions fallback:', err);
+    return INITIAL_ODK_SUBMISSIONS as ODKSubmission[];
+  }
+}
+
+export async function fsSaveOdkSubmission(sub: ODKSubmission): Promise<void> {
+  await setDoc(doc(db, COLS.ODK_SUBMISSIONS, String(sub.id)), cleanData(sub));
+}
+
+export async function fsUpdateOdkSubmission(id: string, fields: Partial<ODKSubmission>): Promise<void> {
+  await updateDoc(doc(db, COLS.ODK_SUBMISSIONS, String(id)), cleanData(fields));
+}
+
+export async function fsDeleteOdkSubmission(id: string): Promise<void> {
+  await deleteDoc(doc(db, COLS.ODK_SUBMISSIONS, String(id)));
+}
+
 // --- CLEAR ALL TEST DATA FROM FIREBASE DATABASE ---
+
 export async function fsClearAllTestData(): Promise<void> {
   // Clear all fichas collection in Firestore
   const fichasSnap = await getDocs(collection(db, COLS.FICHAS));

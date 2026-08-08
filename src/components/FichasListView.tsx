@@ -311,7 +311,7 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Confirm Clear Test Data Modal */}
       <ConfirmModal
         isOpen={isClearTestModalOpen}
@@ -341,42 +341,42 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
       />
 
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Fichas Registadas</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">Fichas Registadas</h1>
+          <p className="mt-0.5 text-[11px] text-slate-500">
             Histórico completo de fichas de mobilização submetidas
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => exportFichasListPDF(visibleFichas)}
-            className="flex h-10 items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3.5 text-xs font-medium text-red-700 transition hover:bg-red-100 shadow-xs"
+            className="flex h-8 items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-3 text-xs font-medium text-red-700 transition hover:bg-red-100 shadow-xs"
             id="btn-export-pdf"
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-3.5 w-3.5" />
             <span>Exportar PDF</span>
           </button>
           <button
             onClick={exportExcel}
-            className="flex h-10 items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-100 shadow-xs"
+            className="flex h-8 items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 text-xs font-medium text-emerald-800 transition hover:bg-emerald-100 shadow-xs"
             id="btn-export-excel"
           >
-            <FileSpreadsheet className="h-4 w-4" />
+            <FileSpreadsheet className="h-3.5 w-3.5" />
             <span>Exportar Excel</span>
           </button>
           <button
             onClick={onRefresh}
-            className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 shadow-xs"
+            className="flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 shadow-xs"
             id="btn-refresh-fichas"
           >
-            <RefreshCw className="h-4 w-4 text-slate-500" />
+            <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
             <span>Atualizar</span>
           </button>
           <button
             onClick={() => setIsValidacaoModalOpen(true)}
-            className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 text-xs font-bold text-white transition shadow-sm active:scale-95"
+            className="flex h-8 items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 text-xs font-bold text-white transition shadow-sm active:scale-95"
             id="btn-validacao-supervisor"
             title="Validação de dados lançados por supervisor"
           >
@@ -398,10 +398,10 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
       </div>
 
       {/* Status Quick Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => setStatusFilter('')}
-          className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+          className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition ${
             statusFilter === ''
               ? 'bg-slate-900 text-white shadow-xs'
               : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
@@ -412,62 +412,62 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
 
         <button
           onClick={() => setStatusFilter('pendente_48h')}
-          className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition border ${
+          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold transition border ${
             statusFilter === 'pendente_48h'
               ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
               : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
           }`}
           id="btn-filter-pendentes-48h"
         >
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-3.5 w-3.5" />
           <span>Pendentes +48h ({countOver48h})</span>
         </button>
 
         <button
           onClick={() => setStatusFilter('pendente')}
-          className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition border ${
+          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold transition border ${
             statusFilter === 'pendente'
               ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
               : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          <Clock className="h-4 w-4 text-amber-500" />
+          <Clock className="h-3.5 w-3.5 text-amber-500" />
           <span>Pendentes ({countPendingAll})</span>
         </button>
 
         <button
           onClick={() => setStatusFilter('aprovada')}
-          className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition border ${
+          className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold transition border ${
             statusFilter === 'aprovada'
               ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
               : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
           <span>Aprovadas ({countApproved})</span>
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 shadow-2xs flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Pesquisar por mobilizador, ID (Ficha ou Mobilizador ex: MT002201), bairro, coordenação ou estado..."
+            placeholder="Pesquisar por mobilizador, ID, bairro, coordenação..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
+            className="w-full h-8.5 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
             id="input-search-fichas"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Filter className="h-4 w-4 text-blue-600" />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Filter className="h-3.5 w-3.5 text-blue-600" />
           <select
             value={rondaFilter}
             onChange={(e) => setRondaFilter(e.target.value)}
-            className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
+            className="h-8.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
             id="select-filter-ronda"
           >
             <option value="">Todas as Rondas</option>
@@ -480,7 +480,7 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
+            className="h-8.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
             id="input-filter-date"
           />
           {(dateFilter || rondaFilter || statusFilter) && (
@@ -490,7 +490,7 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
                 setRondaFilter('');
                 setStatusFilter('');
               }}
-              className="text-xs font-medium text-blue-600 hover:underline px-2"
+              className="text-xs font-medium text-blue-600 hover:underline px-1.5"
             >
               Limpar Filtros
             </button>
@@ -499,22 +499,22 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-800">
-            <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 uppercase">
               <tr>
-                <th className="p-3.5">#</th>
-                <th className="p-3.5">Data</th>
-                <th className="p-3.5">Estado</th>
-                <th className="p-3.5">Ronda</th>
-                <th className="p-3.5">Mobilizador</th>
-                <th className="p-3.5">Coordenação</th>
-                <th className="p-3.5">Bairro</th>
-                <th className="p-3.5 text-center">Locais</th>
-                <th className="p-3.5 text-right">Pessoas</th>
-                <th className="p-3.5 text-center">SIM / NÃO</th>
-                <th className="p-3.5 text-right">Ações</th>
+                <th className="p-2 sm:p-2.5">#</th>
+                <th className="p-2 sm:p-2.5">Data</th>
+                <th className="p-2 sm:p-2.5">Estado</th>
+                <th className="p-2 sm:p-2.5">Ronda</th>
+                <th className="p-2 sm:p-2.5">Mobilizador</th>
+                <th className="p-2 sm:p-2.5">Coordenação</th>
+                <th className="p-2 sm:p-2.5">Bairro</th>
+                <th className="p-2 sm:p-2.5 text-center">Locais</th>
+                <th className="p-2 sm:p-2.5 text-right">Pessoas</th>
+                <th className="p-2 sm:p-2.5 text-center">SIM / NÃO</th>
+                <th className="p-2 sm:p-2.5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -525,37 +525,37 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
 
                 return (
                   <tr key={f.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 font-mono text-slate-400">{i + 1}</td>
-                    <td className="p-3.5 font-mono text-slate-600">{f.data}</td>
-                    <td className="p-3.5 font-medium">
+                    <td className="p-2 sm:p-2.5 font-mono text-slate-400">{i + 1}</td>
+                    <td className="p-2 sm:p-2.5 font-mono text-slate-600">{f.data}</td>
+                    <td className="p-2 sm:p-2.5 font-medium">
                       {isApproved ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="h-3 w-3" />
                           <span>Aprovada</span>
                         </span>
                       ) : isRejected ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">
-                          <XCircle className="h-3.5 w-3.5" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 border border-red-200">
+                          <XCircle className="h-3 w-3" />
                           <span>Rejeitada</span>
                         </span>
                       ) : pending48h ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300">
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800 border border-amber-300">
+                          <AlertTriangle className="h-3 w-3 text-amber-600" />
                           <span>Pendente (+48h)</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 border border-slate-200">
-                          <Clock className="h-3.5 w-3.5 text-amber-500" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
+                          <Clock className="h-3 w-3 text-amber-500" />
                           <span>Pendente</span>
                         </span>
                       )}
                     </td>
-                    <td className="p-3.5 font-medium">
-                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                    <td className="p-2 sm:p-2.5 font-medium">
+                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700">
                         {f.ronda || '1ª Ronda'}
                       </span>
                     </td>
-                    <td className="p-3.5 font-semibold text-slate-900">
+                    <td className="p-2 sm:p-2.5 font-semibold text-slate-900">
                       <div className="flex flex-col">
                         <span className="text-slate-900 font-bold">{f.mobilizador}</span>
                         {(() => {
@@ -567,7 +567,7 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
                           const mobCod = matchedMob?.codigoId || f.mobilizadorCodigoId;
                           if (mobCod) {
                             return (
-                              <span className="inline-block w-fit font-mono text-[10px] bg-blue-50 border border-blue-200 text-blue-800 font-bold px-1.5 py-0.2 rounded mt-0.5">
+                              <span className="inline-block w-fit font-mono text-[9px] bg-blue-50 border border-blue-200 text-blue-800 font-bold px-1 py-0.2 rounded mt-0.5">
                                 ID: {mobCod}
                               </span>
                             );
@@ -576,21 +576,21 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
                         })()}
                       </div>
                     </td>
-                    <td className="p-3.5">
-                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
+                    <td className="p-2 sm:p-2.5">
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
                         {f.coordNome}
                       </span>
                     </td>
-                    <td className="p-3.5 font-medium text-slate-700">{f.bairro}</td>
-                    <td className="p-3.5 text-center font-mono font-medium">{f.totalLocais}</td>
-                    <td className="p-3.5 text-right font-mono font-bold text-emerald-700">
+                    <td className="p-2 sm:p-2.5 font-medium text-slate-700">{f.bairro}</td>
+                    <td className="p-2 sm:p-2.5 text-center font-mono font-medium">{f.totalLocais}</td>
+                    <td className="p-2 sm:p-2.5 text-right font-mono font-bold text-emerald-700">
                       {f.totalPessoas.toLocaleString()}
                     </td>
-                    <td className="p-3.5 text-center font-mono font-semibold">
+                    <td className="p-2 sm:p-2.5 text-center font-mono font-semibold">
                       <span className="text-emerald-700">{f.sim}</span> /{' '}
                       <span className="text-red-600">{f.nao}</span>
                     </td>
-                    <td className="p-3.5 text-right">
+                    <td className="p-2 sm:p-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {onUpdateFicha && !isApproved && (
                           <button

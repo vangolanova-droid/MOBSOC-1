@@ -199,22 +199,22 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
       />
 
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">
             Gestão de Coordenações & Bairros
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-0.5 text-[11px] text-slate-500">
             Estruturação de áreas operacionais, pré-registo de bairros e atribuição de Coordenadores Responsáveis
           </p>
         </div>
 
         <button
           onClick={() => setIsCoordModalOpen(true)}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#00B2FF] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#009ee3] transition active:scale-[0.99]"
+          className="flex h-8.5 items-center justify-center gap-1.5 rounded-xl bg-[#00B2FF] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#009ee3] transition active:scale-[0.99]"
           id="btn-open-cadastrar-coordenador"
         >
-          <UserCheck className="h-4 w-4" />
+          <UserCheck className="h-3.5 w-3.5" />
           <span>+ Cadastrar Coordenador</span>
         </button>
       </div>
@@ -293,13 +293,13 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
       )}
 
       {/* Add Form */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-          <Building2 className="h-4 w-4 text-emerald-600" />
+      <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-3">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
+          <Building2 className="h-3.5 w-3.5 text-emerald-600" />
           <span>Nova Coordenação Operacional & Registo de Bairros</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
           <div>
             <label className="block text-xs font-semibold text-slate-700">
               Nome da Coordenação <span className="text-red-500">*</span>
@@ -310,7 +310,7 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
               placeholder="Ex: Coordenação Zona A"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="input-coord-nome"
             />
           </div>
@@ -324,7 +324,7 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
               placeholder="Ex: Dr. António Manuel"
               value={coordenador}
               onChange={(e) => setCoordenador(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="input-coord-coordenador"
             />
           </div>
@@ -338,7 +338,7 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
               placeholder="Ex: 15 de Março, Chingo, Quissala"
               value={bairrosInput}
               onChange={(e) => setBairrosInput(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="input-coord-bairros"
             />
           </div>
@@ -347,10 +347,10 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-4 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
+              className="h-8.5 w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-3 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
               id="btn-add-coord"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               <span>Adicionar Coordenação</span>
             </button>
           </div>
@@ -358,17 +358,17 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
       </div>
 
       {/* List Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-800">
-            <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
               <tr>
-                <th className="p-3.5">#</th>
-                <th className="p-3.5">Nome da Coordenação</th>
-                <th className="p-3.5">Coordenador Responsável</th>
-                <th className="p-3.5">Bairros Pré-Registados</th>
-                <th className="p-3.5 text-center">Supervisores</th>
-                <th className="p-3.5 text-right">Ações</th>
+                <th className="p-2 sm:p-2.5">#</th>
+                <th className="p-2 sm:p-2.5">Nome da Coordenação</th>
+                <th className="p-2 sm:p-2.5">Coordenador Responsável</th>
+                <th className="p-2 sm:p-2.5">Bairros Pré-Registados</th>
+                <th className="p-2 sm:p-2.5 text-center">Supervisores</th>
+                <th className="p-2 sm:p-2.5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -380,12 +380,12 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
 
                 return (
                   <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 font-mono text-slate-400">{i + 1}</td>
-                    <td className="p-3.5 font-semibold text-slate-900">{c.nome}</td>
-                    <td className="p-3.5 font-semibold text-emerald-800">
+                    <td className="p-2 sm:p-2.5 font-mono text-slate-400">{i + 1}</td>
+                    <td className="p-2 sm:p-2.5 font-semibold text-slate-900">{c.nome}</td>
+                    <td className="p-2 sm:p-2.5 font-semibold text-emerald-800">
                       {c.coordenador || '— Não Atribuído —'}
                     </td>
-                    <td className="p-3.5">
+                    <td className="p-2 sm:p-2.5">
                       {bairros.length === 0 ? (
                         <button
                           type="button"
@@ -393,52 +393,52 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
                             setChecklistCoordId(c.id);
                             setModalSearchBairro('');
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+                          className="inline-flex items-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
                         >
-                          <Plus className="h-3.5 w-3.5 text-slate-400" />
+                          <Plus className="h-3 w-3 text-slate-400" />
                           <span>Adicionar Bairros (Checklist)</span>
                         </button>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => {
                               setChecklistCoordId(c.id);
                               setModalSearchBairro('');
                             }}
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition shadow-xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition shadow-2xs"
                             title="Clique para abrir e gerir a checklist de bairros"
                           >
-                            <ListChecks className="h-4 w-4 text-emerald-600" />
+                            <ListChecks className="h-3.5 w-3.5 text-emerald-600" />
                             <span>{bairros.length} Bairro{bairros.length > 1 ? 's' : ''} (Checklist)</span>
                           </button>
 
-                          <span className="text-xs text-slate-500 max-w-[180px] truncate hidden md:inline font-normal">
+                          <span className="text-[11px] text-slate-500 max-w-[180px] truncate hidden md:inline font-normal">
                             {bairros.slice(0, 2).join(', ')}{bairros.length > 2 ? `, +${bairros.length - 2}` : ''}
                           </span>
                         </div>
                       )}
                     </td>
-                    <td className="p-3.5 text-center">
-                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-mono font-medium text-blue-700 border border-blue-200">
+                    <td className="p-2 sm:p-2.5 text-center">
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-mono font-medium text-blue-700 border border-blue-200">
                         {countSups} supervisores
                       </span>
                     </td>
-                    <td className="p-3.5 text-right">
+                    <td className="p-2 sm:p-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleOpenEditModal(c)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition"
+                          className="rounded-lg p-1 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition"
                           title="Editar Coordenação e Coordenador"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => setDeletingCoord(c)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                          className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
                           title="Apagar Coordenação"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>

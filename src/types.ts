@@ -122,3 +122,25 @@ export interface PendingUpdate {
   senha?: string;
   timestamp: string;
 }
+
+export interface ODKSubmission {
+  id: string;
+  supervisorId: number;
+  supervisorNome: string;
+  coordId: number | null;
+  coordNome: string;
+  formId: string;
+  formNome: string;
+  dataEnvio: string;
+  horaEnvio: string;
+  totalFormularios: number;
+  dispositivoAndroid?: string;
+  codigoReciboODK: string;
+  status: 'pendente' | 'confirmado' | 'divergencia';
+  confirmadoPorAdmin?: boolean;
+  adminConfirmadorNome?: string;
+  dataConfirmacaoAdmin?: string;
+  observacoes?: string;
+  createdAt: string;
+}
+

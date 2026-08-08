@@ -305,40 +305,40 @@ export const AtrasosView: React.FC<AtrasosViewProps> = ({
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Supervisores Registados</span>
-            <Users className="h-5 w-5 text-slate-400" />
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Supervisores Registados</span>
+            <Users className="h-4 w-4 text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-black text-slate-800">{supervisores.length}</div>
+          <div className="mt-1 text-2xl font-black text-slate-800">{supervisores.length}</div>
           <p className="text-[10px] text-slate-400 mt-0.5">Com coordenação de campo atribuída</p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-800 uppercase">Lançamentos em Dia (🟢)</span>
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <span className="text-[11px] font-bold text-emerald-800 uppercase">Lançamentos em Dia (🟢)</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
-          <div className="mt-2 text-2xl font-black text-emerald-700">{submittedSupervisors.length}</div>
+          <div className="mt-1 text-2xl font-black text-emerald-700">{submittedSupervisors.length}</div>
           <p className="text-[10px] text-emerald-600 mt-0.5">Submeteram fichas em {selectedDate}</p>
         </div>
 
-        <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 shadow-2xs">
+        <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-900 uppercase">Em Atraso de Lançamento (🔴)</span>
-            <Clock className="h-5 w-5 text-amber-600" />
+            <span className="text-[11px] font-bold text-amber-900 uppercase">Em Atraso de Lançamento (🔴)</span>
+            <Clock className="h-4 w-4 text-amber-600" />
           </div>
-          <div className="mt-2 text-2xl font-black text-amber-800">{delayedSupervisors.length}</div>
+          <div className="mt-1 text-2xl font-black text-amber-800">{delayedSupervisors.length}</div>
           <p className="text-[10px] text-amber-700 mt-0.5">Sem dados submetidos em {selectedDate}</p>
         </div>
       </div>
 
       {/* Main Action Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-3">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3.5 sm:p-4 space-y-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-2.5">
           <div>
-            <h3 className="text-sm font-black text-[#0B5CAD] flex items-center gap-2">
+            <h3 className="text-xs font-black text-[#0B5CAD] flex items-center gap-1.5">
               <span>Estado dos Lançamentos por Supervisor ({selectedDate})</span>
             </h3>
             <p className="text-[11px] text-slate-500">
@@ -351,10 +351,10 @@ export const AtrasosView: React.FC<AtrasosViewProps> = ({
           {isAdmin && delayedSupervisors.length > 0 && (
             <button
               onClick={handleSendAlertToAll}
-              className="flex items-center gap-2 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow transition hover:bg-amber-700 active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow transition hover:bg-amber-700 active:scale-95"
               id="btn-alert-all-supervisors"
             >
-              <Bell className="h-4 w-4 animate-bounce" />
+              <Bell className="h-3.5 w-3.5 animate-bounce" />
               <span>Avisar Todos os Supervisores em Atraso ({delayedSupervisors.length})</span>
             </button>
           )}
@@ -363,16 +363,16 @@ export const AtrasosView: React.FC<AtrasosViewProps> = ({
         {/* Supervisors Table */}
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-white text-[11px] font-bold text-[#0B5CAD] uppercase tracking-wider border-b border-slate-200">
+            <thead className="bg-white text-[10px] font-bold text-[#0B5CAD] uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="p-3 w-10 text-center">#</th>
-                <th className="p-3">Supervisor</th>
-                <th className="p-3">Coordenação Territorial</th>
-                <th className="p-3 text-center">Mobilizadores RH-MC</th>
-                <th className="p-3 text-center">Fichas Submetidas ({selectedDate})</th>
-                <th className="p-3">Estado do Lançamento</th>
-                <th className="p-3">Último Lançamento</th>
-                {isAdmin && <th className="p-3 text-right">Ação do Administrador</th>}
+                <th className="p-2 sm:p-2.5 w-8 text-center">#</th>
+                <th className="p-2 sm:p-2.5">Supervisor</th>
+                <th className="p-2 sm:p-2.5">Coordenação Territorial</th>
+                <th className="p-2 sm:p-2.5 text-center">Mobilizadores RH-MC</th>
+                <th className="p-2 sm:p-2.5 text-center">Fichas Submetidas ({selectedDate})</th>
+                <th className="p-2 sm:p-2.5">Estado do Lançamento</th>
+                <th className="p-2 sm:p-2.5">Último Lançamento</th>
+                {isAdmin && <th className="p-2 sm:p-2.5 text-right">Ação do Administrador</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">

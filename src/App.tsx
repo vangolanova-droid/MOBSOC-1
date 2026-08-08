@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Coordination, Ficha, Mobilizador, User } from './types';
+import { Coordination, Ficha, Mobilizador, User, ODKSubmission, AuditLog } from './types';
 import { api } from './services/api';
 import { fsSubscribeCollection, initFirestoreDatabase } from './services/firebaseService';
 import {
@@ -23,11 +23,11 @@ import { CoordenacoesView } from './components/CoordenacoesView';
 import { PerfilView } from './components/PerfilView';
 import { MobilizadoresView } from './components/MobilizadoresView';
 import { AtrasosView } from './components/AtrasosView';
+import { ODKCollectView } from './components/ODKCollectView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
-import { AuditLog } from './types';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
 
 function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
@@ -42,6 +42,7 @@ export default function App() {
   const [coordenacoes, setCoordenacoes] = useState<Coordination[]>([]);
   const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
+  const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>([]);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -125,6 +126,12 @@ export default function App() {
         'fichas',
         (items) => setFichas(deduplicateById(items)),
         (a, b) => Number(b.id) - Number(a.id)
+      );
+
+      fsSubscribeCollection<ODKSubmission>(
+        'odk_submissions',
+        (items) => setOdkSubmissions(deduplicateById(items)),
+        (a, b) => b.createdAt.localeCompare(a.createdAt)
       );
 
       fsSubscribeCollection<AuditLog>(
@@ -279,6 +286,46 @@ export default function App() {
     setFichas((prev) => prev.map((f) => (f.id === id ? updated : f)));
   };
 
+  // ODK Submission Actions
+  const handleCreateOdkSubmission = async (subData: Partial<ODKSubmission>) => {
+    const created = await api.createOdkSubmission(subData, currentUser);
+    setOdkSubmissions((prev) => [created, ...prev]);
+  };
+
+  const handleUpdateOdkSubmissionStatus = async (
+    id: string,
+    status: 'confirmado' | 'divergencia' | 'pendente',
+    adminNotes?: string
+  ) => {
+    if (currentUser?.tipo !== 'admin') {
+      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+    }
+    await api.updateOdkSubmissionStatus(id, status, adminNotes, currentUser);
+    setOdkSubmissions((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              status,
+              confirmadoPorAdmin: status === 'confirmado',
+              adminConfirmadorNome: currentUser.nome,
+              dataConfirmacaoAdmin: new Date().toISOString().replace('T', ' ').slice(0, 16),
+              observacoes: adminNotes !== undefined ? adminNotes : s.observacoes,
+            }
+          : s
+      )
+    );
+  };
+
+  const handleDeleteOdkSubmission = async (id: string) => {
+    if (currentUser?.tipo !== 'admin') {
+      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+    }
+    await api.deleteOdkSubmission(id, currentUser);
+    setOdkSubmissions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white text-slate-800">
@@ -348,6 +395,7 @@ export default function App() {
           activeTab={activeTab}
           fichas={fichas}
           users={users}
+          odkSubmissions={odkSubmissions}
           isOpen={sidebarOpen}
           currentPalette={palette}
           themeConfig={themeConfig}
@@ -359,7 +407,7 @@ export default function App() {
           onCloseMobile={() => setSidebarOpen(false)}
         />
 
-        <main className="flex-1 p-2.5 sm:p-3.5 w-full min-w-0 overflow-hidden">
+        <main className="flex-1 p-2 sm:p-2.5 w-full min-w-0 overflow-hidden">
           {activeTab === 'dashboard' && (
             <DashboardView
               user={currentUser}
@@ -429,6 +477,18 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'odk' && (
+            <ODKCollectView
+              user={currentUser}
+              coordenacoes={coordenacoes}
+              users={users}
+              submissions={odkSubmissions}
+              onCreateSubmission={handleCreateOdkSubmission}
+              onUpdateStatus={handleUpdateOdkSubmissionStatus}
+              onDeleteSubmission={handleDeleteOdkSubmission}
+            />
+          )}
+
           {activeTab === 'listFichas' && (
             <FichasListView
               user={currentUser}
@@ -465,7 +525,13 @@ export default function App() {
 
           {activeTab === 'graficos' &&
             (currentUser.tipo === 'admin' ? (
-              <GraficosView user={currentUser} fichas={fichas} />
+              <GraficosView
+                user={currentUser}
+                fichas={fichas}
+                mobilizadores={mobilizadores}
+                coordenacoes={coordenacoes}
+                users={users}
+              />
             ) : (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center font-bold text-xs text-red-700 shadow-sm">
                 ⚠️ Acesso Restrito: Apenas o Administrador possui permissão para visualizar Gráficos Analíticos.

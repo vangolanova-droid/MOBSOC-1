@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className="sticky top-0 z-50 flex h-[57px] w-full items-center justify-between border-b border-white/20 bg-[#00B2FF] px-4 text-white shadow-sm md:px-6 transition-colors shrink-0"
+      className="sticky top-0 z-50 flex h-[48px] w-full items-center justify-between border-b border-white/20 bg-[#00B2FF] px-3 text-white shadow-sm md:px-4 transition-colors shrink-0"
       style={{ backgroundColor: primaryColor }}
     >
       <div className="flex items-center gap-3">

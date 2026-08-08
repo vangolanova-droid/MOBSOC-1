@@ -156,11 +156,11 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Relatórios Oficiais</h1>
-        <p className="mt-1 text-xs text-slate-500">
+        <h1 className="text-lg font-bold tracking-tight text-slate-900">Relatórios Oficiais</h1>
+        <p className="mt-0.5 text-[11px] text-slate-500">
           Geração, pré-visualização, relatórios por supervisores e exportação de dados
         </p>
       </div>
@@ -169,71 +169,71 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
       <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 w-fit">
         <button
           onClick={() => setReportTab('geral')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             reportTab === 'geral'
               ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80'
               : 'text-slate-600 hover:text-slate-900'
           }`}
           id="tab-rel-geral"
         >
-          <BookOpen className="h-4 w-4" />
+          <BookOpen className="h-3.5 w-3.5" />
           <span>Relatório Geral</span>
         </button>
 
         <button
           onClick={() => setReportTab('diario')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             reportTab === 'diario'
               ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80'
               : 'text-slate-600 hover:text-slate-900'
           }`}
           id="tab-rel-diario"
         >
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-3.5 w-3.5" />
           <span>Relatório Diário</span>
         </button>
 
         <button
           onClick={() => setReportTab('supervisores')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             reportTab === 'supervisores'
               ? 'bg-white text-emerald-700 shadow-xs border border-slate-200/80'
               : 'text-slate-600 hover:text-slate-900'
           }`}
           id="tab-rel-supervisores"
         >
-          <Users className="h-4 w-4 text-emerald-600" />
+          <Users className="h-3.5 w-3.5 text-emerald-600" />
           <span>Relatório por Supervisores</span>
         </button>
 
         <button
           onClick={() => setReportTab('export')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             reportTab === 'export'
               ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80'
               : 'text-slate-600 hover:text-slate-900'
           }`}
           id="tab-rel-export"
         >
-          <FileSpreadsheet className="h-4 w-4" />
+          <FileSpreadsheet className="h-3.5 w-3.5" />
           <span>Exportar & Imprimir</span>
         </button>
       </div>
 
       {/* Filters Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-            <Filter className="h-4 w-4 text-blue-600" />
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <Filter className="h-3.5 w-3.5 text-blue-600" />
             <span>Filtros do Relatório</span>
           </div>
 
           {reportTab === 'supervisores' && (
-            <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 border border-slate-200">
+            <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 border border-slate-200">
               <button
                 type="button"
                 onClick={() => setSupervisorSubMode('diario')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
                   supervisorSubMode === 'diario'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -244,7 +244,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSupervisorSubMode('geral')}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
                   supervisorSubMode === 'geral'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -256,7 +256,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           {(reportTab === 'diario' || (reportTab === 'supervisores' && supervisorSubMode === 'diario')) && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
@@ -266,7 +266,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="mt-1 w-full h-8.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
                 id="rel-filter-date"
               />
             </div>
@@ -279,7 +279,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
             <select
               value={selectedCoord}
               onChange={(e) => setSelectedCoord(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1 w-full h-8.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="rel-filter-coord"
             >
               <option value="">Todas as Coordenações</option>
@@ -299,7 +299,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
               <select
                 value={selectedSupervisor}
                 onChange={(e) => setSelectedSupervisor(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="mt-1 w-full h-8.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               >
                 <option value="">Todos os Supervisores</option>
                 {users
