@@ -374,15 +374,17 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
             <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
             <span>Atualizar</span>
           </button>
-          <button
-            onClick={() => setIsValidacaoModalOpen(true)}
-            className="flex h-8 items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 text-xs font-bold text-white transition shadow-sm active:scale-95"
-            id="btn-validacao-supervisor"
-            title="Validação de dados lançados por supervisor"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            <span>Validação por Supervisor</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsValidacaoModalOpen(true)}
+              className="flex h-8 items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 text-xs font-bold text-white transition shadow-sm active:scale-95"
+              id="btn-validacao-supervisor"
+              title="Validação de dados lançados por supervisor"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Validação por Supervisor</span>
+            </button>
+          )}
           {isAdmin && onClearTestData && (
             <button
               onClick={() => setIsClearTestModalOpen(true)}
@@ -592,7 +594,7 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
                     </td>
                     <td className="p-2 sm:p-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {onUpdateFicha && !isApproved && (
+                        {isAdmin && onUpdateFicha && !isApproved && (
                           <button
                             onClick={() => handleUpdateStatus(f.id, 'aprovada')}
                             className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition"

@@ -31,8 +31,12 @@ import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
 
 function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
-  const map = new Map<number | string, T>();
-  items.forEach((item) => map.set(item.id, item));
+  const map = new Map<string, T>();
+  items.forEach((item) => {
+    if (item && item.id !== undefined && item.id !== null) {
+      map.set(String(item.id).trim(), item);
+    }
+  });
   return Array.from(map.values());
 }
 
@@ -194,7 +198,7 @@ export default function App() {
   // User Actions
   const handleCreateUser = async (userPartial: Partial<User>) => {
     const created = await api.createUser(userPartial, currentUser);
-    setUsers((prev) => [...prev, created]);
+    setUsers((prev) => deduplicateById([created, ...prev]));
   };
 
   const handleUpdateUser = async (id: number, fields: Partial<User>) => {
@@ -216,7 +220,7 @@ export default function App() {
   // Coordination Actions
   const handleCreateCoordination = async (nome: string, coordenador?: string, bairros?: string[]) => {
     const created = await api.createCoordination(nome, coordenador, bairros, currentUser);
-    setCoordenacoes((prev) => [...prev, created]);
+    setCoordenacoes((prev) => deduplicateById([...prev, created]));
   };
 
   const handleUpdateCoordination = async (id: number, fields: Partial<Coordination>) => {
@@ -235,7 +239,7 @@ export default function App() {
   // Mobilizador Actions
   const handleCreateMobilizador = async (mobPartial: Partial<Mobilizador>) => {
     const created = await api.createMobilizador(mobPartial, currentUser);
-    setMobilizadores((prev) => [...prev, created]);
+    setMobilizadores((prev) => deduplicateById([...prev, created]));
   };
 
   const handleUpdateMobilizador = async (id: number, fields: Partial<Mobilizador>) => {
@@ -265,7 +269,7 @@ export default function App() {
   };
   const handleSaveFicha = async (fichaPartial: Partial<Ficha>) => {
     const created = await api.createFicha(fichaPartial, currentUser);
-    setFichas((prev) => [created, ...prev]);
+    setFichas((prev) => deduplicateById([created, ...prev]));
     setActiveTab('listFichas');
   };
 
@@ -289,7 +293,7 @@ export default function App() {
   // ODK Submission Actions
   const handleCreateOdkSubmission = async (subData: Partial<ODKSubmission>) => {
     const created = await api.createOdkSubmission(subData, currentUser);
-    setOdkSubmissions((prev) => [created, ...prev]);
+    setOdkSubmissions((prev) => deduplicateById([created, ...prev]));
   };
 
   const handleUpdateOdkSubmissionStatus = async (
