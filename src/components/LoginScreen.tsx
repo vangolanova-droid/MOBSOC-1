@@ -115,6 +115,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
+
+        {/* Melo Tech Footer Badge in Login */}
+        <div className="mt-6 pt-4 border-t border-slate-200/80 text-center space-y-1">
+          <p className="text-[11px] font-extrabold text-slate-700">
+            MELO TECH • <span className="text-blue-600 font-bold">INOVAÇÃO DIGITAL</span>
+          </p>
+          <p className="text-[10px] text-slate-500 font-medium">
+            © {new Date().getFullYear()} Todos os direitos reservados
+          </p>
+          <a
+            href="mailto:v.angola.nova@gmail.com"
+            className="inline-block text-[10px] font-bold text-blue-600 hover:underline pt-0.5"
+          >
+            Suporte Técnico: v.angola.nova@gmail.com
+          </a>
+        </div>
       </div>
     </div>
   );

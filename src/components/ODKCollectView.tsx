@@ -28,6 +28,7 @@ import {
   Award,
 } from 'lucide-react';
 import { User, Coordination, ODKSubmission } from '../types';
+import { Tooltip as ActionTooltip } from './Tooltip';
 
 interface ODKCollectViewProps {
   user: User;
@@ -92,6 +93,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
   const [observacoes, setObservacoes] = useState('');
   const [imagemComprovativo, setImagemComprovativo] = useState<string | undefined>(undefined);
   const [uploadedProof, setUploadedProof] = useState<string | undefined>(undefined);
+  const [numCampaignDays, setNumCampaignDays] = useState<number>(7);
   const [submitting, setSubmitting] = useState(false);
   const [adminNoteInput, setAdminNoteInput] = useState('');
 
@@ -285,10 +287,10 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
     };
   });
 
-  // 4 Campaign Days Breakdown (Dia 1, Dia 2, Dia 3, Dia 4)
-  // Get distinct dates or map to Day 1 .. Day 4
+  // Dynamic Campaign Days Breakdown (Dia 1 .. Dia N, e.g. 4, 5, 6, 7 ou mais)
   const allDates = Array.from(new Set(submissions.map((s) => s.dataEnvio))).sort();
-  const campaignDays = [0, 1, 2, 3].map((index) => {
+  const totalDaysCount = Math.max(numCampaignDays, allDates.length);
+  const campaignDays = Array.from({ length: totalDaysCount }).map((_, index) => {
     const dayLabel = `Dia ${index + 1} de Campanha`;
     const date = allDates[index] || `Dia ${index + 1}`;
     const daySubs = submissions.filter((s) => s.dataEnvio === date);
@@ -785,30 +787,53 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
         </div>
       )}
 
-      {/* TAB 3: RELATÓRIO DOS 4 DIAS DE CAMPANHA */}
+      {/* TAB 3: RELATÓRIO DOS DIAS DE CAMPANHA (DINÂMICO: 4, 5, 6, 7+ DIAS) */}
       {activeMainTab === 'campanha4dias' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950/80 px-3 py-1 text-xs font-bold text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                  <Award className="h-3.5 w-3.5" /> Registos dos 4 Dias de Trabalho de Campanha
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950/80 px-3 py-1 text-xs font-bold text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    <Award className="h-3.5 w-3.5" /> Registos dos {campaignDays.length} Dias de Trabalho de Campanha
+                  </span>
+                  
+                  {/* Selector for Campaign Duration */}
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                    <Calendar className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Duração:</span>
+                    <select
+                      value={numCampaignDays}
+                      onChange={(e) => setNumCampaignDays(Number(e.target.value))}
+                      className="bg-transparent font-extrabold text-purple-700 dark:text-purple-300 outline-none cursor-pointer"
+                    >
+                      <option value={4}>4 Dias</option>
+                      <option value={5}>5 Dias</option>
+                      <option value={6}>6 Dias</option>
+                      <option value={7}>7 Dias (1 Semana)</option>
+                      <option value={10}>10 Dias</option>
+                      <option value={14}>14 Dias (2 Semanas)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-2">
-                  Consolidado Diario de Formulários ODK Collect
+                  Consolidado Diário de Formulários ODK Collect ({campaignDays.length} Dias)
                 </h2>
                 <p className="text-xs text-slate-500 max-w-2xl mt-0.5">
-                  Visualização estruturada dos 4 dias de campanha marcados com todas as submissões de formulários efetuadas pelos supervisores em campo.
+                  Visualização estruturada dos {campaignDays.length} dias da campanha de vacinação/mobilização com todas as submissões efetuadas pelos supervisores em campo.
                 </p>
               </div>
 
-              <button
-                onClick={() => setShow4DaysReceiptModal(true)}
-                className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white px-5 py-3 text-xs font-black shadow-md transition active:scale-95"
-              >
-                <Camera className="h-4 w-4" />
-                <span>Capturar / Gerar Comprovativo dos 4 Dias</span>
-              </button>
+              <ActionTooltip content="Gera o comprovativo oficial com o resumo dos dias trabalhados e captura de ecrã para impressão ou envio à coordenação.">
+                <button
+                  onClick={() => setShow4DaysReceiptModal(true)}
+                  className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white px-5 py-3 text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span>Capturar / Gerar Comprovativo ({campaignDays.length} Dias)</span>
+                </button>
+              </ActionTooltip>
             </div>
           </div>
 
@@ -1246,7 +1271,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 </div>
                 <div>
                   <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">
-                    Comprovativo Oficial dos 4 Dias de Trabalho
+                    Comprovativo Oficial dos {campaignDays.length} Dias de Trabalho
                   </h2>
                   <p className="text-xs font-bold text-purple-800">
                     Campanha de Mobilização • Formulários ODK Collect Central
@@ -1255,7 +1280,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
               </div>
               <div className="text-right">
                 <span className="inline-block font-mono text-xs font-black bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg text-slate-800">
-                  REF-ODK-4DIAS-{new Date().getFullYear()}
+                  REF-ODK-{campaignDays.length}DIAS-{new Date().getFullYear()}
                 </span>
                 <p className="text-[10px] text-slate-500 font-bold mt-1">
                   Gerado em: {new Date().toLocaleString('pt-PT')}
@@ -1267,7 +1292,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
             <div className="grid grid-cols-4 gap-3 bg-purple-50 border border-purple-200 p-4 rounded-xl text-center">
               <div>
                 <span className="text-[10px] font-extrabold uppercase text-purple-900">Dias Marcados</span>
-                <div className="text-xl font-black text-purple-950">4 Dias</div>
+                <div className="text-xl font-black text-purple-950">{campaignDays.length} Dias</div>
               </div>
               <div>
                 <span className="text-[10px] font-extrabold uppercase text-purple-900">Total Formulários</span>
@@ -1315,7 +1340,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 <div>
                   <h4 className="text-xs font-black text-purple-950 flex items-center gap-2">
                     <Camera className="h-4 w-4 text-purple-700" />
-                    <span>Captura de Ecrã / Imagem dos 4 Dias Trabalhados (Comprovativo)</span>
+                    <span>Captura de Ecrã / Imagem dos {campaignDays.length} Dias Trabalhados (Comprovativo)</span>
                   </h4>
                   <p className="text-[11px] text-purple-800 print:text-slate-600">
                     O supervisor envia a captura de ecrã do ODK Collect no seu tablet/smartphone para confirmação da coordenação e do administrador.

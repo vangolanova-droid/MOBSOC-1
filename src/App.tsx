@@ -27,6 +27,7 @@ import { ODKCollectView } from './components/ODKCollectView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
+import { Footer } from './components/Footer';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
 
@@ -576,6 +577,9 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Footer with Developer & Company Credits - Spans 100% full width under sidebar and main view */}
+      <Footer />
 
       {/* Gemini AI Assistant Modal */}
       <AiAssistantModal

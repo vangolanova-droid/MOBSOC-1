@@ -31,7 +31,11 @@ import {
   Pie,
   Cell,
   Legend,
+  ComposedChart,
+  Line,
+  CartesianGrid,
 } from 'recharts';
+import { Tooltip as ActionTooltip } from './Tooltip';
 import { Coordination, Ficha, Mobilizador, User } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
@@ -183,6 +187,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     { name: 'NÃO (Recusaram)', value: totalNao, color: '#DC2626' },
   ];
 
+  // Chart 3: Daily Progress vs Campaign Target (Recharts Data)
+  const dateSubCountMap: Record<string, number> = {};
+  visibleFichas.forEach((f) => {
+    if (f.data) {
+      dateSubCountMap[f.data] = (dateSubCountMap[f.data] || 0) + 1;
+    }
+  });
+
+  const allActiveDates = Array.from(
+    new Set([...Object.keys(dateSubCountMap), targetDate])
+  ).sort();
+
+  const targetPerDay = totalExpectedDailyFichas > 0 ? totalExpectedDailyFichas : 20;
+
+  const dailyProgressChartData = allActiveDates.map((d) => {
+    const submetidas = dateSubCountMap[d] || 0;
+    const target = targetPerDay;
+    const taxa = target > 0 ? Math.round((submetidas / target) * 100) : 0;
+    return {
+      data: d,
+      dataDisplay: d.split('-').reverse().slice(0, 2).join('/'),
+      Submetidas: submetidas,
+      Target: target,
+      TaxaCumprimento: taxa,
+    };
+  });
+
   return (
     <div className="space-y-2.5">
       {/* Page Header */}
@@ -197,22 +228,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={onOpenAiModal}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
-            id="dash-btn-ai"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>Gerar Relatório IA</span>
-          </button>
-          <button
-            onClick={onNewFicha}
-            className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition active:scale-[0.98]"
-            id="dash-btn-nova-ficha"
-          >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>Nova Ficha</span>
-          </button>
+          <ActionTooltip content="Abre a inteligência artificial para resumir dados, gerar relatórios operacionais e identificar tendências no terreno.">
+            <button
+              onClick={onOpenAiModal}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs cursor-pointer"
+              id="dash-btn-ai"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <span>Gerar Relatório IA</span>
+            </button>
+          </ActionTooltip>
+
+          <ActionTooltip content="Abre o formulário digital para registar uma nova ficha de mobilização de campo.">
+            <button
+              onClick={onNewFicha}
+              className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
+              id="dash-btn-nova-ficha"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span>Nova Ficha</span>
+            </button>
+          </ActionTooltip>
         </div>
       </div>
 
@@ -690,6 +726,74 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Charts Section Grid */}
+      {/* Chart 1: Progresso Diário vs Target da Campanha (Recharts) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-100 dark:border-emerald-800">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                Gráfico de Progresso Diário vs Target Estabelecido da Campanha
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Comparativo em Recharts: Fichas Submetidas vs Meta Diária Planeada ({targetPerDay} fichas/dia)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-1 font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              ✓ Submetidas Hoje: {todayFichas.length}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              🎯 Meta Diária: {targetPerDay}
+            </span>
+          </div>
+        </div>
+
+        <div className="h-60 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={dailyProgressChartData} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+              <XAxis dataKey="dataDisplay" tick={{ fontSize: 11, fill: '#64748b' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const dataObj = payload[0].payload;
+                    return (
+                      <div className="rounded-xl bg-slate-900/95 p-3 text-white shadow-xl border border-slate-700 text-xs space-y-1">
+                        <p className="font-extrabold text-blue-400 border-b border-slate-700 pb-1">
+                          Data: {dataObj.data}
+                        </p>
+                        <p className="font-semibold text-emerald-400 flex items-center justify-between gap-4">
+                          <span>Fichas Submetidas:</span>
+                          <span className="font-mono font-bold">{dataObj.Submetidas}</span>
+                        </p>
+                        <p className="font-semibold text-blue-300 flex items-center justify-between gap-4">
+                          <span>Target Estabelecido:</span>
+                          <span className="font-mono font-bold">{dataObj.Target}</span>
+                        </p>
+                        <p className="font-semibold text-amber-300 flex items-center justify-between gap-4 pt-1 border-t border-slate-800">
+                          <span>Taxa de Cumprimento:</span>
+                          <span className="font-mono font-bold">{dataObj.TaxaCumprimento}%</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+              <Bar dataKey="Submetidas" fill="#10B981" radius={[6, 6, 0, 0]} name="Fichas Submetidas" />
+              <Line type="monotone" dataKey="Target" stroke="#2563EB" strokeWidth={3} dot={{ r: 4 }} name="Target Estabelecido" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         {/* Bar Chart - Pessoas por Local de Mobilização */}
         <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm space-y-2.5">
