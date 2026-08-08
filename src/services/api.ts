@@ -485,6 +485,7 @@ export const api = {
       status: subData.status || 'pendente',
       confirmadoPorAdmin: false,
       observacoes: subData.observacoes || '',
+      imagemComprovativo: subData.imagemComprovativo || '',
       createdAt: new Date().toISOString(),
     };
 

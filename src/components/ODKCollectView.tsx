@@ -57,6 +57,13 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
   // Active Main View Tab: 'list' | 'supervisores' | 'campanha4dias'
   const [activeMainTab, setActiveMainTab] = useState<'list' | 'supervisores' | 'campanha4dias'>('list');
 
+  // Enforce tab security: only admins can view 'supervisores'
+  React.useEffect(() => {
+    if (!isAdmin && activeMainTab === 'supervisores') {
+      setActiveMainTab('list');
+    }
+  }, [isAdmin, activeMainTab]);
+
   // State Modals
   const [showModal, setShowModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -83,8 +90,24 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
   const userAssignedCoord = coordenacoes.find((c) => c.id === user.coordId) || coordenacoes[0];
   const [coordId, setCoordId] = useState<number | null>(user.coordId || (userAssignedCoord?.id ?? null));
   const [observacoes, setObservacoes] = useState('');
+  const [imagemComprovativo, setImagemComprovativo] = useState<string | undefined>(undefined);
+  const [uploadedProof, setUploadedProof] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
   const [adminNoteInput, setAdminNoteInput] = useState('');
+
+  const handleImageUpload = (file: File, callback: (base64: string) => void) => {
+    if (file.size > 8 * 1024 * 1024) {
+      alert('O ficheiro de imagem excede o tamanho máximo permitido de 8MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        callback(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Pre-defined ODK Forms options with primary default option
   const ODK_FORM_OPTIONS = [
@@ -111,6 +134,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
       setCoordId(coordenacoes[0].id);
     }
     setFormNome('Ficha de Supervisão da Mobilização');
+    setImagemComprovativo(undefined);
     handleGenerateReceiptCode();
     setShowModal(true);
   };
@@ -140,12 +164,14 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
         coordId: effectiveCoordId,
         coordNome: finalCoordNome,
         observacoes,
+        imagemComprovativo,
       });
 
       setShowModal(false);
       // Reset form defaults
       setTotalFormularios(25);
       setObservacoes('');
+      setImagemComprovativo(undefined);
       handleGenerateReceiptCode();
     } catch (err) {
       alert('Erro ao registar confirmação ODK: ' + (err instanceof Error ? err.message : String(err)));
@@ -426,17 +452,19 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
             <span>Lista de Submissões ({filteredSubmissions.length})</span>
           </button>
 
-          <button
-            onClick={() => setActiveMainTab('supervisores')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
-              activeMainTab === 'supervisores'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            <span>Resumo por Supervisores ({supervisoresList.length})</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveMainTab('supervisores')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
+                activeMainTab === 'supervisores'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span>Resumo por Supervisores ({supervisoresList.length})</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveMainTab('campanha4dias')}
@@ -447,7 +475,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
             }`}
           >
             <Calendar className="h-4 w-4" />
-            <span>Relatório dos 4 Dias de Campanha</span>
+            <span>Relatório dos dias trabalhados</span>
           </button>
         </div>
 
@@ -458,7 +486,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
             id="btn-capturar-4-dias"
           >
             <Camera className="h-4 w-4" />
-            <span>Gerar Comprovativo dos 4 Dias (Modo Captura)</span>
+            <span>Gerar Comprovativo dos dias Trabalhdo (Modo Captura)</span>
           </button>
         )}
       </div>
@@ -563,7 +591,20 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                       return (
                         <tr key={sub.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                           <td className="p-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                            {sub.codigoReciboODK}
+                            <div className="flex items-center gap-1.5">
+                              <span>{sub.codigoReciboODK}</span>
+                              {sub.imagemComprovativo && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSub(sub)}
+                                  className="inline-flex items-center gap-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 px-1.5 py-0.5 text-[9px] font-bold text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 hover:bg-purple-200 transition"
+                                  title="Ver captura de ecrã/imagem em anexo"
+                                >
+                                  <Camera className="h-3 w-3" />
+                                  <span>Imagem</span>
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
                             {sub.dataEnvio} <span className="text-[10px] text-slate-400">({sub.horaEnvio})</span>
@@ -1013,6 +1054,37 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 />
               </div>
 
+              {/* Captura de Ecrã / Imagem de Comprovativo */}
+              <div>
+                <label className="block text-xs font-bold text-white mb-1 flex items-center gap-1.5">
+                  <Camera className="h-4 w-4 text-emerald-400" />
+                  <span>Anexar Captura de Ecrã do ODK Collect (Foto/Imagem)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file, setImagemComprovativo);
+                  }}
+                  className="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-500 file:text-slate-950 hover:file:bg-emerald-400 cursor-pointer bg-slate-800 rounded-xl p-2 border border-slate-600"
+                />
+                {imagemComprovativo && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-2 relative">
+                    <p className="text-[10px] font-bold text-emerald-400 mb-1">Pré-visualização da Captura:</p>
+                    <img src={imagemComprovativo} alt="Captura de Ecrã ODK" className="max-h-48 mx-auto object-contain rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => setImagemComprovativo(undefined)}
+                      className="absolute top-3 right-3 bg-rose-600 hover:bg-rose-700 text-white p-1 rounded-full text-xs shadow-md"
+                      title="Remover Imagem"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button
                   type="button"
@@ -1099,6 +1171,24 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
                   <span className="text-slate-400 font-bold block">Observações:</span>
                   <span className="text-slate-200 italic">{selectedSub.observacoes}</span>
+                </div>
+              )}
+
+              {selectedSub.imagemComprovativo && (
+                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-emerald-400 font-extrabold flex items-center gap-1.5 text-xs">
+                      <Camera className="h-4 w-4" />
+                      Captura de Ecrã / Imagem Anexada:
+                    </span>
+                  </div>
+                  <div className="rounded-xl overflow-hidden bg-slate-950 border border-slate-700 p-2">
+                    <img
+                      src={selectedSub.imagemComprovativo}
+                      alt="Captura de Ecrã"
+                      className="max-h-80 mx-auto object-contain rounded-lg w-full"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1217,6 +1307,59 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Anexo de Captura de Ecrã dos 4 Dias pelo Supervisor */}
+            <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-xl space-y-3 print:border-slate-300 print:bg-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-black text-purple-950 flex items-center gap-2">
+                    <Camera className="h-4 w-4 text-purple-700" />
+                    <span>Captura de Ecrã / Imagem dos 4 Dias Trabalhados (Comprovativo)</span>
+                  </h4>
+                  <p className="text-[11px] text-purple-800 print:text-slate-600">
+                    O supervisor envia a captura de ecrã do ODK Collect no seu tablet/smartphone para confirmação da coordenação e do administrador.
+                  </p>
+                </div>
+              </div>
+
+              <div className="print:hidden">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file, setUploadedProof);
+                  }}
+                  className="w-full text-xs text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-700 file:text-white hover:file:bg-purple-800 cursor-pointer bg-white rounded-xl p-2 border border-purple-300"
+                />
+              </div>
+
+              {uploadedProof ? (
+                <div className="rounded-xl border border-purple-300 bg-white p-3 relative space-y-2">
+                  <div className="flex items-center justify-between print:hidden">
+                    <span className="text-xs font-black text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="h-4 w-4" /> Captura de Ecrã Carregada com Sucesso
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedProof(undefined)}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Remover Foto
+                    </button>
+                  </div>
+                  <img
+                    src={uploadedProof}
+                    alt="Captura dos 4 Dias ODK"
+                    className="max-h-72 mx-auto object-contain rounded-lg border border-slate-200"
+                  />
+                </div>
+              ) : (
+                <div className="text-center p-4 border border-dashed border-purple-300 rounded-xl text-purple-700 text-xs font-semibold print:hidden">
+                  📸 Nenhuma captura de ecrã anexada ainda. Selecione um ficheiro de imagem acima para enviar como comprovativo dos 4 dias de trabalho.
+                </div>
+              )}
             </div>
 
             {/* Signature & Verification Seal */}

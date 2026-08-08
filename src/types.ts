@@ -141,6 +141,7 @@ export interface ODKSubmission {
   adminConfirmadorNome?: string;
   dataConfirmacaoAdmin?: string;
   observacoes?: string;
+  imagemComprovativo?: string;
   createdAt: string;
 }
 
