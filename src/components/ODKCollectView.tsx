@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Smartphone,
   CheckCircle2,
@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Plus,
   Search,
-  Filter,
   Download,
   FileSpreadsheet,
   Trash2,
@@ -15,11 +14,8 @@ import {
   ShieldCheck,
   Send,
   Building2,
-  UserCheck,
-  Hash,
   X,
   FileText,
-  MapPin,
   Check,
   Calendar,
   Camera,
@@ -27,6 +23,7 @@ import {
   Users,
   Award,
 } from 'lucide-react';
+
 import { User, Coordination, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
 
@@ -35,12 +32,17 @@ interface ODKCollectViewProps {
   coordenacoes: Coordination[];
   users: User[];
   submissions: ODKSubmission[];
-  onCreateSubmission: (sub: Partial<ODKSubmission>) => Promise<void>;
+
+  onCreateSubmission: (
+    sub: Partial<ODKSubmission>
+  ) => Promise<void>;
+
   onUpdateStatus: (
     id: string,
     status: 'confirmado' | 'divergencia' | 'pendente',
     adminNotes?: string
   ) => Promise<void>;
+
   onDeleteSubmission: (id: string) => Promise<void>;
 }
 
@@ -55,63 +57,126 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
 }) => {
   const isAdmin = user.tipo === 'admin';
 
-  // Active Main View Tab: 'list' | 'supervisores' | 'campanha4dias'
-  const [activeMainTab, setActiveMainTab] = useState<'list' | 'supervisores' | 'campanha4dias'>('list');
+  // ============================================================
+  // TABS
+  // ============================================================
 
-  // Enforce tab security: only admins can view 'supervisores'
-  React.useEffect(() => {
+  const [activeMainTab, setActiveMainTab] = useState<
+    'list' | 'supervisores' | 'campanha4dias'
+  >('list');
+
+  useEffect(() => {
     if (!isAdmin && activeMainTab === 'supervisores') {
       setActiveMainTab('list');
     }
   }, [isAdmin, activeMainTab]);
 
-  // State Modals
+  // ============================================================
+  // MODAIS
+  // ============================================================
+
   const [showModal, setShowModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [show4DaysReceiptModal, setShow4DaysReceiptModal] = useState(false);
-  const [selectedSub, setSelectedSub] = useState<ODKSubmission | null>(null);
+  const [show4DaysReceiptModal, setShow4DaysReceiptModal] =
+    useState(false);
 
-  // Filters
+  const [selectedSub, setSelectedSub] =
+    useState<ODKSubmission | null>(null);
+
+  // ============================================================
+  // CONTROLO LOCAL DOS REGISTOS ELIMINADOS
+  // ============================================================
+
+  /*
+   * Isto resolve um problema comum:
+   *
+   * onDeleteSubmission() pode apagar no backend,
+   * mas o componente pai pode demorar a atualizar "submissions".
+   *
+   * Guardamos temporariamente os IDs eliminados para que
+   * desapareçam imediatamente da interface.
+   */
+  const [deletedSubmissionIds, setDeletedSubmissionIds] =
+    useState<Set<string>>(new Set());
+
+  // ============================================================
+  // FILTROS
+  // ============================================================
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'confirmado' | 'divergencia'>('todos');
-  const [coordFilter, setCoordFilter] = useState<string>('todas');
-  const [supervisorFilter, setSupervisorFilter] = useState<string>('todos');
 
-  // Form State
-  const [formNome, setFormNome] = useState('Ficha de Supervisão da Mobilização');
-  const [customFormNome, setCustomFormNome] = useState('');
-  const [dataEnvio, setDataEnvio] = useState(new Date().toISOString().split('T')[0]);
-  const [horaEnvio, setHoraEnvio] = useState(new Date().toTimeString().slice(0, 5));
-  const [totalFormularios, setTotalFormularios] = useState<number>(25);
-  const [dispositivoAndroid, setDispositivoAndroid] = useState('Samsung Galaxy Tab A7 (Android 11, 4GB RAM)');
-  const [codigoRecibo, setCodigoRecibo] = useState(
-    `ODK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}-X`
+  const [statusFilter, setStatusFilter] = useState<
+    'todos' | 'pendente' | 'confirmado' | 'divergencia'
+  >('todos');
+
+  const [coordFilter, setCoordFilter] = useState('todas');
+
+  const [supervisorFilter, setSupervisorFilter] =
+    useState('todos');
+
+  // ============================================================
+  // FORMULÁRIO
+  // ============================================================
+
+  const [formNome, setFormNome] = useState(
+    'Ficha de Supervisão da Mobilização'
   );
-  // Default coordId for supervisor is strictly their registered user.coordId
-  const userAssignedCoord = coordenacoes.find((c) => c.id === user.coordId) || coordenacoes[0];
-  const [coordId, setCoordId] = useState<number | null>(user.coordId || (userAssignedCoord?.id ?? null));
+
+  const [customFormNome, setCustomFormNome] = useState('');
+
+  const [dataEnvio, setDataEnvio] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+
+  const [horaEnvio, setHoraEnvio] = useState(
+    new Date().toTimeString().slice(0, 5)
+  );
+
+  const [totalFormularios, setTotalFormularios] =
+    useState(25);
+
+  const [dispositivoAndroid, setDispositivoAndroid] =
+    useState(
+      'Samsung Galaxy Tab A7 (Android 11, 4GB RAM)'
+    );
+
+  const [codigoRecibo, setCodigoRecibo] = useState(
+    `ODK-${new Date().getFullYear()}-${Math.floor(
+      1000 + Math.random() * 9000
+    )}-X`
+  );
+
+  const userAssignedCoord =
+    coordenacoes.find((c) => c.id === user.coordId) ||
+    coordenacoes[0];
+
+  const [coordId, setCoordId] = useState<number | null>(
+    user.coordId || userAssignedCoord?.id || null
+  );
+
   const [observacoes, setObservacoes] = useState('');
-  const [imagemComprovativo, setImagemComprovativo] = useState<string | undefined>(undefined);
-  const [uploadedProof, setUploadedProof] = useState<string | undefined>(undefined);
-  const [numCampaignDays, setNumCampaignDays] = useState<number>(7);
+
+  const [imagemComprovativo, setImagemComprovativo] =
+    useState<string | undefined>(undefined);
+
+  const [uploadedProof, setUploadedProof] =
+    useState<string | undefined>(undefined);
+
+  const [numCampaignDays, setNumCampaignDays] =
+    useState(7);
+
   const [submitting, setSubmitting] = useState(false);
-  const [adminNoteInput, setAdminNoteInput] = useState('');
 
-  const handleImageUpload = (file: File, callback: (base64: string) => void) => {
-    if (file.size > 8 * 1024 * 1024) {
-      alert('O ficheiro de imagem excede o tamanho máximo permitido de 8MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        callback(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+  const [deletingId, setDeletingId] =
+    useState<string | null>(null);
 
-  // Pre-defined ODK Forms options with primary default option
+  const [adminNoteInput, setAdminNoteInput] =
+    useState('');
+
+  // ============================================================
+  // OPÇÕES ODK
+  // ============================================================
+
   const ODK_FORM_OPTIONS = [
     'Ficha de Supervisão da Mobilização',
     'Registo de Agregados Familiares (ODK Collect)',
@@ -121,124 +186,467 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
     'Outro Formulário Personalizado...',
   ];
 
+  // ============================================================
+  // UPLOAD DE IMAGEM
+  // ============================================================
+
+  const handleImageUpload = (
+    file: File,
+    callback: (base64: string) => void
+  ) => {
+    if (file.size > 8 * 1024 * 1024) {
+      alert(
+        'O ficheiro de imagem excede o tamanho máximo permitido de 8MB.'
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        callback(reader.result);
+      }
+    };
+
+    reader.onerror = () => {
+      alert('Não foi possível ler a imagem selecionada.');
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  // ============================================================
+  // GERAR RECIBO
+  // ============================================================
+
   const handleGenerateReceiptCode = () => {
-    const randomCode = `ODK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}-${String.fromCharCode(
+    const randomCode = `ODK-${new Date().getFullYear()}-${Math.floor(
+      1000 + Math.random() * 9000
+    )}-${String.fromCharCode(
       65 + Math.floor(Math.random() * 26)
     )}`;
+
     setCodigoRecibo(randomCode);
   };
 
+  // ============================================================
+  // ABRIR NOVO REGISTO
+  // ============================================================
+
   const handleOpenNewSubmissionModal = () => {
-    // Lock coordination for supervisor to their assigned coordination
     if (!isAdmin && user.coordId) {
       setCoordId(user.coordId);
     } else if (!coordId && coordenacoes.length > 0) {
       setCoordId(coordenacoes[0].id);
     }
-    setFormNome('Ficha de Supervisão da Mobilização');
+
+    setFormNome(
+      'Ficha de Supervisão da Mobilização'
+    );
+
+    setCustomFormNome('');
+
+    setDataEnvio(
+      new Date().toISOString().split('T')[0]
+    );
+
+    setHoraEnvio(
+      new Date().toTimeString().slice(0, 5)
+    );
+
+    setTotalFormularios(25);
+
+    setObservacoes('');
+
     setImagemComprovativo(undefined);
+
     handleGenerateReceiptCode();
+
     setShowModal(true);
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  // ============================================================
+  // SUBMETER NOVO REGISTO
+  // ============================================================
+
+  const handleFormSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
+
+    if (submitting) return;
+
     setSubmitting(true);
+
     try {
-      // If supervisor, strictly use their assigned coordId and coordNome
-      const effectiveCoordId = !isAdmin && user.coordId ? user.coordId : Number(coordId);
-      const selectedCoord = coordenacoes.find((c) => c.id === effectiveCoordId);
-      const finalCoordNome = selectedCoord ? selectedCoord.nome : user.coordNome || 'Sem Coordenação';
+      const effectiveCoordId =
+        !isAdmin && user.coordId
+          ? user.coordId
+          : Number(coordId);
+
+      const selectedCoord = coordenacoes.find(
+        (c) => c.id === effectiveCoordId
+      );
+
+      const finalCoordNome = selectedCoord
+        ? selectedCoord.nome
+        : user.coordNome || 'Sem Coordenação';
 
       const finalFormNome =
-        formNome === 'Outro Formulário Personalizado...'
-          ? customFormNome || 'Formulário Personalizado ODK'
+        formNome ===
+        'Outro Formulário Personalizado...'
+          ? customFormNome.trim() ||
+            'Formulário Personalizado ODK'
           : formNome;
 
       await onCreateSubmission({
-        formId: finalFormNome.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        formId: finalFormNome
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '_'),
+
         formNome: finalFormNome,
+
         dataEnvio,
+
         horaEnvio,
-        totalFormularios: Number(totalFormularios),
+
+        totalFormularios:
+          Number(totalFormularios) || 0,
+
         dispositivoAndroid,
+
         codigoReciboODK: codigoRecibo,
+
         coordId: effectiveCoordId,
+
         coordNome: finalCoordNome,
+
         observacoes,
+
         imagemComprovativo,
       });
 
       setShowModal(false);
-      // Reset form defaults
+
       setTotalFormularios(25);
+
       setObservacoes('');
+
       setImagemComprovativo(undefined);
+
+      setCustomFormNome('');
+
       handleGenerateReceiptCode();
+
+      alert(
+        'Envio ODK registado com sucesso.'
+      );
     } catch (err) {
-      alert('Erro ao registar confirmação ODK: ' + (err instanceof Error ? err.message : String(err)));
+      console.error(
+        'Erro ao registar confirmação ODK:',
+        err
+      );
+
+      alert(
+        'Erro ao registar confirmação ODK: ' +
+          (err instanceof Error
+            ? err.message
+            : String(err))
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleUpdateStatusAction = async (id: string, status: 'confirmado' | 'divergencia' | 'pendente') => {
+  // ============================================================
+  // ATUALIZAR STATUS
+  // ============================================================
+
+  const handleUpdateStatusAction = async (
+    id: string,
+    status:
+      | 'confirmado'
+      | 'divergencia'
+      | 'pendente'
+  ) => {
     try {
-      await onUpdateStatus(id, status, adminNoteInput);
+      await onUpdateStatus(
+        id,
+        status,
+        adminNoteInput
+      );
+
       setSelectedSub(null);
+
       setAdminNoteInput('');
     } catch (err) {
-      alert('Erro ao atualizar status: ' + (err instanceof Error ? err.message : String(err)));
+      console.error(
+        'Erro ao atualizar status:',
+        err
+      );
+
+      alert(
+        'Erro ao atualizar status: ' +
+          (err instanceof Error
+            ? err.message
+            : String(err))
+      );
     }
   };
 
-  const handleDeleteSubmissionAction = async (id: string, codigoRecibo: string) => {
-    if (confirm(`Tem a certeza que deseja eliminar o registo ODK de recibo ${codigoRecibo}?`)) {
-      try {
-        await onDeleteSubmission(id);
-        if (selectedSub?.id === id) {
-          setSelectedSub(null);
+  // ============================================================
+  // DELETE CORRIGIDO
+  // ============================================================
+
+  const handleDeleteSubmissionAction = async (
+    id: string,
+    codigoReciboODK: string
+  ) => {
+    if (!id) {
+      alert(
+        'Erro: o registo não possui um ID válido.'
+      );
+      return;
+    }
+
+    if (deletingId) {
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Tem a certeza que deseja eliminar este registo ODK?\n\n` +
+        `Recibo: ${codigoReciboODK}\n\n` +
+        `Esta operação não pode ser desfeita.`
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setDeletingId(id);
+
+    try {
+      console.log(
+        '[ODK] A eliminar submissão:',
+        id
+      );
+
+      /*
+       * PRIMEIRO:
+       * chama a função do componente pai.
+       *
+       * Esta função deve eliminar da base de dados.
+       */
+      await onDeleteSubmission(id);
+
+      /*
+       * SEGUNDO:
+       * remove imediatamente da interface local.
+       */
+      setDeletedSubmissionIds(
+        (previous) => {
+          const next = new Set(previous);
+          next.add(String(id));
+          return next;
         }
-      } catch (err) {
-        alert('Erro ao eliminar o registo ODK: ' + (err instanceof Error ? err.message : String(err)));
-      }
+      );
+
+      /*
+       * TERCEIRO:
+       * fecha o modal se estava aberto.
+       */
+      setSelectedSub((current) => {
+        if (
+          current &&
+          String(current.id) === String(id)
+        ) {
+          return null;
+        }
+
+        return current;
+      });
+
+      setAdminNoteInput('');
+
+      console.log(
+        '[ODK] Submissão eliminada com sucesso:',
+        id
+      );
+    } catch (err) {
+      console.error(
+        '[ODK] Erro ao eliminar submissão:',
+        err
+      );
+
+      alert(
+        'Não foi possível eliminar o registo ODK.\n\n' +
+          (err instanceof Error
+            ? err.message
+            : String(err))
+      );
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  // Filter Logic
-  const filteredSubmissions = submissions.filter((sub) => {
-    // Supervisors see their own submissions or submissions from their coordination
-    if (!isAdmin && sub.supervisorId !== user.id) {
-      if (user.coordId && sub.coordId !== user.coordId) {
+  // ============================================================
+  // LISTA DE SUBMISSÕES
+  // ============================================================
+
+  const filteredSubmissions = useMemo(() => {
+    return submissions.filter((sub) => {
+      /*
+       * Não mostrar localmente os registos eliminados.
+       */
+      if (
+        deletedSubmissionIds.has(
+          String(sub.id)
+        )
+      ) {
         return false;
       }
-    }
 
-    if (statusFilter !== 'todos' && sub.status !== statusFilter) return false;
-    if (coordFilter !== 'todas' && String(sub.coordId) !== coordFilter) return false;
-    if (supervisorFilter !== 'todos' && String(sub.supervisorId) !== supervisorFilter) return false;
+      /*
+       * Supervisores:
+       * só podem visualizar os seus próprios
+       * registos ou os da sua coordenação.
+       */
+      if (!isAdmin) {
+        if (
+          sub.supervisorId !== user.id
+        ) {
+          if (
+            user.coordId &&
+            sub.coordId !== user.coordId
+          ) {
+            return false;
+          }
+        }
+      }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      const matchRecibo = sub.codigoReciboODK.toLowerCase().includes(term);
-      const matchSupervisor = sub.supervisorNome.toLowerCase().includes(term);
-      const matchForm = sub.formNome.toLowerCase().includes(term);
-      const matchCoord = sub.coordNome.toLowerCase().includes(term);
-      if (!matchRecibo && !matchSupervisor && !matchForm && !matchCoord) return false;
-    }
+      if (
+        statusFilter !== 'todos' &&
+        sub.status !== statusFilter
+      ) {
+        return false;
+      }
 
-    return true;
-  });
+      if (
+        coordFilter !== 'todas' &&
+        String(sub.coordId) !== coordFilter
+      ) {
+        return false;
+      }
 
-  // KPI Calculations
-  const totalSubmissionsCount = filteredSubmissions.length;
-  const totalFormsCount = filteredSubmissions.reduce((acc, curr) => acc + (curr.totalFormularios || 0), 0);
-  const confirmedCount = filteredSubmissions.filter((s) => s.status === 'confirmado').length;
-  const pendingCount = filteredSubmissions.filter((s) => s.status === 'pendente').length;
-  const divergenciaCount = filteredSubmissions.filter((s) => s.status === 'divergencia').length;
-  const confirmationRate = totalSubmissionsCount > 0 ? Math.round((confirmedCount / totalSubmissionsCount) * 100) : 0;
+      if (
+        supervisorFilter !== 'todos' &&
+        String(sub.supervisorId) !==
+          supervisorFilter
+      ) {
+        return false;
+      }
 
-  // Export CSV
+      if (searchTerm.trim()) {
+        const term =
+          searchTerm.toLowerCase();
+
+        const matchRecibo =
+          String(
+            sub.codigoReciboODK || ''
+          )
+            .toLowerCase()
+            .includes(term);
+
+        const matchSupervisor =
+          String(
+            sub.supervisorNome || ''
+          )
+            .toLowerCase()
+            .includes(term);
+
+        const matchForm =
+          String(
+            sub.formNome || ''
+          )
+            .toLowerCase()
+            .includes(term);
+
+        const matchCoord =
+          String(
+            sub.coordNome || ''
+          )
+            .toLowerCase()
+            .includes(term);
+
+        if (
+          !matchRecibo &&
+          !matchSupervisor &&
+          !matchForm &&
+          !matchCoord
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    submissions,
+    deletedSubmissionIds,
+    isAdmin,
+    user,
+    statusFilter,
+    coordFilter,
+    supervisorFilter,
+    searchTerm,
+  ]);
+
+  // ============================================================
+  // KPIs
+  // ============================================================
+
+  const totalSubmissionsCount =
+    filteredSubmissions.length;
+
+  const totalFormsCount =
+    filteredSubmissions.reduce(
+      (acc, curr) =>
+        acc +
+        (Number(
+          curr.totalFormularios
+        ) || 0),
+      0
+    );
+
+  const confirmedCount =
+    filteredSubmissions.filter(
+      (s) => s.status === 'confirmado'
+    ).length;
+
+  const pendingCount =
+    filteredSubmissions.filter(
+      (s) => s.status === 'pendente'
+    ).length;
+
+  const divergenciaCount =
+    filteredSubmissions.filter(
+      (s) => s.status === 'divergencia'
+    ).length;
+
+  const confirmationRate =
+    totalSubmissionsCount > 0
+      ? Math.round(
+          (confirmedCount /
+            totalSubmissionsCount) *
+            100
+        )
+      : 0;
+
+  // ============================================================
+  // EXPORTAR CSV
+  // ============================================================
+
   const handleExportCSV = () => {
     const headers = [
       'Recibo ODK',
@@ -252,439 +660,835 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
       'Status',
       'Confirmado por Admin',
     ];
-    const rows = filteredSubmissions.map((s) => [
-      s.codigoReciboODK,
-      `"${s.supervisorNome}"`,
-      `"${s.coordNome}"`,
-      `"${s.formNome}"`,
-      s.dataEnvio,
-      s.horaEnvio,
-      s.totalFormularios,
-      `"${s.dispositivoAndroid || ''}"`,
-      s.status.toUpperCase(),
-      s.confirmadoPorAdmin ? 'Sim' : 'Não',
-    ]);
+
+    const escapeCSV = (
+      value: unknown
+    ) => {
+      const text =
+        value === null ||
+        value === undefined
+          ? ''
+          : String(value);
+
+      return `"${text.replace(
+        /"/g,
+        '""'
+      )}"`;
+    };
+
+    const rows =
+      filteredSubmissions.map((s) => [
+        escapeCSV(
+          s.codigoReciboODK
+        ),
+        escapeCSV(
+          s.supervisorNome
+        ),
+        escapeCSV(s.coordNome),
+        escapeCSV(s.formNome),
+        escapeCSV(s.dataEnvio),
+        escapeCSV(s.horaEnvio),
+        escapeCSV(
+          s.totalFormularios
+        ),
+        escapeCSV(
+          s.dispositivoAndroid
+        ),
+        escapeCSV(
+          String(
+            s.status
+          ).toUpperCase()
+        ),
+        escapeCSV(
+          s.confirmadoPorAdmin
+            ? 'Sim'
+            : 'Não'
+        ),
+      ]);
 
     const csvContent =
-      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Confirmacoes_ODK_Collect_${new Date().toISOString().split('T')[0]}.csv`);
+      '\uFEFF' +
+      [
+        headers
+          .map(escapeCSV)
+          .join(';'),
+        ...rows.map((row) =>
+          row.join(';')
+        ),
+      ].join('\n');
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type:
+          'text/csv;charset=utf-8;',
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement('a');
+
+    link.href = url;
+
+    link.download =
+      `Confirmacoes_ODK_Collect_${new Date()
+        .toISOString()
+        .split('T')[0]}.csv`;
+
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
 
-  const supervisoresList = users.filter((u) => u.tipo === 'supervisor' || u.tipo === 'user' || u.tipo === 'admin');
+  // ============================================================
+  // SUPERVISORES
+  // ============================================================
 
-  // Supervisor Grouped Statistics
-  const supervisorStats = supervisoresList.map((sup) => {
-    const supSubs = submissions.filter((s) => s.supervisorId === sup.id || s.supervisorNome === sup.nome);
-    const totalSubs = supSubs.length;
-    const totalForms = supSubs.reduce((acc, curr) => acc + (curr.totalFormularios || 0), 0);
-    const confirmados = supSubs.filter((s) => s.status === 'confirmado').length;
-    const pendentes = supSubs.filter((s) => s.status === 'pendente').length;
-    const ultimosEnvio = supSubs.length > 0 ? supSubs[0].dataEnvio : '—';
-    const recibos = supSubs.map((s) => s.codigoReciboODK);
+  const supervisoresList =
+    users.filter(
+      (u) =>
+        u.tipo === 'supervisor' ||
+        u.tipo === 'user' ||
+        u.tipo === 'admin'
+    );
 
-    return {
-      supervisor: sup,
-      totalSubs,
-      totalForms,
-      confirmados,
-      pendentes,
-      ultimosEnvio,
-      recibos,
-      coordNome: sup.coordNome || 'Coordenação não atribuída',
-    };
-  });
+  const supervisorStats =
+    supervisoresList.map((sup) => {
+      const supSubs =
+        submissions.filter(
+          (s) =>
+            String(
+              s.supervisorId
+            ) === String(sup.id) ||
+            s.supervisorNome ===
+              sup.nome
+        );
 
-  // Dynamic Campaign Days Breakdown (Dia 1 .. Dia N, e.g. 4, 5, 6, 7 ou mais)
-  const allDates = Array.from(new Set(submissions.map((s) => s.dataEnvio))).sort();
-  const totalDaysCount = Math.max(numCampaignDays, allDates.length);
-  const campaignDays = Array.from({ length: totalDaysCount }).map((_, index) => {
-    const dayLabel = `Dia ${index + 1} de Campanha`;
-    const date = allDates[index] || `Dia ${index + 1}`;
-    const daySubs = submissions.filter((s) => s.dataEnvio === date);
-    const totalFormsDay = daySubs.reduce((acc, curr) => acc + (curr.totalFormularios || 0), 0);
-    const confirmadosDay = daySubs.filter((s) => s.status === 'confirmado').length;
+      const totalSubs =
+        supSubs.length;
 
-    return {
-      dayIndex: index + 1,
-      dayLabel,
-      date,
-      submissions: daySubs,
-      totalFormsDay,
-      confirmadosDay,
-    };
-  });
+      const totalForms =
+        supSubs.reduce(
+          (acc, curr) =>
+            acc +
+            (Number(
+              curr.totalFormularios
+            ) || 0),
+          0
+        );
+
+      const confirmados =
+        supSubs.filter(
+          (s) =>
+            s.status ===
+            'confirmado'
+        ).length;
+
+      const pendentes =
+        supSubs.filter(
+          (s) =>
+            s.status ===
+            'pendente'
+        ).length;
+
+      const ultimosEnvio =
+        supSubs.length > 0
+          ? supSubs[
+              supSubs.length - 1
+            ].dataEnvio
+          : '—';
+
+      const recibos =
+        supSubs.map(
+          (s) =>
+            s.codigoReciboODK
+        );
+
+      return {
+        supervisor: sup,
+        totalSubs,
+        totalForms,
+        confirmados,
+        pendentes,
+        ultimosEnvio,
+        recibos,
+        coordNome:
+          sup.coordNome ||
+          'Coordenação não atribuída',
+      };
+    });
+
+  // ============================================================
+  // CAMPANHA
+  // ============================================================
+
+  const allDates = Array.from(
+    new Set(
+      submissions
+        .filter(
+          (s) =>
+            !deletedSubmissionIds.has(
+              String(s.id)
+            )
+        )
+        .map(
+          (s) => s.dataEnvio
+        )
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const totalDaysCount = Math.max(
+    numCampaignDays,
+    allDates.length
+  );
+
+  const campaignDays =
+    Array.from({
+      length: totalDaysCount,
+    }).map((_, index) => {
+      const dayLabel =
+        `Dia ${
+          index + 1
+        } de Campanha`;
+
+      const date =
+        allDates[index] ||
+        `Dia ${index + 1}`;
+
+      const daySubs =
+        submissions.filter(
+          (s) => {
+            if (
+              deletedSubmissionIds.has(
+                String(s.id)
+              )
+            ) {
+              return false;
+            }
+
+            return (
+              s.dataEnvio ===
+              date
+            );
+          }
+        );
+
+      const totalFormsDay =
+        daySubs.reduce(
+          (acc, curr) =>
+            acc +
+            (Number(
+              curr.totalFormularios
+            ) || 0),
+          0
+        );
+
+      const confirmadosDay =
+        daySubs.filter(
+          (s) =>
+            s.status ===
+            'confirmado'
+        ).length;
+
+      return {
+        dayIndex: index + 1,
+        dayLabel,
+        date,
+        submissions: daySubs,
+        totalFormsDay,
+        confirmadosDay,
+      };
+    });
+
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Banner Header */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <Smartphone className="h-3.5 w-3.5" /> ODK Collect Integration
-              </span>
-              <span className="text-xs text-slate-500 font-medium">| Confirmação de Envios de Campo</span>
+    <div className="space-y-6">
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-xl bg-emerald-600 p-2.5 text-white">
+                <Smartphone className="h-5 w-5" />
+              </div>
+
+              <div>
+                <h1 className="text-xl font-black text-slate-900 dark:text-white">
+                  ODK Collect Integration
+                </h1>
+
+                <p className="text-xs font-bold text-emerald-600">
+                  Confirmação de Envios de Campo
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">
               Confirmação & Controlo de Envios ODK
-            </h1>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
-              Acompanhamento e validação administrativa das <strong>Fichas de Supervisão da Mobilização</strong> e relatórios de envio executados pelos supervisores no aplicativo Android <strong>ODK Collect</strong>.
+            </h2>
+
+            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              Acompanhamento e validação administrativa
+              das Fichas de Supervisão da Mobilização e
+              relatórios de envio executados pelos
+              supervisores no aplicativo Android ODK Collect.
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => setShowInfoModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Ver especificações e guia do ODK Collect"
+              onClick={() =>
+                setShowInfoModal(true)
+              }
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition"
             >
-              <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Guia do ODK</span>
+              <Info className="h-4 w-4 text-emerald-600" />
+              Guia do ODK
             </button>
 
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Exportar confirmações para Excel"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition"
             >
-              <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Exportar Excel</span>
+              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              Exportar Excel
             </button>
 
             <button
-              onClick={handleOpenNewSubmissionModal}
+              onClick={
+                handleOpenNewSubmissionModal
+              }
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-extrabold shadow-sm transition active:scale-95"
-              id="btn-novo-envio-odk"
             >
               <Plus className="h-4 w-4" />
-              <span>Registar Envio ODK</span>
+              Registar Envio ODK
             </button>
           </div>
         </div>
 
-        {/* Admin Notification Banner */}
-        {isAdmin && pendingCount > 0 && (
-          <div className="mt-4 flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 p-3.5 text-amber-900 dark:text-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-black shadow-xs animate-pulse">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-wider text-amber-950 dark:text-amber-100">
-                  Atenção Administrador: Validações ODK Pendentes ({pendingCount})
-                </div>
-                <div className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
-                  Existem {pendingCount} submissões de formulários ODK enviadas por supervisores a aguardar a sua confirmação e validação administrativa.
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setStatusFilter('pendente')}
-              className="shrink-0 rounded-xl bg-amber-600 hover:bg-amber-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition"
-            >
-              Validar Agora
-            </button>
-          </div>
-        )}
+        {/* ==================================================
+            ALERTA ADMIN
+        ================================================== */}
 
-        {/* KPI Cards */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Total Submissões */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Submissões ODK</span>
-              <Hash className="h-4 w-4 text-slate-400" />
+        {isAdmin &&
+          pendingCount > 0 && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 p-3.5 text-amber-900 dark:text-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <div className="text-xs font-black uppercase">
+                    Atenção Administrador:
+                    Validações ODK Pendentes (
+                    {pendingCount})
+                  </div>
+
+                  <div className="text-[11px] text-amber-800 dark:text-amber-300">
+                    Existem {pendingCount}{' '}
+                    submissões aguardando validação.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  setStatusFilter('pendente')
+                }
+                className="rounded-xl bg-amber-600 hover:bg-amber-700 px-3.5 py-1.5 text-xs font-bold text-white"
+              >
+                Validar Agora
+              </button>
             </div>
-            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+          )}
+
+        {/* ==================================================
+            KPIs
+        ================================================== */}
+
+        <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
+            <span className="text-[11px] font-bold uppercase text-slate-500">
+              Submissões ODK
+            </span>
+
+            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
               {totalSubmissionsCount}
             </div>
-            <p className="mt-1 text-[11px] text-slate-500">Registos de confirmação</p>
+
+            <p className="mt-1 text-[11px] text-slate-500">
+              Registos de confirmação
+            </p>
           </div>
 
-          {/* Card 2: Formulários Lançados */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Formulários ODK</span>
-              <Smartphone className="h-4 w-4 text-emerald-500" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              {totalFormsCount.toLocaleString('pt-PT')}
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500">Fichas de supervisão submetidas</p>
-          </div>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
+            <span className="text-[11px] font-bold uppercase text-slate-500">
+              Formulários ODK
+            </span>
 
-          {/* Card 3: Confirmados pelo Admin */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Confirmados Admin</span>
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{confirmedCount}</span>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">({confirmationRate}%)</span>
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500">Validados pelo administrador</p>
-          </div>
-
-          {/* Card 4: Pendentes de Validação */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Pendentes / Alertas</span>
-              <Clock className="h-4 w-4 text-amber-500" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{pendingCount}</span>
-              {divergenciaCount > 0 && (
-                <span className="text-xs font-bold text-rose-600">({divergenciaCount} div.)</span>
+            <div className="mt-2 text-2xl font-black text-emerald-600">
+              {totalFormsCount.toLocaleString(
+                'pt-PT'
               )}
             </div>
-            <p className="mt-1 text-[11px] text-slate-500">Aguardam verificação</p>
+
+            <p className="mt-1 text-[11px] text-slate-500">
+              Fichas submetidas
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
+            <span className="text-[11px] font-bold uppercase text-slate-500">
+              Confirmados Admin
+            </span>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-slate-900 dark:text-white">
+                {confirmedCount}
+              </span>
+
+              <span className="text-xs font-bold text-emerald-600">
+                ({confirmationRate}%)
+              </span>
+            </div>
+
+            <p className="mt-1 text-[11px] text-slate-500">
+              Validados
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4">
+            <span className="text-[11px] font-bold uppercase text-slate-500">
+              Pendentes / Alertas
+            </span>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-amber-600">
+                {pendingCount}
+              </span>
+
+              {divergenciaCount > 0 && (
+                <span className="text-xs font-bold text-rose-600">
+                  ({divergenciaCount} div.)
+                </span>
+              )}
+            </div>
+
+            <p className="mt-1 text-[11px] text-slate-500">
+              Aguardam verificação
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Main View Tabs (Lista | Resumo por Supervisor | Relatório 4 Dias) */}
+      {/* ======================================================
+          TABS
+      ====================================================== */}
+
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setActiveMainTab('list')}
+            onClick={() =>
+              setActiveMainTab('list')
+            }
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
               activeMainTab === 'list'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <FileText className="h-4 w-4" />
-            <span>Lista de Submissões ({filteredSubmissions.length})</span>
+            Lista ({filteredSubmissions.length})
           </button>
 
           {isAdmin && (
             <button
-              onClick={() => setActiveMainTab('supervisores')}
+              onClick={() =>
+                setActiveMainTab(
+                  'supervisores'
+                )
+              }
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
-                activeMainTab === 'supervisores'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+                activeMainTab ===
+                'supervisores'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
               }`}
             >
               <Users className="h-4 w-4" />
-              <span>Resumo por Supervisores ({supervisoresList.length})</span>
+              Supervisores (
+              {supervisoresList.length})
             </button>
           )}
 
           <button
-            onClick={() => setActiveMainTab('campanha4dias')}
+            onClick={() =>
+              setActiveMainTab(
+                'campanha4dias'
+              )
+            }
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
-              activeMainTab === 'campanha4dias'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+              activeMainTab ===
+              'campanha4dias'
+                ? 'bg-purple-700 text-white'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <Calendar className="h-4 w-4" />
-            <span>Relatório dos dias trabalhados</span>
+            Relatório dos dias
           </button>
         </div>
 
-        {activeMainTab === 'campanha4dias' && (
+        {activeMainTab ===
+          'campanha4dias' && (
           <button
-            onClick={() => setShow4DaysReceiptModal(true)}
-            className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 px-4 py-2 text-xs font-black text-white shadow-sm transition active:scale-95"
-            id="btn-capturar-4-dias"
+            onClick={() =>
+              setShow4DaysReceiptModal(
+                true
+              )
+            }
+            className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 px-4 py-2 text-xs font-black text-white"
           >
             <Camera className="h-4 w-4" />
-            <span>Gerar Comprovativo dos dias Trabalhdo (Modo Captura)</span>
+            Gerar Comprovativo
           </button>
         )}
       </div>
 
-      {/* TAB 1: LISTA DE SUBMISSÕES */}
+      {/* ======================================================
+          LISTA
+      ====================================================== */}
+
       {activeMainTab === 'list' && (
         <div className="space-y-4">
-          {/* Filter Toolbar */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-            {/* Search Input */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
               <input
                 type="text"
-                placeholder="Pesquisar por recibo, supervisor, coordenação ou formulário..."
+                placeholder="Pesquisar recibo, supervisor, coordenação ou formulário..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500"
+                onChange={(e) =>
+                  setSearchTerm(
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 pl-9 pr-4 py-2 text-xs outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* Dropdown Filters */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e: any) => setStatusFilter(e.target.value)}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none"
-              >
-                <option value="todos">Todos os Estados</option>
-                <option value="pendente">Pendentes</option>
-                <option value="confirmado">Confirmados Admin</option>
-                <option value="divergencia">Com Divergência</option>
-              </select>
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as
+                    | 'todos'
+                    | 'pendente'
+                    | 'confirmado'
+                    | 'divergencia'
+                )
+              }
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold"
+            >
+              <option value="todos">
+                Todos os Estados
+              </option>
 
-              {/* Coordination Filter */}
-              {isAdmin && (
+              <option value="pendente">
+                Pendentes
+              </option>
+
+              <option value="confirmado">
+                Confirmados
+              </option>
+
+              <option value="divergencia">
+                Divergências
+              </option>
+            </select>
+
+            {isAdmin && (
+              <>
                 <select
                   value={coordFilter}
-                  onChange={(e) => setCoordFilter(e.target.value)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none"
+                  onChange={(e) =>
+                    setCoordFilter(
+                      e.target.value
+                    )
+                  }
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold"
                 >
-                  <option value="todas">Todas Coordenações</option>
-                  {coordenacoes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              )}
+                  <option value="todas">
+                    Todas Coordenações
+                  </option>
 
-              {/* Supervisor Filter */}
-              {isAdmin && (
-                <select
-                  value={supervisorFilter}
-                  onChange={(e) => setSupervisorFilter(e.target.value)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none"
-                >
-                  <option value="todos">Todos Supervisores</option>
-                  {supervisoresList.map((sup) => (
-                    <option key={sup.id} value={sup.id}>
-                      {sup.nome}
-                    </option>
-                  ))}
+                  {coordenacoes.map(
+                    (c) => (
+                      <option
+                        key={c.id}
+                        value={c.id}
+                      >
+                        {c.nome}
+                      </option>
+                    )
+                  )}
                 </select>
-              )}
-            </div>
+
+                <select
+                  value={
+                    supervisorFilter
+                  }
+                  onChange={(e) =>
+                    setSupervisorFilter(
+                      e.target.value
+                    )
+                  }
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold"
+                >
+                  <option value="todos">
+                    Todos Supervisores
+                  </option>
+
+                  {supervisoresList.map(
+                    (sup) => (
+                      <option
+                        key={sup.id}
+                        value={sup.id}
+                      >
+                        {sup.nome}
+                      </option>
+                    )
+                  )}
+                </select>
+              </>
+            )}
           </div>
 
-          {/* Table Container */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-            {filteredSubmissions.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-                <Smartphone className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
+          {/* ==================================================
+              TABELA
+          ================================================== */}
+
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+            {filteredSubmissions.length ===
+            0 ? (
+              <div className="p-12 text-center">
+                <Smartphone className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
                   Nenhuma confirmação ODK encontrada
                 </p>
+
                 <p className="mt-1 text-xs text-slate-500">
-                  Tente ajustar os filtros de pesquisa ou registe uma nova confirmação de envio do ODK Collect.
+                  Registe um novo envio ou
+                  ajuste os filtros.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-800 dark:text-slate-200">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-[10px] font-extrabold uppercase text-slate-500">
                     <tr>
-                      <th className="p-3">Recibo ODK</th>
-                      <th className="p-3">Data/Hora Envio</th>
-                      <th className="p-3">Supervisor</th>
-                      <th className="p-3">Coordenação</th>
-                      <th className="p-3">Formulário ODK</th>
-                      <th className="p-3 text-center">Formulários</th>
-                      <th className="p-3">Status Admin</th>
-                      <th className="p-3 text-right">Ações</th>
+                      <th className="p-3">
+                        Recibo ODK
+                      </th>
+
+                      <th className="p-3">
+                        Data/Hora
+                      </th>
+
+                      <th className="p-3">
+                        Supervisor
+                      </th>
+
+                      <th className="p-3">
+                        Coordenação
+                      </th>
+
+                      <th className="p-3">
+                        Formulário
+                      </th>
+
+                      <th className="p-3 text-center">
+                        Formulários
+                      </th>
+
+                      <th className="p-3">
+                        Status
+                      </th>
+
+                      <th className="p-3 text-right">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
-                    {filteredSubmissions.map((sub) => {
-                      const isConf = sub.status === 'confirmado';
-                      const isDiv = sub.status === 'divergencia';
 
-                      return (
-                        <tr key={sub.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                          <td className="p-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                            <div className="flex items-center gap-1.5">
-                              <span>{sub.codigoReciboODK}</span>
-                              {sub.imagemComprovativo && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedSub(sub)}
-                                  className="inline-flex items-center gap-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 px-1.5 py-0.5 text-[9px] font-bold text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 hover:bg-purple-200 transition"
-                                  title="Ver captura de ecrã/imagem em anexo"
-                                >
-                                  <Camera className="h-3 w-3" />
-                                  <span>Imagem</span>
-                                </button>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredSubmissions.map(
+                      (sub) => {
+                        const isConf =
+                          sub.status ===
+                          'confirmado';
+
+                        const isDiv =
+                          sub.status ===
+                          'divergencia';
+
+                        const isDeleting =
+                          deletingId ===
+                          String(sub.id);
+
+                        return (
+                          <tr
+                            key={sub.id}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            <td className="p-3 font-mono font-bold text-emerald-600">
+                              <div className="flex items-center gap-2">
+                                {sub.codigoReciboODK}
+
+                                {sub.imagemComprovativo && (
+                                  <Camera className="h-3.5 w-3.5 text-purple-600" />
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                              {sub.dataEnvio}{' '}
+                              <span className="text-[10px]">
+                                ({sub.horaEnvio})
+                              </span>
+                            </td>
+
+                            <td className="p-3 font-bold text-slate-900 dark:text-white">
+                              {sub.supervisorNome}
+                            </td>
+
+                            <td className="p-3">
+                              <span className="rounded-full bg-blue-50 dark:bg-blue-950 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                                {sub.coordNome}
+                              </span>
+                            </td>
+
+                            <td className="p-3 font-medium">
+                              {sub.formNome}
+                            </td>
+
+                            <td className="p-3 text-center font-black text-emerald-700 dark:text-emerald-300 text-sm">
+                              {sub.totalFormularios}
+                            </td>
+
+                            <td className="p-3">
+                              {isConf ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Confirmado
+                                </span>
+                              ) : isDiv ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950 px-2.5 py-1 text-[10px] font-extrabold text-rose-800 dark:text-rose-300">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Divergência
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 px-2.5 py-1 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
+                                  <Clock className="h-3 w-3" />
+                                  Pendente
+                                </span>
                               )}
-                            </div>
-                          </td>
-                          <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                            {sub.dataEnvio} <span className="text-[10px] text-slate-400">({sub.horaEnvio})</span>
-                          </td>
-                          <td className="p-3 font-bold text-slate-900 dark:text-slate-100">
-                            {sub.supervisorNome}
-                          </td>
-                          <td className="p-3 font-medium text-slate-700 dark:text-slate-300">
-                            <span className="inline-block rounded-full bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-300">
-                              {sub.coordNome}
-                            </span>
-                          </td>
-                          <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
-                            {sub.formNome}
-                          </td>
-                          <td className="p-3 text-center font-mono font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
-                            {sub.totalFormularios}
-                          </td>
-                          <td className="p-3">
-                            {isConf ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                                <CheckCircle2 className="h-3 w-3" /> Confirmado
-                              </span>
-                            ) : isDiv ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950/80 px-2.5 py-0.5 text-[10px] font-extrabold text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-                                <AlertTriangle className="h-3 w-3" /> Divergência
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                                <Clock className="h-3 w-3" /> Pendente Admin
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => setSelectedSub(sub)}
-                                className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                title="Ver Detalhes do Recibo ODK"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
+                            </td>
 
-                              {isAdmin && !isConf && (
+                            <td className="p-3 text-right">
+                              <div className="flex justify-end gap-1">
                                 <button
-                                  onClick={() => handleUpdateStatusAction(sub.id, 'confirmado')}
-                                  className="rounded-lg border border-emerald-200 dark:border-emerald-800 p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition cursor-pointer"
-                                  title="Confirmar envio como VÁLIDO"
+                                  onClick={() =>
+                                    setSelectedSub(
+                                      sub
+                                    )
+                                  }
+                                  disabled={
+                                    isDeleting
+                                  }
+                                  className="rounded-lg border border-slate-200 dark:border-slate-700 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                  title="Ver detalhes"
                                 >
-                                  <Check className="h-3.5 w-3.5" />
+                                  <Eye className="h-3.5 w-3.5" />
                                 </button>
-                              )}
 
-                              <button
-                                onClick={() => handleDeleteSubmissionAction(sub.id, sub.codigoReciboODK)}
-                                className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
-                                title="Eliminar confirmação ODK"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                                {isAdmin &&
+                                  !isConf && (
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateStatusAction(
+                                          String(
+                                            sub.id
+                                          ),
+                                          'confirmado'
+                                        )
+                                      }
+                                      disabled={
+                                        isDeleting
+                                      }
+                                      className="rounded-lg border border-emerald-200 p-1.5 text-emerald-600 hover:bg-emerald-50"
+                                      title="Confirmar"
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+
+                                {/* =================================================
+                                    BOTÃO DELETE
+                                ================================================== */}
+
+                                <button
+                                  onClick={() =>
+                                    handleDeleteSubmissionAction(
+                                      String(
+                                        sub.id
+                                      ),
+                                      sub.codigoReciboODK
+                                    )
+                                  }
+                                  disabled={
+                                    isDeleting
+                                  }
+                                  className={`rounded-lg border border-rose-200 dark:border-rose-900 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition ${
+                                    isDeleting
+                                      ? 'opacity-50 cursor-not-allowed'
+                                      : ''
+                                  }`}
+                                  title={
+                                    isDeleting
+                                      ? 'A eliminar...'
+                                      : 'Eliminar registo'
+                                  }
+                                >
+                                  {isDeleting ? (
+                                    <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-300 border-t-rose-600" />
+                                  ) : (
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -693,431 +1497,611 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
         </div>
       )}
 
-      {/* TAB 2: RESUMO POR SUPERVISORES */}
-      {activeMainTab === 'supervisores' && (
+      {/* ======================================================
+          SUPERVISORES
+      ====================================================== */}
+
+      {activeMainTab ===
+        'supervisores' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
-            <h2 className="text-base font-black text-slate-900 dark:text-slate-100 mb-1">
-              Desempenho & Formulários ODK por Supervisor
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+            <h2 className="text-base font-black text-slate-900 dark:text-white">
+              Desempenho por Supervisor
             </h2>
-            <p className="text-xs text-slate-500">
-              Listagem consolidada mostrando quantas confirmações e formulários ODK cada supervisor enviou durante a campanha.
+
+            <p className="text-xs text-slate-500 mt-1">
+              Resumo das submissões e formulários
+              ODK enviados.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {supervisorStats.map((st) => (
-              <div
-                key={st.supervisor.id}
-                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4 flex flex-col justify-between"
-              >
-                <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {supervisorStats.map(
+              (st) => (
+                <div
+                  key={st.supervisor.id}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-black text-sm">
-                      {st.supervisor.nome.charAt(0).toUpperCase()}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white font-black">
+                      {st.supervisor.nome
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
+
                     <div>
-                      <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white">
                         {st.supervisor.nome}
                       </h3>
-                      <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+
+                      <p className="text-[11px] font-bold text-emerald-600">
                         {st.coordNome}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Submissões</span>
-                      <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-3">
+                      <span className="text-[10px] font-bold text-slate-500">
+                        SUBMISSÕES
+                      </span>
+
+                      <div className="text-lg font-black">
                         {st.totalSubs}
                       </div>
                     </div>
-                    <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-2.5">
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
-                        Formulários
+
+                    <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950 p-3">
+                      <span className="text-[10px] font-bold text-emerald-700">
+                        FORMULÁRIOS
                       </span>
-                      <div className="text-lg font-black text-emerald-700 dark:text-emerald-300">
+
+                      <div className="text-lg font-black text-emerald-700">
                         {st.totalForms}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                    <span>Validadas: <strong className="text-emerald-600">{st.confirmados}</strong></span>
-                    <span>Pendentes: <strong className="text-amber-600">{st.pendentes}</strong></span>
+                  <div className="flex justify-between text-[11px]">
+                    <span>
+                      Validadas:{' '}
+                      <strong className="text-emerald-600">
+                        {st.confirmados}
+                      </strong>
+                    </span>
+
+                    <span>
+                      Pendentes:{' '}
+                      <strong className="text-amber-600">
+                        {st.pendentes}
+                      </strong>
+                    </span>
                   </div>
 
-                  {st.recibos.length > 0 && (
-                    <div className="pt-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Códigos de Recibo:</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {st.recibos.slice(0, 3).map((r) => (
-                          <span
-                            key={r}
-                            className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300"
-                          >
-                            {r}
-                          </span>
-                        ))}
-                        {st.recibos.length > 3 && (
-                          <span className="text-[9px] font-bold text-slate-400">
-                            +{st.recibos.length - 3} mais
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 flex justify-between items-center">
-                  <span>Último envio: {st.ultimosEnvio}</span>
                   <button
                     onClick={() => {
-                      setSearchTerm(st.supervisor.nome);
-                      setActiveMainTab('list');
+                      setSearchTerm(
+                        st.supervisor
+                          .nome
+                      );
+
+                      setActiveMainTab(
+                        'list'
+                      );
                     }}
-                    className="text-emerald-600 font-bold hover:underline"
+                    className="w-full rounded-xl bg-emerald-50 dark:bg-emerald-950 py-2 text-xs font-bold text-emerald-700"
                   >
-                    Ver Envios →
+                    Ver Envios
                   </button>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 3: RELATÓRIO DOS DIAS DE CAMPANHA (DINÂMICO: 4, 5, 6, 7+ DIAS) */}
-      {activeMainTab === 'campanha4dias' && (
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950/80 px-3 py-1 text-xs font-bold text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                    <Award className="h-3.5 w-3.5" /> Registos dos {campaignDays.length} Dias de Trabalho de Campanha
+      {/* ======================================================
+          CAMPANHA
+      ====================================================== */}
+
+      {activeMainTab ===
+        'campanha4dias' && (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950 px-3 py-1 text-xs font-bold text-purple-800 dark:text-purple-300">
+                    <Award className="h-3.5 w-3.5" />
+                    {campaignDays.length}{' '}
+                    Dias de Trabalho
                   </span>
-                  
-                  {/* Selector for Campaign Duration */}
-                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-                    <Calendar className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Duração:</span>
-                    <select
-                      value={numCampaignDays}
-                      onChange={(e) => setNumCampaignDays(Number(e.target.value))}
-                      className="bg-transparent font-extrabold text-purple-700 dark:text-purple-300 outline-none cursor-pointer"
-                    >
-                      <option value={4}>4 Dias</option>
-                      <option value={5}>5 Dias</option>
-                      <option value={6}>6 Dias</option>
-                      <option value={7}>7 Dias (1 Semana)</option>
-                      <option value={10}>10 Dias</option>
-                      <option value={14}>14 Dias (2 Semanas)</option>
-                    </select>
-                  </div>
+
+                  <select
+                    value={
+                      numCampaignDays
+                    }
+                    onChange={(e) =>
+                      setNumCampaignDays(
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold"
+                  >
+                    <option value={4}>
+                      4 Dias
+                    </option>
+
+                    <option value={5}>
+                      5 Dias
+                    </option>
+
+                    <option value={6}>
+                      6 Dias
+                    </option>
+
+                    <option value={7}>
+                      7 Dias
+                    </option>
+
+                    <option value={10}>
+                      10 Dias
+                    </option>
+
+                    <option value={14}>
+                      14 Dias
+                    </option>
+                  </select>
                 </div>
 
-                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mt-2">
-                  Consolidado Diário de Formulários ODK Collect ({campaignDays.length} Dias)
+                <h2 className="mt-3 text-xl font-black text-slate-900 dark:text-white">
+                  Consolidado Diário ODK Collect
                 </h2>
-                <p className="text-xs text-slate-500 max-w-2xl mt-0.5">
-                  Visualização estruturada dos {campaignDays.length} dias da campanha de vacinação/mobilização com todas as submissões efetuadas pelos supervisores em campo.
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Visualização dos dias da campanha
+                  e submissões realizadas.
                 </p>
               </div>
 
-              <ActionTooltip content="Gera o comprovativo oficial com o resumo dos dias trabalhados e captura de ecrã para impressão ou envio à coordenação.">
+              <ActionTooltip content="Gerar comprovativo dos dias trabalhados">
                 <button
-                  onClick={() => setShow4DaysReceiptModal(true)}
-                  className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white px-5 py-3 text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
+                  onClick={() =>
+                    setShow4DaysReceiptModal(
+                      true
+                    )
+                  }
+                  className="flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white px-5 py-3 text-xs font-black"
                 >
                   <Camera className="h-4 w-4" />
-                  <span>Capturar / Gerar Comprovativo ({campaignDays.length} Dias)</span>
+                  Capturar Comprovativo
                 </button>
               </ActionTooltip>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {campaignDays.map((day) => (
-              <div
-                key={day.dayIndex}
-                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4"
-              >
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white font-black text-sm shadow-2xs">
-                      D{day.dayIndex}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-                        {day.dayLabel}
-                      </h3>
-                      <p className="text-[11px] font-mono text-slate-500">
-                        Data: {day.date}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-lg font-black text-purple-700 dark:text-purple-400">
-                      {day.totalFormsDay} <span className="text-xs font-normal text-slate-500">forms</span>
-                    </div>
-                    <div className="text-[10px] font-bold text-emerald-600">
-                      {day.confirmadosDay} validados
-                    </div>
-                  </div>
-                </div>
-
-                {day.submissions.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400 italic">
-                    Nenhum formulário ODK registado neste dia de trabalho.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {day.submissions.map((sub) => (
-                      <div
-                        key={sub.id}
-                        className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/40 p-3 text-xs border border-slate-100 dark:border-slate-800"
-                      >
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-slate-100">
-                            {sub.supervisorNome} ({sub.coordNome})
-                          </div>
-                          <div className="text-[10px] font-mono text-slate-500">
-                            Recibo: {sub.codigoReciboODK} • {sub.horaEnvio}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm mr-1">
-                            {sub.totalFormularios} forms
-                          </span>
-                          <button
-                            onClick={() => setSelectedSub(sub)}
-                            className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                            title="Ver Detalhes do Recibo ODK"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSubmissionAction(sub.id, sub.codigoReciboODK)}
-                            className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
-                            title="Eliminar Submissão ODK"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {campaignDays.map(
+              (day) => (
+                <div
+                  key={day.dayIndex}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 text-white font-black">
+                        D{day.dayIndex}
                       </div>
-                    ))}
+
+                      <div>
+                        <h3 className="text-sm font-black">
+                          {day.dayLabel}
+                        </h3>
+
+                        <p className="text-[11px] font-mono text-slate-500">
+                          {day.date}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-lg font-black text-purple-700">
+                        {day.totalFormsDay}
+                      </div>
+
+                      <div className="text-[10px] text-emerald-600 font-bold">
+                        {day.confirmadosDay}{' '}
+                        validados
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {day.submissions.length ===
+                  0 ? (
+                    <div className="p-5 text-center text-xs text-slate-400">
+                      Nenhum formulário
+                      registado neste dia.
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {day.submissions.map(
+                        (sub) => (
+                          <div
+                            key={sub.id}
+                            className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800 p-3"
+                          >
+                            <div>
+                              <div className="font-bold text-xs">
+                                {
+                                  sub.supervisorNome
+                                }
+                              </div>
+
+                              <div className="text-[10px] font-mono text-slate-500">
+                                {
+                                  sub.codigoReciboODK
+                                }{' '}
+                                •{' '}
+                                {
+                                  sub.horaEnvio
+                                }
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-emerald-600">
+                                {
+                                  sub.totalFormularios
+                                }
+                              </span>
+
+                              <button
+                                onClick={() =>
+                                  setSelectedSub(
+                                    sub
+                                  )
+                                }
+                                className="rounded-lg border p-1.5"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleDeleteSubmissionAction(
+                                    String(
+                                      sub.id
+                                    ),
+                                    sub.codigoReciboODK
+                                  )
+                                }
+                                disabled={
+                                  deletingId ===
+                                  String(
+                                    sub.id
+                                  )
+                                }
+                                className="rounded-lg border border-rose-200 p-1.5 text-rose-600"
+                              >
+                                {deletingId ===
+                                String(
+                                  sub.id
+                                ) ? (
+                                  <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-300 border-t-rose-600" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            )}
           </div>
         </div>
       )}
 
-      {/* MODAL: REGISTAR NOVO ENVIO ODK COLLECT (HIGH CONTRAST WHITE TEXT) */}
+      {/* ======================================================
+          MODAL NOVO ENVIO
+      ====================================================== */}
+
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-5 text-white">
-            {/* Modal Header */}
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-emerald-500 p-2.5 text-slate-950 font-black">
+                <div className="rounded-xl bg-emerald-500 p-2.5 text-slate-950">
                   <Smartphone className="h-6 w-6" />
                 </div>
+
                 <div>
-                  <h3 className="text-lg font-black text-white">
-                    Registar Confirmação Envio ODK Collect
+                  <h3 className="text-lg font-black">
+                    Registar Envio ODK Collect
                   </h3>
-                  <p className="text-xs text-slate-300 font-medium">
-                    Informar envio dos formulários recolhidos no Android ODK Collect.
+
+                  <p className="text-xs text-slate-300">
+                    Registo de envio de campo.
                   </p>
                 </div>
               </div>
+
               <button
-                onClick={() => setShowModal(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                onClick={() =>
+                  setShowModal(false)
+                }
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-slate-400" />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* Form Selection */}
+            <form
+              onSubmit={handleFormSubmit}
+              className="mt-5 space-y-4"
+            >
               <div>
-                <label className="block text-xs font-bold text-white mb-1">
-                  Nome do Formulário ODK Collect *
+                <label className="block text-xs font-bold mb-1">
+                  Nome do Formulário *
                 </label>
+
                 <select
                   value={formNome}
-                  onChange={(e) => setFormNome(e.target.value)}
-                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                  onChange={(e) =>
+                    setFormNome(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white"
                   required
                 >
-                  {ODK_FORM_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt} className="bg-slate-900 text-white font-semibold">
-                      {opt}
-                    </option>
-                  ))}
+                  {ODK_FORM_OPTIONS.map(
+                    (opt) => (
+                      <option
+                        key={opt}
+                        value={opt}
+                      >
+                        {opt}
+                      </option>
+                    )
+                  )}
                 </select>
-                {formNome === 'Outro Formulário Personalizado...' && (
+
+                {formNome ===
+                  'Outro Formulário Personalizado...' && (
                   <input
                     type="text"
-                    value={customFormNome}
-                    onChange={(e) => setCustomFormNome(e.target.value)}
-                    placeholder="Digite o nome do formulário..."
-                    className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white outline-none focus:border-emerald-400"
+                    value={
+                      customFormNome
+                    }
+                    onChange={(e) =>
+                      setCustomFormNome(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Nome do formulário..."
+                    className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                     required
                   />
                 )}
               </div>
 
-              {/* Data & Hora Envio */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-white mb-1">
-                    Data do Envio *
+                  <label className="block text-xs font-bold mb-1">
+                    Data *
                   </label>
+
                   <input
                     type="date"
                     value={dataEnvio}
-                    onChange={(e) => setDataEnvio(e.target.value)}
-                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white outline-none focus:border-emerald-400"
+                    onChange={(e) =>
+                      setDataEnvio(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-white mb-1">
-                    Hora do Envio *
+                  <label className="block text-xs font-bold mb-1">
+                    Hora *
                   </label>
+
                   <input
                     type="time"
                     value={horaEnvio}
-                    onChange={(e) => setHoraEnvio(e.target.value)}
-                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white outline-none focus:border-emerald-400"
+                    onChange={(e) =>
+                      setHoraEnvio(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                     required
                   />
                 </div>
               </div>
 
-              {/* Total Formulários Lançados & Coordination */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-white mb-1">
-                    Qtd. Formulários Enviados *
+                  <label className="block text-xs font-bold mb-1">
+                    Formulários *
                   </label>
+
                   <input
                     type="number"
-                    min="1"
-                    max="10000"
-                    value={totalFormularios}
-                    onChange={(e) => setTotalFormularios(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-sm font-black text-emerald-400 outline-none focus:border-emerald-400"
+                    min={1}
+                    max={10000}
+                    value={
+                      totalFormularios
+                    }
+                    onChange={(e) =>
+                      setTotalFormularios(
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-sm font-black text-emerald-400"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-white mb-1">
-                    Coordenação Operacional
+                  <label className="block text-xs font-bold mb-1">
+                    Coordenação
                   </label>
+
                   {isAdmin ? (
                     <select
-                      value={coordId || ''}
-                      onChange={(e) => setCoordId(Number(e.target.value))}
-                      className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-bold text-white outline-none focus:border-emerald-400"
+                      value={
+                        coordId || ''
+                      }
+                      onChange={(e) =>
+                        setCoordId(
+                          Number(
+                            e.target.value
+                          )
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                     >
-                      {coordenacoes.map((c) => (
-                        <option key={c.id} value={c.id} className="bg-slate-900 text-white font-semibold">
-                          {c.nome}
-                        </option>
-                      ))}
+                      {coordenacoes.map(
+                        (c) => (
+                          <option
+                            key={c.id}
+                            value={c.id}
+                          >
+                            {c.nome}
+                          </option>
+                        )
+                      )}
                     </select>
                   ) : (
-                    <div className="w-full rounded-xl border border-emerald-500/50 bg-slate-800/80 p-3 text-xs font-bold text-emerald-300 flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-emerald-400" />
-                      <span>{user.coordNome || userAssignedCoord?.nome || 'Coordenação Atribuída'}</span>
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-500/50 bg-slate-800 p-3 text-xs font-bold text-emerald-300">
+                      <Building2 className="h-4 w-4" />
+
+                      {user.coordNome ||
+                        userAssignedCoord?.nome ||
+                        'Coordenação'}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Recibo Code & Dispositivo Android */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-white">
-                    Código de Recibo / Referência ODK *
+                  <label className="text-xs font-bold">
+                    Código de Recibo *
                   </label>
+
                   <button
                     type="button"
-                    onClick={handleGenerateReceiptCode}
-                    className="text-[10px] font-bold text-emerald-400 hover:underline"
+                    onClick={
+                      handleGenerateReceiptCode
+                    }
+                    className="text-[10px] font-bold text-emerald-400"
                   >
-                    Gerar Novo Código
+                    Gerar Novo
                   </button>
                 </div>
+
                 <input
                   type="text"
                   value={codigoRecibo}
-                  onChange={(e) => setCodigoRecibo(e.target.value)}
-                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-mono font-bold text-emerald-300 outline-none focus:border-emerald-400"
+                  onChange={(e) =>
+                    setCodigoRecibo(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-mono font-bold text-emerald-300"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white mb-1">
-                  Dispositivo Android Utilizado
+                <label className="block text-xs font-bold mb-1">
+                  Dispositivo Android
                 </label>
+
                 <input
                   type="text"
-                  value={dispositivoAndroid}
-                  onChange={(e) => setDispositivoAndroid(e.target.value)}
-                  placeholder="Ex: Samsung Galaxy Tab A7 (Android 11, 4GB RAM)"
-                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-semibold text-white placeholder-slate-400 outline-none focus:border-emerald-400"
+                  value={
+                    dispositivoAndroid
+                  }
+                  onChange={(e) =>
+                    setDispositivoAndroid(
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                 />
               </div>
 
-              {/* Observações */}
               <div>
-                <label className="block text-xs font-bold text-white mb-1">
-                  Observações de Campo / Notas do Envio
+                <label className="block text-xs font-bold mb-1">
+                  Observações
                 </label>
+
                 <textarea
                   value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  rows={2}
-                  placeholder="Indique detalhes de sinal GPS, local de recolha ou intercorrências..."
-                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs font-semibold text-white placeholder-slate-400 outline-none focus:border-emerald-400"
+                  onChange={(e) =>
+                    setObservacoes(
+                      e.target.value
+                    )
+                  }
+                  rows={3}
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-xs text-white"
                 />
               </div>
 
-              {/* Captura de Ecrã / Imagem de Comprovativo */}
               <div>
-                <label className="block text-xs font-bold text-white mb-1 flex items-center gap-1.5">
+                <label className="flex items-center gap-2 text-xs font-bold mb-2">
                   <Camera className="h-4 w-4 text-emerald-400" />
-                  <span>Anexar Captura de Ecrã do ODK Collect (Foto/Imagem)</span>
+                  Captura de Ecrã ODK
                 </label>
+
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file, setImagemComprovativo);
+                    const file =
+                      e.target.files?.[0];
+
+                    if (file) {
+                      handleImageUpload(
+                        file,
+                        setImagemComprovativo
+                      );
+                    }
                   }}
-                  className="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-500 file:text-slate-950 hover:file:bg-emerald-400 cursor-pointer bg-slate-800 rounded-xl p-2 border border-slate-600"
+                  className="w-full rounded-xl bg-slate-800 p-2 text-xs"
                 />
+
                 {imagemComprovativo && (
-                  <div className="mt-2 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-2 relative">
-                    <p className="text-[10px] font-bold text-emerald-400 mb-1">Pré-visualização da Captura:</p>
-                    <img src={imagemComprovativo} alt="Captura de Ecrã ODK" className="max-h-48 mx-auto object-contain rounded-lg" />
+                  <div className="relative mt-3 rounded-xl border border-slate-700 bg-slate-950 p-2">
+                    <img
+                      src={
+                        imagemComprovativo
+                      }
+                      alt="Captura ODK"
+                      className="max-h-48 mx-auto rounded-lg object-contain"
+                    />
+
                     <button
                       type="button"
-                      onClick={() => setImagemComprovativo(undefined)}
-                      className="absolute top-3 right-3 bg-rose-600 hover:bg-rose-700 text-white p-1 rounded-full text-xs shadow-md"
-                      title="Remover Imagem"
+                      onClick={() =>
+                        setImagemComprovativo(
+                          undefined
+                        )
+                      }
+                      className="absolute right-2 top-2 rounded-full bg-rose-600 p-1 text-white"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1125,21 +2109,27 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 border-t border-slate-800 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-700 transition"
+                  onClick={() =>
+                    setShowModal(false)
+                  }
+                  className="rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-300"
                 >
                   Cancelar
                 </button>
+
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-6 py-2.5 text-xs shadow-lg transition active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-black text-slate-950 disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
-                  <span>{submitting ? 'A Submeter...' : 'Confirmar Envio ODK'}</span>
+
+                  {submitting
+                    ? 'A Submeter...'
+                    : 'Confirmar Envio'}
                 </button>
               </div>
             </form>
@@ -1147,138 +2137,239 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
         </div>
       )}
 
-      {/* MODAL: VER DETALHES DO RECIBO ODK */}
+      {/* ======================================================
+          MODAL DETALHES
+      ====================================================== */}
+
       {selectedSub && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4 text-white">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400">
-                  Comprovativo de Envio ODK
+                  Comprovativo ODK
                 </span>
-                <h3 className="text-lg font-black text-white font-mono">
-                  {selectedSub.codigoReciboODK}
+
+                <h3 className="text-lg font-black font-mono">
+                  {
+                    selectedSub.codigoReciboODK
+                  }
                 </h3>
               </div>
+
               <button
-                onClick={() => setSelectedSub(null)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                onClick={() =>
+                  setSelectedSub(null)
+                }
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-slate-400" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+            <div className="mt-4 space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-800 p-3">
                 <div>
-                  <span className="text-slate-400 font-bold block">Supervisor:</span>
-                  <span className="text-white font-black text-sm">{selectedSub.supervisorNome}</span>
+                  <span className="text-slate-400">
+                    Supervisor
+                  </span>
+
+                  <div className="font-black text-sm">
+                    {
+                      selectedSub.supervisorNome
+                    }
+                  </div>
                 </div>
+
                 <div>
-                  <span className="text-slate-400 font-bold block">Coordenação:</span>
-                  <span className="text-emerald-300 font-black text-sm">{selectedSub.coordNome}</span>
+                  <span className="text-slate-400">
+                    Coordenação
+                  </span>
+
+                  <div className="font-black text-emerald-300">
+                    {
+                      selectedSub.coordNome
+                    }
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <span className="text-slate-400 font-bold block">Nome do Formulário ODK:</span>
-                <span className="text-white font-extrabold">{selectedSub.formNome}</span>
+              <div className="rounded-xl bg-slate-800 p-3">
+                <span className="text-slate-400">
+                  Formulário
+                </span>
+
+                <div className="font-bold">
+                  {selectedSub.formNome}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-800 p-3">
                 <div>
-                  <span className="text-slate-400 font-bold block">Data & Hora de Envio:</span>
-                  <span className="text-white font-semibold">
-                    {selectedSub.dataEnvio} às {selectedSub.horaEnvio}
+                  <span className="text-slate-400">
+                    Data/Hora
                   </span>
+
+                  <div>
+                    {
+                      selectedSub.dataEnvio
+                    }{' '}
+                    às{' '}
+                    {
+                      selectedSub.horaEnvio
+                    }
+                  </div>
                 </div>
+
                 <div>
-                  <span className="text-slate-400 font-bold block">Formulários Submetidos:</span>
-                  <span className="text-emerald-400 font-black text-base">
-                    {selectedSub.totalFormularios} formulários
+                  <span className="text-slate-400">
+                    Formulários
                   </span>
+
+                  <div className="font-black text-emerald-400">
+                    {
+                      selectedSub.totalFormularios
+                    }
+                  </div>
                 </div>
               </div>
 
               {selectedSub.dispositivoAndroid && (
-                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                  <span className="text-slate-400 font-bold block">Dispositivo Android:</span>
-                  <span className="text-slate-200 font-medium">{selectedSub.dispositivoAndroid}</span>
+                <div className="rounded-xl bg-slate-800 p-3">
+                  <span className="text-slate-400">
+                    Dispositivo
+                  </span>
+
+                  <div>
+                    {
+                      selectedSub.dispositivoAndroid
+                    }
+                  </div>
                 </div>
               )}
 
               {selectedSub.observacoes && (
-                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                  <span className="text-slate-400 font-bold block">Observações:</span>
-                  <span className="text-slate-200 italic">{selectedSub.observacoes}</span>
+                <div className="rounded-xl bg-slate-800 p-3">
+                  <span className="text-slate-400">
+                    Observações
+                  </span>
+
+                  <div className="italic">
+                    {
+                      selectedSub.observacoes
+                    }
+                  </div>
                 </div>
               )}
 
               {selectedSub.imagemComprovativo && (
-                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-emerald-400 font-extrabold flex items-center gap-1.5 text-xs">
-                      <Camera className="h-4 w-4" />
-                      Captura de Ecrã / Imagem Anexada:
-                    </span>
+                <div className="rounded-xl bg-slate-800 p-3">
+                  <div className="mb-2 flex items-center gap-2 font-bold text-emerald-400">
+                    <Camera className="h-4 w-4" />
+                    Captura de Ecrã
                   </div>
-                  <div className="rounded-xl overflow-hidden bg-slate-950 border border-slate-700 p-2">
-                    <img
-                      src={selectedSub.imagemComprovativo}
-                      alt="Captura de Ecrã"
-                      className="max-h-80 mx-auto object-contain rounded-lg w-full"
-                    />
+
+                  <img
+                    src={
+                      selectedSub.imagemComprovativo
+                    }
+                    alt="Captura ODK"
+                    className="max-h-80 w-full rounded-lg object-contain"
+                  />
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="border-t border-slate-800 pt-4">
+                  <label className="block text-xs font-bold text-amber-300 mb-2">
+                    Nota Administrativa
+                  </label>
+
+                  <input
+                    type="text"
+                    value={
+                      adminNoteInput
+                    }
+                    onChange={(e) =>
+                      setAdminNoteInput(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Nota de validação..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-xs text-white"
+                  />
+
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() =>
+                        handleUpdateStatusAction(
+                          String(
+                            selectedSub.id
+                          ),
+                          'confirmado'
+                        )
+                      }
+                      className="rounded-xl bg-emerald-500 p-2.5 text-xs font-black text-slate-950"
+                    >
+                      Aprovar
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleUpdateStatusAction(
+                          String(
+                            selectedSub.id
+                          ),
+                          'divergencia'
+                        )
+                      }
+                      className="rounded-xl bg-rose-600 p-2.5 text-xs font-black text-white"
+                    >
+                      Divergência
+                    </button>
                   </div>
                 </div>
               )}
 
-              <div className="pt-2 border-t border-slate-800 space-y-3">
-                {isAdmin && (
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-amber-300">
-                      Ação Administrativa de Validação:
-                    </label>
-                    <input
-                      type="text"
-                      value={adminNoteInput}
-                      onChange={(e) => setAdminNoteInput(e.target.value)}
-                      placeholder="Adicionar nota administrativa de verificação..."
-                      className="w-full rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-xs text-white placeholder-slate-400 outline-none"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleUpdateStatusAction(selectedSub.id, 'confirmado')}
-                        className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 p-2.5 text-xs font-black text-slate-950 transition cursor-pointer"
-                      >
-                        Aprovar & Confirmar
-                      </button>
-                      <button
-                        onClick={() => handleUpdateStatusAction(selectedSub.id, 'divergencia')}
-                        className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 p-2.5 text-xs font-black text-white transition cursor-pointer"
-                      >
-                        Marcar Divergência
-                      </button>
-                    </div>
-                  </div>
-                )}
+              {/* DELETE NO MODAL */}
 
-                <div className="pt-1">
-                  <button
-                    onClick={() => handleDeleteSubmissionAction(selectedSub.id, selectedSub.codigoReciboODK)}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950/80 hover:bg-rose-900 p-2.5 text-xs font-bold text-rose-300 transition cursor-pointer"
-                    title="Eliminar Submissão ODK"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Eliminar Registo de Recibo ({selectedSub.codigoReciboODK})</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800 text-right">
               <button
-                onClick={() => setSelectedSub(null)}
-                className="rounded-xl bg-slate-800 px-5 py-2 text-xs font-bold text-white hover:bg-slate-700"
+                onClick={() =>
+                  handleDeleteSubmissionAction(
+                    String(
+                      selectedSub.id
+                    ),
+                    selectedSub.codigoReciboODK
+                  )
+                }
+                disabled={
+                  deletingId ===
+                  String(
+                    selectedSub.id
+                  )
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950 p-3 text-xs font-bold text-rose-300 disabled:opacity-50"
+              >
+                {deletingId ===
+                String(
+                  selectedSub.id
+                ) ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-300 border-t-transparent" />
+                    A eliminar...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar Registo
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() =>
+                  setSelectedSub(null)
+                }
+                className="w-full rounded-xl bg-slate-800 p-2.5 text-xs font-bold"
               >
                 Fechar
               </button>
@@ -1287,204 +2378,309 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
         </div>
       )}
 
-      {/* MODAL: COMPROVATIVO DE 4 DIAS DE TRABALHO (MODO CAPTURA / IMPRESSÃO) */}
+      {/* ======================================================
+          MODAL COMPROVATIVO
+      ====================================================== */}
+
       {show4DaysReceiptModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl border-2 border-purple-500 bg-white p-8 shadow-2xl space-y-6 text-slate-900 print:m-0 print:p-0 print:shadow-none">
-            {/* Header Comprovativo */}
+          <div className="w-full max-w-3xl rounded-2xl border-2 border-purple-500 bg-white p-8 text-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-900 text-white font-black text-xl shadow-md">
-                  ODK
-                </div>
-                <div>
-                  <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">
-                    Comprovativo Oficial dos {campaignDays.length} Dias de Trabalho
-                  </h2>
-                  <p className="text-xs font-bold text-purple-800">
-                    Campanha de Mobilização • Formulários ODK Collect Central
-                  </p>
-                </div>
+              <div>
+                <h2 className="text-lg font-black uppercase">
+                  Comprovativo Oficial dos{' '}
+                  {campaignDays.length}{' '}
+                  Dias de Trabalho
+                </h2>
+
+                <p className="text-xs font-bold text-purple-800">
+                  Campanha de Mobilização •
+                  ODK Collect
+                </p>
               </div>
+
               <div className="text-right">
-                <span className="inline-block font-mono text-xs font-black bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg text-slate-800">
-                  REF-ODK-{campaignDays.length}DIAS-{new Date().getFullYear()}
-                </span>
-                <p className="text-[10px] text-slate-500 font-bold mt-1">
-                  Gerado em: {new Date().toLocaleString('pt-PT')}
+                <div className="font-mono text-xs font-black">
+                  REF-ODK-
+                  {campaignDays.length}
+                  DIAS-
+                  {new Date().getFullYear()}
+                </div>
+
+                <p className="text-[10px] text-slate-500">
+                  {new Date().toLocaleString(
+                    'pt-PT'
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* Campaign Metrics Overview */}
-            <div className="grid grid-cols-4 gap-3 bg-purple-50 border border-purple-200 p-4 rounded-xl text-center">
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 rounded-xl bg-purple-50 border border-purple-200 p-4 text-center">
               <div>
-                <span className="text-[10px] font-extrabold uppercase text-purple-900">Dias Marcados</span>
-                <div className="text-xl font-black text-purple-950">{campaignDays.length} Dias</div>
+                <span className="text-[10px] font-bold">
+                  DIAS
+                </span>
+
+                <div className="text-xl font-black text-purple-900">
+                  {
+                    campaignDays.length
+                  }
+                </div>
               </div>
+
               <div>
-                <span className="text-[10px] font-extrabold uppercase text-purple-900">Total Formulários</span>
-                <div className="text-xl font-black text-emerald-700">{totalFormsCount}</div>
+                <span className="text-[10px] font-bold">
+                  FORMULÁRIOS
+                </span>
+
+                <div className="text-xl font-black text-emerald-700">
+                  {
+                    totalFormsCount
+                  }
+                </div>
               </div>
+
               <div>
-                <span className="text-[10px] font-extrabold uppercase text-purple-900">Submissões</span>
-                <div className="text-xl font-black text-slate-900">{totalSubmissionsCount}</div>
+                <span className="text-[10px] font-bold">
+                  SUBMISSÕES
+                </span>
+
+                <div className="text-xl font-black">
+                  {
+                    totalSubmissionsCount
+                  }
+                </div>
               </div>
+
               <div>
-                <span className="text-[10px] font-extrabold uppercase text-purple-900">Validadas Admin</span>
-                <div className="text-xl font-black text-emerald-800">{confirmedCount}</div>
+                <span className="text-[10px] font-bold">
+                  VALIDADAS
+                </span>
+
+                <div className="text-xl font-black text-emerald-800">
+                  {confirmedCount}
+                </div>
               </div>
             </div>
 
-            {/* Daily Breakdown Table */}
-            <div className="border border-slate-300 rounded-xl overflow-hidden">
+            <div className="mt-5 rounded-xl border border-slate-300 overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 border-b border-slate-300 font-black text-slate-800 uppercase text-[10px]">
+                <thead className="bg-slate-100 font-black uppercase text-[10px]">
                   <tr>
-                    <th className="p-2.5">Dia de Campanha</th>
-                    <th className="p-2.5">Data Envio</th>
-                    <th className="p-2.5">Submissões</th>
-                    <th className="p-2.5 text-right">Formulários ODK</th>
+                    <th className="p-2.5">
+                      Dia
+                    </th>
+
+                    <th className="p-2.5">
+                      Data
+                    </th>
+
+                    <th className="p-2.5">
+                      Submissões
+                    </th>
+
+                    <th className="p-2.5 text-right">
+                      Formulários
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {campaignDays.map((d) => (
-                    <tr key={d.dayIndex} className="font-semibold">
-                      <td className="p-2.5 font-black text-purple-900">{d.dayLabel}</td>
-                      <td className="p-2.5 font-mono text-slate-700">{d.date}</td>
-                      <td className="p-2.5 text-slate-800">{d.submissions.length} registos</td>
-                      <td className="p-2.5 text-right font-mono font-black text-emerald-800 text-sm">
-                        {d.totalFormsDay}
-                      </td>
-                    </tr>
-                  ))}
+
+                <tbody>
+                  {campaignDays.map(
+                    (d) => (
+                      <tr
+                        key={
+                          d.dayIndex
+                        }
+                        className="border-t"
+                      >
+                        <td className="p-2.5 font-black text-purple-900">
+                          {
+                            d.dayLabel
+                          }
+                        </td>
+
+                        <td className="p-2.5 font-mono">
+                          {d.date}
+                        </td>
+
+                        <td className="p-2.5">
+                          {
+                            d.submissions
+                              .length
+                          }
+                        </td>
+
+                        <td className="p-2.5 text-right font-black text-emerald-800">
+                          {
+                            d.totalFormsDay
+                          }
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Anexo de Captura de Ecrã dos 4 Dias pelo Supervisor */}
-            <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-xl space-y-3 print:border-slate-300 print:bg-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-black text-purple-950 flex items-center gap-2">
-                    <Camera className="h-4 w-4 text-purple-700" />
-                    <span>Captura de Ecrã / Imagem dos {campaignDays.length} Dias Trabalhados (Comprovativo)</span>
-                  </h4>
-                  <p className="text-[11px] text-purple-800 print:text-slate-600">
-                    O supervisor envia a captura de ecrã do ODK Collect no seu tablet/smartphone para confirmação da coordenação e do administrador.
-                  </p>
-                </div>
-              </div>
+            <div className="mt-5 rounded-xl border border-purple-200 bg-purple-50 p-4">
+              <h4 className="text-xs font-black text-purple-950">
+                Captura de Ecrã dos Dias Trabalhados
+              </h4>
 
-              <div className="print:hidden">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file, setUploadedProof);
-                  }}
-                  className="w-full text-xs text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-700 file:text-white hover:file:bg-purple-800 cursor-pointer bg-white rounded-xl p-2 border border-purple-300"
-                />
-              </div>
+              <p className="mt-1 text-[11px] text-purple-800">
+                Anexe uma captura do ODK Collect
+                como comprovativo.
+              </p>
 
-              {uploadedProof ? (
-                <div className="rounded-xl border border-purple-300 bg-white p-3 relative space-y-2">
-                  <div className="flex items-center justify-between print:hidden">
-                    <span className="text-xs font-black text-emerald-700 flex items-center gap-1">
-                      <CheckCircle2 className="h-4 w-4" /> Captura de Ecrã Carregada com Sucesso
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setUploadedProof(undefined)}
-                      className="text-xs font-bold text-rose-600 hover:underline"
-                    >
-                      Remover Foto
-                    </button>
-                  </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file =
+                    e.target.files?.[0];
+
+                  if (file) {
+                    handleImageUpload(
+                      file,
+                      setUploadedProof
+                    );
+                  }
+                }}
+                className="mt-3 w-full text-xs"
+              />
+
+              {uploadedProof && (
+                <div className="mt-3 rounded-xl bg-white p-3">
                   <img
                     src={uploadedProof}
-                    alt="Captura dos 4 Dias ODK"
-                    className="max-h-72 mx-auto object-contain rounded-lg border border-slate-200"
+                    alt="Comprovativo ODK"
+                    className="max-h-72 mx-auto object-contain"
                   />
-                </div>
-              ) : (
-                <div className="text-center p-4 border border-dashed border-purple-300 rounded-xl text-purple-700 text-xs font-semibold print:hidden">
-                  📸 Nenhuma captura de ecrã anexada ainda. Selecione um ficheiro de imagem acima para enviar como comprovativo dos 4 dias de trabalho.
                 </div>
               )}
             </div>
 
-            {/* Signature & Verification Seal */}
-            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-300 text-xs">
-              <div className="border-t border-slate-400 pt-2 text-center">
-                <span className="font-bold text-slate-800">Assinatura do Supervisor Responsável</span>
-                <p className="text-[10px] text-slate-500 font-medium mt-0.5">{user.nome} ({user.coordNome || 'Supervisor'})</p>
+            <div className="mt-6 grid grid-cols-2 gap-8 border-t pt-5 text-center text-xs">
+              <div>
+                <div className="border-t border-slate-400 pt-2 font-bold">
+                  Assinatura do Supervisor
+                </div>
+
+                <p className="text-[10px] text-slate-500">
+                  {user.nome}
+                </p>
               </div>
-              <div className="border-t border-slate-400 pt-2 text-center">
-                <span className="font-bold text-slate-800">Selo de Validação do Administrador</span>
-                <p className="text-[10px] text-emerald-700 font-bold mt-0.5">✔ Autenticado pela Direção Geral</p>
+
+              <div>
+                <div className="border-t border-slate-400 pt-2 font-bold">
+                  Validação do Administrador
+                </div>
+
+                <p className="text-[10px] text-emerald-700">
+                  Autenticado
+                </p>
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200 print:hidden">
+            <div className="mt-5 flex justify-between border-t pt-4">
               <button
-                onClick={() => setShow4DaysReceiptModal(false)}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                onClick={() =>
+                  setShow4DaysReceiptModal(
+                    false
+                  )
+                }
+                className="rounded-xl border px-5 py-2.5 text-xs font-bold"
               >
                 Fechar
               </button>
+
               <button
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-black px-6 py-2.5 text-xs shadow-md transition active:scale-95"
+                onClick={() =>
+                  window.print()
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-purple-700 px-6 py-2.5 text-xs font-black text-white"
               >
                 <Printer className="h-4 w-4" />
-                <span>Imprimir / Capturar Comprovativo</span>
+                Imprimir / Capturar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL: GUIA DO ODK COLLECT */}
+      {/* ======================================================
+          GUIA ODK
+      ====================================================== */}
+
       {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <Info className="h-5 w-5 text-emerald-400" />
-                <h3 className="text-base font-black text-white">
-                  Guia Oficial do ODK Collect Central
+
+                <h3 className="font-black">
+                  Guia do ODK Collect
                 </h3>
               </div>
+
               <button
-                onClick={() => setShowInfoModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800"
+                onClick={() =>
+                  setShowInfoModal(false)
+                }
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-slate-400" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs leading-relaxed text-slate-200">
+            <div className="mt-4 space-y-3 text-xs leading-relaxed text-slate-200">
               <p>
-                <strong>ODK Collect</strong> é o aplicativo Android padrão para recolha de dados e fichas de supervisão da mobilização em campo.
+                <strong>
+                  ODK Collect
+                </strong>{' '}
+                é utilizado para recolha de
+                dados e fichas de supervisão
+                em campo.
               </p>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <span className="font-bold text-emerald-300 block">Passo a Passo do Supervisor:</span>
-                <ol className="list-decimal pl-4 space-y-1">
-                  <li>Abra o ODK Collect no seu tablet ou smartphone Android em campo.</li>
-                  <li>Preencha a <strong>Ficha de Supervisão da Mobilização</strong>.</li>
-                  <li>Efetue o envio final dos formulários para o servidor central.</li>
-                  <li>Aceda a este sistema e clique em <strong>Registar Envio ODK</strong> indicando o recibo e quantidade para validação do Administrador.</li>
+
+              <div className="rounded-xl bg-slate-800 p-4">
+                <strong className="text-emerald-300">
+                  Passo a passo:
+                </strong>
+
+                <ol className="mt-2 list-decimal pl-5 space-y-1">
+                  <li>
+                    Abrir o ODK Collect.
+                  </li>
+
+                  <li>
+                    Preencher a ficha.
+                  </li>
+
+                  <li>
+                    Enviar os formulários.
+                  </li>
+
+                  <li>
+                    Registar o envio neste
+                    sistema.
+                  </li>
+
+                  <li>
+                    Aguardar validação do
+                    administrador.
+                  </li>
                 </ol>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-800 text-right">
+            <div className="mt-5 border-t border-slate-800 pt-4 text-right">
               <button
-                onClick={() => setShowInfoModal(false)}
-                className="rounded-xl bg-emerald-500 text-slate-950 font-black px-5 py-2 text-xs hover:bg-emerald-400"
+                onClick={() =>
+                  setShowInfoModal(false)
+                }
+                className="rounded-xl bg-emerald-500 px-5 py-2 text-xs font-black text-slate-950"
               >
                 Entendi
               </button>
