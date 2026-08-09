@@ -16,6 +16,7 @@ import {
   Type,
   LayoutGrid,
   FileSpreadsheet,
+  Newspaper,
 } from 'lucide-react';
 import { Coordination, User } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -43,6 +44,7 @@ interface HeaderProps {
   onOpenAiModal: () => void;
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
+  onOpenPortalNews?: () => void;
   onSelectTab?: (tab: string) => void;
 }
 
@@ -61,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAiModal,
   onOpenNotepad,
   onOpenAuditLogs,
-  onOpenGoogleSheets,
+  onOpenPortalNews,
   onSelectTab,
 }) => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -220,6 +222,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Notebook className="h-3.5 w-3.5 text-amber-300" />
             <span className="hidden sm:inline">Bloco de Notas</span>
+          </button>
+        )}
+
+        {/* Admin Portal News Button */}
+        {user.tipo === 'admin' && onOpenPortalNews && (
+          <button
+            onClick={onOpenPortalNews}
+            className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
+            title="Publicar e gerir notícias na página inicial"
+            id="btn-header-portal-news"
+          >
+            <Newspaper className="h-3.5 w-3.5 text-sky-300" />
+            <span className="hidden sm:inline">Notícias Portal</span>
           </button>
         )}
 

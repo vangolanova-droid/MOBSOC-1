@@ -19,6 +19,8 @@ import {
   UserCheck,
   Send,
   MessageSquare,
+  Sliders,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   BarChart,
@@ -36,7 +38,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
-import { Coordination, Ficha, Mobilizador, User } from '../types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, User } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
 interface DashboardViewProps {
@@ -45,9 +47,11 @@ interface DashboardViewProps {
   mobilizadores: Mobilizador[];
   coordenacoes: Coordination[];
   users: User[];
+  goals?: CoordinationGoal[];
   onNewFicha: () => void;
   onViewAllFichas: () => void;
   onOpenAiModal: () => void;
+  onOpenGoalModal?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -56,9 +60,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   mobilizadores,
   coordenacoes,
   users,
+  goals = [],
   onNewFicha,
   onViewAllFichas,
   onOpenAiModal,
+  onOpenGoalModal,
 }) => {
   const isAdmin = user.tipo === 'admin';
 
@@ -342,14 +348,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-blue-600" />
               <h3 className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Metas & Objetivos de Alcance da Campanha
+                Metas & Objetivos de Alcance da Campanha (Sumbe)
               </h3>
             </div>
-            {totalPessoas >= 5000 && (
-              <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
-                Meta Geral Cumprida 🎉
-              </span>
-            )}
+            
+            <div className="flex items-center gap-2">
+              {isAdmin && onOpenGoalModal && (
+                <button
+                  onClick={onOpenGoalModal}
+                  className="flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition cursor-pointer"
+                  id="dash-btn-config-metas"
+                >
+                  <Sliders className="h-3.5 w-3.5" />
+                  <span>Configurar Metas</span>
+                </button>
+              )}
+
+              {totalPessoas >= 5000 && (
+                <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
+                  Meta Geral Cumprida 🎉
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -358,18 +378,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-emerald-900 dark:text-emerald-200">Pessoas Alcançadas</span>
                 <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-300">
-                  {totalPessoas.toLocaleString()} / 5.000
+                  {totalPessoas.toLocaleString()} / {goals.reduce((s, g) => s + (g.targetPessoas || 0), 0) || 12500}
                 </span>
               </div>
               <div className="w-full h-2.5 bg-emerald-200 dark:bg-emerald-900 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-600 dark:bg-emerald-400 transition-all duration-300"
-                  style={{ width: `${Math.min(100, Math.round((totalPessoas / 5000) * 100))}%` }}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round(
+                        (totalPessoas / (goals.reduce((s, g) => s + (g.targetPessoas || 0), 0) || 12500)) * 100
+                      )
+                    )}%`,
+                  }}
                 />
               </div>
               <div className="flex justify-between text-[11px] text-emerald-800 dark:text-emerald-300 font-bold">
-                <span>{Math.round((totalPessoas / 5000) * 100)}% concluído</span>
-                <span>Faltam {Math.max(0, 5000 - totalPessoas).toLocaleString()}</span>
+                <span>
+                  {Math.round(
+                    (totalPessoas / (goals.reduce((s, g) => s + (g.targetPessoas || 0), 0) || 12500)) * 100
+                  )}% concluído
+                </span>
+                <span>Faltam {Math.max(0, (goals.reduce((s, g) => s + (g.targetPessoas || 0), 0) || 12500) - totalPessoas).toLocaleString()}</span>
               </div>
             </div>
 
@@ -378,18 +409,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-sky-900 dark:text-sky-200">Locais Visitados</span>
                 <span className="font-mono font-extrabold text-sky-700 dark:text-sky-300">
-                  {totalLocais.toLocaleString()} / 200
+                  {totalLocais.toLocaleString()} / {goals.reduce((s, g) => s + (g.targetLocais || 0), 0) || 470}
                 </span>
               </div>
               <div className="w-full h-2.5 bg-sky-200 dark:bg-sky-900 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-sky-600 dark:bg-sky-400 transition-all duration-300"
-                  style={{ width: `${Math.min(100, Math.round((totalLocais / 200) * 100))}%` }}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round(
+                        (totalLocais / (goals.reduce((s, g) => s + (g.targetLocais || 0), 0) || 470)) * 100
+                      )
+                    )}%`,
+                  }}
                 />
               </div>
               <div className="flex justify-between text-[11px] text-sky-800 dark:text-sky-300 font-bold">
-                <span>{Math.round((totalLocais / 200) * 100)}% concluído</span>
-                <span>Faltam {Math.max(0, 200 - totalLocais).toLocaleString()}</span>
+                <span>
+                  {Math.round(
+                    (totalLocais / (goals.reduce((s, g) => s + (g.targetLocais || 0), 0) || 470)) * 100
+                  )}% concluído
+                </span>
+                <span>Faltam {Math.max(0, (goals.reduce((s, g) => s + (g.targetLocais || 0), 0) || 470) - totalLocais).toLocaleString()}</span>
               </div>
             </div>
 

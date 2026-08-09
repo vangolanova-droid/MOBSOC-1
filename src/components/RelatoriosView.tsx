@@ -10,12 +10,17 @@ import {
   UserCheck,
   ChevronDown,
   ChevronUp,
+  Target,
+  AlertTriangle,
+  Building2,
+  ShieldAlert,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { Coordination, Ficha, Mobilizador, User } from '../types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, User } from '../types';
 import {
   exportRelatorioOficialPDF,
   exportSupervisoresReportPDF,
+  exportBoletimProvincialPDF,
 } from '../utils/pdfExporter';
 import {
   buildSupervisorAggregates,
@@ -29,6 +34,7 @@ interface RelatoriosViewProps {
   coordenacoes: Coordination[];
   users?: User[];
   mobilizadores?: Mobilizador[];
+  goals?: CoordinationGoal[];
 }
 
 export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
@@ -37,8 +43,9 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
   coordenacoes,
   users = [],
   mobilizadores = [],
+  goals = [],
 }) => {
-  const [reportTab, setReportTab] = useState<'geral' | 'diario' | 'supervisores' | 'export'>('geral');
+  const [reportTab, setReportTab] = useState<'geral' | 'diario' | 'supervisores' | 'dps' | 'export'>('geral');
   const [supervisorSubMode, setSupervisorSubMode] = useState<'diario' | 'geral'>('diario');
   const [selectedCoord, setSelectedCoord] = useState<string>('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<string>('');
@@ -138,6 +145,14 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
   };
 
   const handleExportPDF = () => {
+    if (reportTab === 'dps') {
+      exportBoletimProvincialPDF(filtered, coordenacoes, goals, {
+        provincia: 'Cuanza Sul',
+        municipio: municipioFilter || 'Sumbe',
+      });
+      return;
+    }
+
     if (reportTab === 'supervisores') {
       exportSupervisoresReportPDF(
         supervisorSubMode,
@@ -204,6 +219,19 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
         >
           <Users className="h-3.5 w-3.5 text-emerald-600" />
           <span>Relatório por Supervisores</span>
+        </button>
+
+        <button
+          onClick={() => setReportTab('dps')}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+            reportTab === 'dps'
+              ? 'bg-white text-blue-700 shadow-xs border border-blue-200 font-bold'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+          id="tab-rel-dps"
+        >
+          <Building2 className="h-3.5 w-3.5 text-blue-600" />
+          <span>Boletim Municipal (DMS Sumbe)</span>
         </button>
 
         <button
@@ -550,7 +578,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
             </table>
           </div>
         </div>
-      ) : (
+      ) : reportTab !== 'dps' ? (
         /* STANDARD FICHA REPORT TABLE */
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 print:border-none print:bg-white print:text-black">
           <div className="border-b border-slate-200 pb-4 text-center">
@@ -625,6 +653,129 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </div>
+      ) : (
+        /* BOLETIM PROVINCIAL DPS MODE VIEW */
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6 print:border-none print:p-0">
+          {/* Header Banner DPS */}
+          <div className="border-b-2 border-blue-600 pb-4 text-center space-y-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+              República de Angola • Ministério da Saúde
+            </span>
+            <h2 className="text-lg font-black tracking-tight text-blue-900 uppercase">
+              Boletim Estratégico de Desempenho e Cobertura de Saúde
+            </h2>
+            <p className="text-xs font-bold text-slate-700">
+              Direção Municipal de Saúde do Sumbe • Cuanza Sul
+            </p>
+            <div className="text-[11px] text-slate-500 font-mono pt-1">
+              Data de Emissão: {new Date().toLocaleDateString('pt-AO')} • Responsável: {user.nome}
+            </div>
+          </div>
+
+          {/* Goals and Executed Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-1">
+              <div className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">
+                Total Mobilizados (Sumbe)
+              </div>
+              <div className="text-2xl font-black text-blue-950 font-mono">
+                {totalPessoas.toLocaleString('pt-AO')}
+              </div>
+              <div className="text-[11px] text-blue-800 font-medium">
+                Pessoas alcançadas pela equipa
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1">
+              <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                Taxa de Aceitação Global
+              </div>
+              <div className="text-2xl font-black text-emerald-800 font-mono">
+                {acceptancePct}%
+              </div>
+              <div className="text-[11px] text-emerald-800 font-medium">
+                {totalSim.toLocaleString()} Aceites / {totalNao.toLocaleString()} Recusas
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/60 space-y-1">
+              <div className="text-[10px] font-bold text-purple-800 uppercase tracking-wider">
+                Fichas & Locais
+              </div>
+              <div className="text-2xl font-black text-purple-950 font-mono">
+                {filtered.length} <span className="text-xs font-normal text-purple-700">fichas</span>
+              </div>
+              <div className="text-[11px] text-purple-800 font-medium">
+                {totalLocais.toLocaleString()} locais/casas visitadas
+              </div>
+            </div>
+          </div>
+
+          {/* Coordination Breakdown Table */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              <span>Desempenho e Metas por Coordenação do Sumbe</span>
+            </h3>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Coordenação</th>
+                    <th className="p-3">Coordenador(a)</th>
+                    <th className="p-3 text-right">Meta Pessoas</th>
+                    <th className="p-3 text-right">Alcançado</th>
+                    <th className="p-3 text-center">Cobertura %</th>
+                    <th className="p-3 text-center">Fichas</th>
+                    <th className="p-3 text-center">Estado da Meta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {coordenacoes.map((c) => {
+                    const cFichas = filtered.filter((f) => f.coordId === c.id || f.coordNome === c.nome);
+                    const cPessoas = cFichas.reduce((s, f) => s + (f.totalPessoas || 0), 0);
+                    const g = goals.find((item) => item.coordId === c.id) || { targetPessoas: 5000, targetFichas: 80 };
+                    const cobPct = g.targetPessoas > 0 ? Math.round((cPessoas / g.targetPessoas) * 100) : 0;
+
+                    return (
+                      <tr key={c.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-blue-800">{c.nome}</td>
+                        <td className="p-3 font-medium text-slate-700">{c.coordenador || '—'}</td>
+                        <td className="p-3 text-right font-mono font-semibold">{g.targetPessoas.toLocaleString('pt-AO')}</td>
+                        <td className="p-3 text-right font-mono font-bold text-emerald-700">{cPessoas.toLocaleString('pt-AO')}</td>
+                        <td className="p-3 text-center font-mono font-bold">{cobPct}%</td>
+                        <td className="p-3 text-center font-mono">{cFichas.length} / {g.targetFichas}</td>
+                        <td className="p-3 text-center font-bold text-[11px]">
+                          {cobPct >= 100 ? (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">🟢 Meta Concluída</span>
+                          ) : cobPct >= 80 ? (
+                            <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">🔵 Bom Progresso</span>
+                          ) : cobPct >= 50 ? (
+                            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">🟡 Ritmo Médio</span>
+                          ) : (
+                            <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">🔴 Cobertura Crítica</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Action Bar */}
+          <div className="pt-2 flex justify-end gap-3 print:hidden">
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 transition cursor-pointer"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Gerar PDF do Boletim Municipal (DMS)</span>
+            </button>
           </div>
         </div>
       )}

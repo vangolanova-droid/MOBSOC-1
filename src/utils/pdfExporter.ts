@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Ficha, Mobilizador } from '../types';
+import { Ficha, Mobilizador, CoordinationGoal, Coordination } from '../types';
 
 export interface ConsolidadoRow {
   provincia: string;
@@ -833,4 +833,195 @@ export function exportFinancasPDF(
 
   doc.save(`SIS-MOBSOC_Relatorio_Financeiro_RH_${dateStr}.pdf`);
 }
+
+/**
+ * Export Boletim Estratégico de Desempenho e Cobertura para Direção Municipal de Saúde (DMS / Sumbe)
+ */
+export function exportBoletimProvincialPDF(
+  fichas: Ficha[],
+  coordenacoes: Coordination[],
+  goals: CoordinationGoal[],
+  options?: {
+    provincia?: string;
+    municipio?: string;
+    metaSumbePessoas?: number;
+    metaSumbeFichas?: number;
+  }
+) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const dateStr = new Date().toISOString().split('T')[0];
+  const provinciaName = options?.provincia || 'Cuanza Sul';
+  const municipioName = options?.municipio || 'Sumbe';
+
+  drawOfficialHeader(
+    doc,
+    'Boletim Estratégico de Desempenho e Cobertura de Saúde',
+    `DIREÇÃO MUNICIPAL DE SAÚDE DO ${municipioName.toUpperCase()} • PROVÍNCIA DO ${provinciaName.toUpperCase()}`
+  );
+
+  let currentY = 45;
+
+  // Global Campaign Aggregates
+  const totalPessoas = fichas.reduce((s, f) => s + (f.totalPessoas || 0), 0);
+  const totalLocais = fichas.reduce((s, f) => s + (f.totalLocais || 0), 0);
+  const totalFichas = fichas.length;
+  const totalSim = fichas.reduce((s, f) => s + (f.sim || 0), 0);
+  const totalNao = fichas.reduce((s, f) => s + (f.nao || 0), 0);
+  const totalResp = totalSim + totalNao;
+  const aceitacaoPct = totalResp > 0 ? Math.round((totalSim / totalResp) * 100) : 0;
+
+  // Goals
+  const targetPessoasGlobal = options?.metaSumbePessoas || goals.reduce((s, g) => s + (g.targetPessoas || 0), 0) || 25000;
+  const targetFichasGlobal = options?.metaSumbeFichas || goals.reduce((s, g) => s + (g.targetFichas || 0), 0) || 500;
+
+  const coberturaPessoasPct = targetPessoasGlobal > 0 ? Math.round((totalPessoas / targetPessoasGlobal) * 100) : 0;
+  const coberturaFichasPct = targetFichasGlobal > 0 ? Math.round((totalFichas / targetFichasGlobal) * 100) : 0;
+
+  // Section 1: Executive Key Metrics Box
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(203, 213, 225);
+  doc.roundedRect(14, currentY, 182, 32, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(11, 92, 173);
+  doc.text('RESUMO EXECUTIVO DE COBERTURA MUNICIPAL DE SAÚDE', 18, currentY + 6);
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Pessoas Mobilizadas: `, 18, currentY + 14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${totalPessoas.toLocaleString('pt-AO')} / ${targetPessoasGlobal.toLocaleString('pt-AO')} (${coberturaPessoasPct}% da Meta)`, 50, currentY + 14);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Fichas Registadas: `, 18, currentY + 21);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${totalFichas} / ${targetFichasGlobal} (${coberturaFichasPct}% da Meta)`, 48, currentY + 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Taxa de Aceitação: `, 115, currentY + 14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(aceitacaoPct >= 85 ? 16 : 180, aceitacaoPct >= 85 ? 122 : 80, aceitacaoPct >= 85 ? 65 : 20);
+  doc.text(`${aceitacaoPct}% (${totalSim.toLocaleString()} SIM / ${totalNao.toLocaleString()} NÃO)`, 144, currentY + 14);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Locais Visitados: `, 115, currentY + 21);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${totalLocais.toLocaleString('pt-AO')} casas/pontos`, 142, currentY + 21);
+
+  currentY += 38;
+
+  // Section 2: Goals vs Executed per Coordination
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(11, 92, 173);
+  doc.text('DESEMPENHO E COBERTURA POR COORDENAÇÃO (SUMBE)', 14, currentY);
+
+  currentY += 4;
+
+  const coordRows = coordenacoes.map((c, idx) => {
+    const cFichas = fichas.filter((f) => f.coordId === c.id || f.coordNome === c.nome);
+    const cPessoas = cFichas.reduce((s, f) => s + (f.totalPessoas || 0), 0);
+    const cSim = cFichas.reduce((s, f) => s + (f.sim || 0), 0);
+    const cNao = cFichas.reduce((s, f) => s + (f.nao || 0), 0);
+    const cResp = cSim + cNao;
+    const cAceit = cResp > 0 ? Math.round((cSim / cResp) * 100) : 0;
+
+    const g = goals.find((item) => item.coordId === c.id) || {
+      targetPessoas: 5000,
+      targetLocais: 200,
+      targetFichas: 80,
+    };
+
+    const cobPct = g.targetPessoas > 0 ? Math.round((cPessoas / g.targetPessoas) * 100) : 0;
+    let statusText = '🔵 Bom Progresso';
+    if (cobPct >= 100) statusText = '🟢 Meta Concluída';
+    else if (cobPct < 50) statusText = '🔴 Cobertura Crítica';
+    else if (cobPct < 80) statusText = '🟡 Ritmo Médio';
+
+    return [
+      idx + 1,
+      c.nome,
+      c.coordenador || '—',
+      g.targetPessoas.toLocaleString('pt-AO'),
+      cPessoas.toLocaleString('pt-AO'),
+      `${cobPct}%`,
+      `${cFichas.length} / ${g.targetFichas}`,
+      `${cAceit}%`,
+      statusText,
+    ];
+  });
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [
+        '#',
+        'Coordenação',
+        'Coordenador(a)',
+        'Meta (Pess.)',
+        'Alcançado',
+        'Cobertura %',
+        'Fichas',
+        'Aceitação',
+        'Estado da Meta',
+      ],
+    ],
+    body: coordRows,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [11, 92, 173],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8,
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: [51, 65, 85],
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Section 3: Risk Alerts & Recommendations
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(180, 80, 20); // Amber/Red
+  doc.text('ALERTAS DE RISCO DE COBERTURA & RECOMENDAÇÕES OPERACIONAIS', 14, currentY);
+
+  currentY += 5;
+
+  // Identify risk areas
+  const riskCoords = coordenacoes.filter((c) => {
+    const cFichas = fichas.filter((f) => f.coordId === c.id || f.coordNome === c.nome);
+    const cPessoas = cFichas.reduce((s, f) => s + (f.totalPessoas || 0), 0);
+    const g = goals.find((item) => item.coordId === c.id) || { targetPessoas: 5000 };
+    const cob = g.targetPessoas > 0 ? (cPessoas / g.targetPessoas) * 100 : 100;
+    return cob < 60 || cFichas.length === 0;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+
+  let riskMsg = riskCoords.length > 0
+    ? `Atenção DPS: As seguintes coordenações estão com ritmo abaixo do esperado (<60% da meta ou sem submissões): ${riskCoords.map((c) => c.nome).join(', ')}.`
+    : 'Todas as coordenações do Sumbe apresentam ritmo satisfatório de mobilização em campo.';
+
+  doc.text(doc.splitTextToSize(`• Deteção de Alertas: ${riskMsg}`, 180), 14, currentY);
+  currentY += 10;
+
+  doc.text(doc.splitTextToSize('• Recomendação 1: Reforçar a mobilização porta-a-porta nos bairros periféricos de menor adesão com apoio dos supervisores de zona.', 180), 14, currentY);
+  currentY += 8;
+
+  doc.text(doc.splitTextToSize('• Recomendação 2: Garantir que todos os mobilizadores submetam as fichas diárias até às 17h00 para validação ODK e controlo de atrasos.', 180), 14, currentY);
+
+  drawOfficialFooter(doc);
+
+  doc.save(`SIS-MOBSOC_Boletim_Estrategico_DPS_${dateStr}.pdf`);
+}
+
 

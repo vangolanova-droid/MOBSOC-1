@@ -21,6 +21,7 @@ import {
   Check,
   Smartphone,
   PanelLeftClose,
+  Newspaper,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -46,6 +47,7 @@ interface SidebarProps {
   onSelectTab: (tab: string) => void;
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
+  onOpenPortalNews?: () => void;
   onLogout: () => void;
   onCloseMobile: () => void;
 }
@@ -63,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   onOpenNotepad,
   onOpenAuditLogs,
+  onOpenPortalNews,
   onLogout,
   onCloseMobile,
 }) => {
@@ -114,7 +117,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNav = (tab: string) => {
     onSelectTab(tab);
-    onCloseMobile();
   };
 
   const primaryColor = currentPalette?.colors?.primary || '#00B2FF';
@@ -467,8 +469,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       style={activeTab === 'utilizadores' ? { backgroundColor: primaryColor } : undefined}
                       id="nav-utilizadores"
                     >
-                      <Users className={`h-4 w-4 ${activeTab === 'utilizadores' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                      <span>Utilizadores</span>
+                      <div className="flex items-center gap-2">
+                        <Users className={`h-4 w-4 ${activeTab === 'utilizadores' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span>Utilizadores</span>
+                      </div>
+                      {users.filter((u) => u.status === 'pendente').length > 0 && (
+                        <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950 animate-pulse">
+                          {users.filter((u) => u.status === 'pendente').length}
+                        </span>
+                      )}
                     </button>
                   </ActionTooltip>
 
@@ -500,6 +509,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                         <span className="rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[9px] font-medium text-slate-600 dark:text-slate-300">
                           ADMIN
+                        </span>
+                      </button>
+                    </ActionTooltip>
+                  )}
+
+                  {onOpenPortalNews && (
+                    <ActionTooltip content="Publicar e gerir notícias, comunicados e avisos apresentados na página inicial do portal.">
+                      <button
+                        onClick={() => {
+                          onCloseMobile();
+                          onOpenPortalNews();
+                        }}
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-sky-500/10 hover:text-sky-500 transition"
+                        id="nav-portal-news"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Newspaper className="h-4 w-4 text-sky-500" />
+                          <span>Notícias do Portal</span>
+                        </div>
+                        <span className="rounded-full bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 text-[9px] font-medium text-sky-500">
+                          PORTAL
                         </span>
                       </button>
                     </ActionTooltip>

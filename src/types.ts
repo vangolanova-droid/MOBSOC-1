@@ -10,6 +10,8 @@ export interface User {
   coordNome?: string;
   coordenadorNome?: string;
   fotoUrl?: string;
+  status?: 'ativo' | 'pendente' | 'rejeitado';
+  telefone?: string;
   createdAt?: string;
 }
 
@@ -142,6 +144,19 @@ export interface ODKSubmission {
   dataConfirmacaoAdmin?: string;
   observacoes?: string;
   imagemComprovativo?: string;
+  createdAt: string;
+}
+
+export interface PortalPost {
+  id: string;
+  titulo: string;
+  subtitulo?: string;
+  conteudo: string;
+  categoria: 'Notícia' | 'Aviso' | 'Brigada Móvel' | 'Estatística' | 'Guia';
+  data: string;
+  autor: string;
+  destaque?: boolean;
+  imagemUrl?: string;
   createdAt: string;
 }
 

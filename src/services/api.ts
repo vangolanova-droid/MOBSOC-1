@@ -180,6 +180,8 @@ export const api = {
       coordNome: user.coordNome || '—',
       coordenadorNome: user.coordenadorNome || '—',
       fotoUrl: user.fotoUrl || '',
+      status: user.status || 'ativo',
+      telefone: user.telefone || '',
       createdAt: new Date().toISOString(),
     };
 

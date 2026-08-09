@@ -1242,6 +1242,18 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                     >
                       Marcar Divergência
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm(`Tem a certeza que deseja eliminar definitivamente a submissão ODK ${selectedSub.codigoReciboODK}?`)) {
+                          await onDeleteSubmission(selectedSub.id);
+                          setSelectedSub(null);
+                        }
+                      }}
+                      className="rounded-xl border border-rose-500/40 bg-rose-950/60 hover:bg-rose-900 p-2.5 text-xs font-bold text-rose-300 transition"
+                      title="Eliminar Submissão ODK"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               )}

@@ -10,7 +10,7 @@ import {
   getDocFromServer,
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission } from '../types';
+import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, PortalPost } from '../types';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
@@ -30,6 +30,7 @@ const COLS = {
   SYSTEM_CONFIG: 'system_config',
   ADMIN_MESSAGES: 'admin_messages',
   ODK_SUBMISSIONS: 'odk_submissions',
+  PORTAL_POSTS: 'portal_posts',
 };
 
 const META_DOC = doc(db, 'system_metadata', 'initial_seed');
@@ -420,6 +421,69 @@ export async function fsUpdateOdkSubmission(id: string, fields: Partial<ODKSubmi
 
 export async function fsDeleteOdkSubmission(id: string): Promise<void> {
   await deleteDoc(doc(db, COLS.ODK_SUBMISSIONS, String(id)));
+}
+
+// --- PORTAL POSTS / NEWS ---
+const DEFAULT_PORTAL_POSTS: PortalPost[] = [
+  {
+    id: 'post-1',
+    titulo: 'Reforço das Brigadas Móveis nos Bairros Chingo, Quissala e Bairro Novo',
+    subtitulo: 'Sumbe Urbano & Periferia',
+    conteudo: 'As equipas de mobilizadores comunitários (RH-MC) iniciaram a rota intensiva de sensibilização casa a casa, informando as famílias sobre os postos fixos e avançados de vacinação.',
+    categoria: 'Brigada Móvel',
+    data: new Date().toISOString().split('T')[0],
+    autor: 'Equipa de Saúde Pública',
+    destaque: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'post-2',
+    titulo: 'Digitalização Completa dos Registos com ODK Collect Central',
+    subtitulo: 'Mapeamento ODK Collect',
+    conteudo: 'Mais de 95% dos supervisores já estão a sincronizar dados do ODK Collect em tempo real com o SisMob, reduzindo erros manuais e acelerando o envio de relatórios.',
+    categoria: 'Notícia',
+    data: new Date().toISOString().split('T')[0],
+    autor: 'Sistema Digital SisMob',
+    destaque: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'post-3',
+    titulo: 'Estratégias de Diálogo para Resolução de Recusas Comunitárias',
+    subtitulo: 'Comunicação Interpessoal',
+    conteudo: 'Lançado o novo guia técnico de orientação interpessoal para mobilizadores lidarem com hesitação vacinal em feiras, igrejas e chafarizes comunitários.',
+    categoria: 'Guia',
+    data: new Date().toISOString().split('T')[0],
+    autor: 'Guia do Mobilizador',
+    destaque: false,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export async function fsGetPortalPosts(): Promise<PortalPost[]> {
+  try {
+    const snap = await getDocs(collection(db, COLS.PORTAL_POSTS));
+    if (snap.empty) {
+      for (const p of DEFAULT_PORTAL_POSTS) {
+        await setDoc(doc(db, COLS.PORTAL_POSTS, p.id), cleanData(p));
+      }
+      return DEFAULT_PORTAL_POSTS;
+    }
+    const items: PortalPost[] = [];
+    snap.forEach((d) => items.push(d.data() as PortalPost));
+    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  } catch (err) {
+    console.warn('fsGetPortalPosts error:', err);
+    return DEFAULT_PORTAL_POSTS;
+  }
+}
+
+export async function fsSavePortalPost(post: PortalPost): Promise<void> {
+  await setDoc(doc(db, COLS.PORTAL_POSTS, post.id), cleanData(post));
+}
+
+export async function fsDeletePortalPost(id: string): Promise<void> {
+  await deleteDoc(doc(db, COLS.PORTAL_POSTS, id));
 }
 
 // --- CLEAR ALL TEST DATA FROM FIREBASE DATABASE ---

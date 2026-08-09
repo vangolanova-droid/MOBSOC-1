@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Coordination, Ficha, Mobilizador, User, ODKSubmission, AuditLog } from './types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost } from './types';
 import { api } from './services/api';
-import { fsSubscribeCollection, initFirestoreDatabase } from './services/firebaseService';
+import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts } from './services/firebaseService';
 import {
   Theme,
   UserThemeConfig,
@@ -27,6 +27,8 @@ import { ODKCollectView } from './components/ODKCollectView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
+import { GoalManagerModal } from './components/GoalManagerModal';
+import { PortalNewsManagerModal } from './components/PortalNewsManagerModal';
 import { Footer } from './components/Footer';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
@@ -48,12 +50,16 @@ export default function App() {
   const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>([]);
+  const [goals, setGoals] = useState<CoordinationGoal[]>([]);
+  const [portalPosts, setPortalPosts] = useState<PortalPost[]>([]);
+  const [portalNewsOpen, setPortalNewsOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [notepadOpen, setNotepadOpen] = useState(false);
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [auditLogsOpen, setAuditLogsOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
@@ -145,6 +151,24 @@ export default function App() {
         (a, b) => b.timestamp.localeCompare(a.timestamp)
       );
 
+      fsSubscribeCollection<CoordinationGoal>(
+        'coordination_goals',
+        (items) => setGoals(items),
+        (a, b) => a.coordId - b.coordId
+      );
+
+      fsSubscribeCollection<PortalPost>(
+        'portal_posts',
+        (items) => {
+          if (items.length > 0) {
+            setPortalPosts(items.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+          } else {
+            fsGetPortalPosts().then((posts) => setPortalPosts(posts));
+          }
+        },
+        (a, b) => b.createdAt.localeCompare(a.createdAt)
+      );
+
       api.checkServerHealth().then((online) => setIsOnline(online));
     };
 
@@ -157,6 +181,18 @@ export default function App() {
       if (unsubFichas) unsubFichas();
     };
   }, []);
+
+  const handleSaveGoal = async (goal: CoordinationGoal) => {
+    await fsSaveGoal(goal);
+  };
+
+  const handleSavePortalPost = async (post: PortalPost) => {
+    await fsSavePortalPost(post);
+  };
+
+  const handleDeletePortalPost = async (id: string) => {
+    await fsDeletePortalPost(id);
+  };
 
   const handleRefresh = async () => {
     try {
@@ -343,7 +379,16 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <LoginScreen users={users} onLogin={handleLogin} />;
+    return (
+      <LoginScreen
+        users={users}
+        portalPosts={portalPosts}
+        fichas={fichas}
+        coordenacoes={coordenacoes}
+        onLogin={handleLogin}
+        onRegisterUser={handleCreateUser}
+      />
+    );
   }
 
   const handleOpenAuditLogs = async () => {
@@ -391,6 +436,7 @@ export default function App() {
         onOpenAiModal={() => setAiModalOpen(true)}
         onOpenNotepad={() => setNotepadOpen(true)}
         onOpenAuditLogs={handleOpenAuditLogs}
+        onOpenPortalNews={() => setPortalNewsOpen(true)}
         onSelectTab={(tab) => setActiveTab(tab)}
       />
 
@@ -408,6 +454,7 @@ export default function App() {
           onSelectTab={setActiveTab}
           onOpenNotepad={() => setNotepadOpen(true)}
           onOpenAuditLogs={handleOpenAuditLogs}
+          onOpenPortalNews={() => setPortalNewsOpen(true)}
           onLogout={handleLogout}
           onCloseMobile={() => setSidebarOpen(false)}
         />
@@ -420,9 +467,11 @@ export default function App() {
               mobilizadores={mobilizadores}
               coordenacoes={coordenacoes}
               users={users}
+              goals={goals}
               onNewFicha={() => setActiveTab('ficha')}
               onViewAllFichas={() => setActiveTab('listFichas')}
               onOpenAiModal={() => setAiModalOpen(true)}
+              onOpenGoalModal={() => setGoalModalOpen(true)}
             />
           )}
 
@@ -521,6 +570,7 @@ export default function App() {
                 coordenacoes={coordenacoes}
                 users={users}
                 mobilizadores={mobilizadores}
+                goals={goals}
               />
             ) : (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center font-bold text-xs text-red-700 shadow-sm">
@@ -548,6 +598,7 @@ export default function App() {
               users={users}
               coordenacoes={coordenacoes}
               onCreateUser={handleCreateUser}
+              onUpdateUser={handleUpdateUser}
               onDeleteUser={handleDeleteUser}
               onOpenNotepad={() => setNotepadOpen(true)}
             />
@@ -602,6 +653,26 @@ export default function App() {
         onClose={() => setAuditLogsOpen(false)}
         logs={auditLogs}
       />
+
+      {/* Goal Manager Modal */}
+      <GoalManagerModal
+        isOpen={goalModalOpen}
+        onClose={() => setGoalModalOpen(false)}
+        coordenacoes={coordenacoes}
+        goals={goals}
+        onSaveGoal={handleSaveGoal}
+      />
+
+      {/* Portal News Manager Modal */}
+      {portalNewsOpen && currentUser?.tipo === 'admin' && (
+        <PortalNewsManagerModal
+          user={currentUser}
+          posts={portalPosts}
+          onSavePost={handleSavePortalPost}
+          onDeletePost={handleDeletePortalPost}
+          onClose={() => setPortalNewsOpen(false)}
+        />
+      )}
     </div>
   );
 }
