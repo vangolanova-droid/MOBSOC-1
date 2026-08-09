@@ -863,7 +863,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0F172A',
+                    backgroundColor: '#ff4000',
                     borderColor: '#2563EB',
                     borderRadius: '0.75rem',
                     color: '#FFFFFF',
