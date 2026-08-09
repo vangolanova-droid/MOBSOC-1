@@ -227,10 +227,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           src={socialMobilizationBgImg}
           alt="Mobilização Social e Saúde Comunitária"
           referrerPolicy="no-referrer"
-          className="h-full w-full object-cover object-center filter brightness-90 contrast-105"
+          className="h-full w-full object-cover object-center filter brightness-100 contrast-105 saturate-110"
         />
-        {/* Dark Rich Tint for Maximum Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/85 via-blue-950/80 to-slate-950/90 backdrop-blur-[2px]" />
+        {/* Crisp Gradient Overlay for Maximum Image Visibility and Text Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/60 via-blue-950/45 to-slate-950/65 backdrop-blur-[0.5px]" />
       </div>
 
       {/* Main Container */}
@@ -570,10 +570,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="text-left space-y-0.5">
               <p className="font-extrabold text-slate-200">
-                MELO TECH • <span className="text-sky-400">INOVAÇÃO DIGITAL EM SAÚDE</span>
+                MELO TECH • <span className="text-sky-400">Inovação Digital </span>
               </p>
               <p className="text-[11px] text-slate-400">
                 Desenvolvido para a Direção Municipal de Saúde do Cuanza Sul • Município do Sumbe
+                Programa de Mobilização Socil
               </p>
             </div>
 
@@ -626,26 +627,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             {/* Login Modal Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs text-sky-900 space-y-1">
-                <div className="font-extrabold flex items-center justify-between">
-                  <span>Administração Geral:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('v.angola.nova@gmail.com');
-                      setSenha('Andre2021');
-                      setError('');
-                    }}
-                    className="text-[11px] font-black text-sky-700 hover:text-sky-900 bg-sky-200/80 hover:bg-sky-200 px-2 py-0.5 rounded-lg transition cursor-pointer"
-                  >
-                    Preencher Credenciais Admin
-                  </button>
-                </div>
-                <div className="text-[11px] font-mono text-sky-800">
-                  Email: <strong>v.angola.nova@gmail.com</strong>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Email do Utilizador

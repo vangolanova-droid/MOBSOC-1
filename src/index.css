@@ -5,7 +5,7 @@
   --color-primary-hover: #009ee3;
   --color-secondary: #0080FF;
   --color-sidebar: #FFFFFF;
-  --color-background: #FFFFFF;
+  --color-background: #ececec;
   --color-card: #FFFFFF;
   --color-border: #E2E8F0;
   --color-text: #0F172A;
@@ -19,13 +19,13 @@
 }
 
 html.dark, [data-theme="dark"] {
-  --color-background: #0F172A;
-  --color-card: #1E293B;
+  --color-background: #ececec;
+  --color-card: #FFFFFF;
   --color-sidebar: #0F172A;
-  --color-border: #334155;
-  --color-text: #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  color-scheme: dark;
+  --color-border: #CBD5E1;
+  --color-text: #0F172A;
+  --color-text-secondary: #475569;
+  color-scheme: light;
 }
 
 /* Force selected interface font across all elements */

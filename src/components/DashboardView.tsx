@@ -225,8 +225,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Page Header */}
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">Dashboard Geral</h1>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <h1 className="text-xl font-black tracking-tight text-slate-950">Dashboard Geral</h1>
+          <p className="mt-0.5 text-xs font-bold text-slate-700">
             {user.tipo === 'supervisor' && user.coordNome
               ? `Acompanhamento operacional da ${user.coordNome}`
               : 'Visão geral consolidada das mobilizações de saúde no terreno'}

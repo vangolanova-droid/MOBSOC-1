@@ -91,10 +91,10 @@ export const ConsolidadoView: React.FC<ConsolidadoViewProps> = ({ user, fichas }
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-black tracking-tight text-slate-950">
             Consolidado Geográfico & Comparativo de Rondas
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs font-bold text-slate-700">
             Agrupamento por território e comparação de desempenho entre rondas de vacinação/mobilização
           </p>
         </div>

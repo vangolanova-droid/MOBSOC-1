@@ -286,16 +286,16 @@ export function applyThemeVariables(config: UserThemeConfig): Theme {
   if (config.darkMode) {
     root.classList.add('dark');
     root.setAttribute('data-theme', 'dark');
-    root.style.setProperty('--color-background', '#0F172A');
-    root.style.setProperty('--color-card', '#1E293B');
+    root.style.setProperty('--color-background', '#ececec');
+    root.style.setProperty('--color-card', '#FFFFFF');
     root.style.setProperty('--color-sidebar', '#0F172A');
-    root.style.setProperty('--color-text', '#F8FAFC');
-    root.style.setProperty('--color-text-secondary', '#94A3B8');
-    root.style.setProperty('--color-border', '#334155');
+    root.style.setProperty('--color-text', '#0F172A');
+    root.style.setProperty('--color-text-secondary', '#475569');
+    root.style.setProperty('--color-border', '#CBD5E1');
   } else {
     root.classList.remove('dark');
     root.setAttribute('data-theme', 'light');
-    root.style.setProperty('--color-background', '#FFFFFF');
+    root.style.setProperty('--color-background', '#ececec');
     root.style.setProperty('--color-card', '#FFFFFF');
     root.style.setProperty('--color-sidebar', '#FFFFFF');
     root.style.setProperty('--color-text', '#0F172A');

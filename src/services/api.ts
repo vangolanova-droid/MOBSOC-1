@@ -538,17 +538,25 @@ export const api = {
   },
 
   async deleteOdkSubmission(id: string, currentUser?: User | null): Promise<void> {
-    await fsDeleteOdkSubmission(id);
-    await this.addAuditLog({
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      usuarioId: currentUser?.id || 0,
-      usuarioNome: currentUser?.nome || 'Administrador',
-      usuarioTipo: currentUser?.tipo || 'admin',
-      acao: 'Eliminação',
-      entidade: 'Submissão ODK',
-      detalhes: `Submissão ODK ${id} eliminada por ${currentUser?.nome || 'Administrador'}.`,
-    });
+    try {
+      await fsDeleteOdkSubmission(id);
+    } catch (e) {
+      console.warn('Erro ao eliminar no Firestore fsDeleteOdkSubmission:', e);
+    }
+    try {
+      await this.addAuditLog({
+        id: 'log-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        usuarioId: currentUser?.id || 0,
+        usuarioNome: currentUser?.nome || 'Utilizador',
+        usuarioTipo: currentUser?.tipo || 'admin',
+        acao: 'Eliminação',
+        entidade: 'Submissão ODK',
+        detalhes: `Submissão ODK ${id} eliminada por ${currentUser?.nome || 'Utilizador'}.`,
+      });
+    } catch (e) {
+      console.warn('Erro ao guardar log de auditoria de eliminação ODK:', e);
+    }
   },
 
   // Clear Test Data

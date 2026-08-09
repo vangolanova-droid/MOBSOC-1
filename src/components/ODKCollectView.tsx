@@ -192,6 +192,19 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
     }
   };
 
+  const handleDeleteSubmissionAction = async (id: string, codigoRecibo: string) => {
+    if (confirm(`Tem a certeza que deseja eliminar o registo ODK de recibo ${codigoRecibo}?`)) {
+      try {
+        await onDeleteSubmission(id);
+        if (selectedSub?.id === id) {
+          setSelectedSub(null);
+        }
+      } catch (err) {
+        alert('Erro ao eliminar o registo ODK: ' + (err instanceof Error ? err.message : String(err)));
+      }
+    }
+  };
+
   // Filter Logic
   const filteredSubmissions = submissions.filter((sub) => {
     // Supervisors see their own submissions or submissions from their coordination
@@ -650,35 +663,23 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                                 <Eye className="h-3.5 w-3.5" />
                               </button>
 
-                              {isAdmin && (
-                                <>
-                                  {!isConf && (
-                                    <button
-                                      onClick={() => handleUpdateStatusAction(sub.id, 'confirmado')}
-                                      className="rounded-lg border border-emerald-200 dark:border-emerald-800 p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition"
-                                      title="Confirmar envio como VÁLIDO"
-                                    >
-                                      <Check className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-
-                                  <button
-                                    onClick={async () => {
-                                      if (
-                                        confirm(
-                                          `Tem a certeza que deseja eliminar o registo de recibo ${sub.codigoReciboODK}?`
-                                        )
-                                      ) {
-                                        await onDeleteSubmission(sub.id);
-                                      }
-                                    }}
-                                    className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
-                                    title="Eliminar confirmação ODK"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </>
+                              {isAdmin && !isConf && (
+                                <button
+                                  onClick={() => handleUpdateStatusAction(sub.id, 'confirmado')}
+                                  className="rounded-lg border border-emerald-200 dark:border-emerald-800 p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition cursor-pointer"
+                                  title="Confirmar envio como VÁLIDO"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </button>
                               )}
+
+                              <button
+                                onClick={() => handleDeleteSubmissionAction(sub.id, sub.codigoReciboODK)}
+                                className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
+                                title="Eliminar confirmação ODK"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -887,10 +888,24 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                             Recibo: {sub.codigoReciboODK} • {sub.horaEnvio}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm mr-1">
                             {sub.totalFormularios} forms
                           </span>
+                          <button
+                            onClick={() => setSelectedSub(sub)}
+                            className="rounded-lg border border-slate-200 dark:border-slate-800 p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                            title="Ver Detalhes do Recibo ODK"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubmissionAction(sub.id, sub.codigoReciboODK)}
+                            className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
+                            title="Eliminar Submissão ODK"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -1217,46 +1232,47 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                 </div>
               )}
 
-              {isAdmin && (
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <label className="block text-xs font-bold text-amber-300">
-                    Ação Administrativa de Validação:
-                  </label>
-                  <input
-                    type="text"
-                    value={adminNoteInput}
-                    onChange={(e) => setAdminNoteInput(e.target.value)}
-                    placeholder="Adicionar nota administrativa de verificação..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-xs text-white placeholder-slate-400 outline-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleUpdateStatusAction(selectedSub.id, 'confirmado')}
-                      className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 p-2.5 text-xs font-black text-slate-950 transition"
-                    >
-                      Aprovar & Confirmar
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatusAction(selectedSub.id, 'divergencia')}
-                      className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 p-2.5 text-xs font-black text-white transition"
-                    >
-                      Marcar Divergência
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (confirm(`Tem a certeza que deseja eliminar definitivamente a submissão ODK ${selectedSub.codigoReciboODK}?`)) {
-                          await onDeleteSubmission(selectedSub.id);
-                          setSelectedSub(null);
-                        }
-                      }}
-                      className="rounded-xl border border-rose-500/40 bg-rose-950/60 hover:bg-rose-900 p-2.5 text-xs font-bold text-rose-300 transition"
-                      title="Eliminar Submissão ODK"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+              <div className="pt-2 border-t border-slate-800 space-y-3">
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-amber-300">
+                      Ação Administrativa de Validação:
+                    </label>
+                    <input
+                      type="text"
+                      value={adminNoteInput}
+                      onChange={(e) => setAdminNoteInput(e.target.value)}
+                      placeholder="Adicionar nota administrativa de verificação..."
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-xs text-white placeholder-slate-400 outline-none"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleUpdateStatusAction(selectedSub.id, 'confirmado')}
+                        className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 p-2.5 text-xs font-black text-slate-950 transition cursor-pointer"
+                      >
+                        Aprovar & Confirmar
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatusAction(selectedSub.id, 'divergencia')}
+                        className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 p-2.5 text-xs font-black text-white transition cursor-pointer"
+                      >
+                        Marcar Divergência
+                      </button>
+                    </div>
                   </div>
+                )}
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => handleDeleteSubmissionAction(selectedSub.id, selectedSub.codigoReciboODK)}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950/80 hover:bg-rose-900 p-2.5 text-xs font-bold text-rose-300 transition cursor-pointer"
+                    title="Eliminar Submissão ODK"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Eliminar Registo de Recibo ({selectedSub.codigoReciboODK})</span>
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="pt-2 border-t border-slate-800 text-right">

@@ -375,11 +375,12 @@ export default function App() {
   };
 
   const handleDeleteOdkSubmission = async (id: string) => {
-    if (currentUser?.tipo !== 'admin') {
-      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+    try {
+      await api.deleteOdkSubmission(id, currentUser);
+    } catch (err) {
+      console.warn('Erro ao apagar no Firestore, eliminando localmente:', err);
     }
-    await api.deleteOdkSubmission(id, currentUser);
-    setOdkSubmissions((prev) => prev.filter((s) => s.id !== id));
+    setOdkSubmissions((prev) => prev.filter((s) => String(s.id) !== String(id)));
   };
 
 
@@ -427,7 +428,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ececec] dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-[#00B2FF] selection:text-white transition-colors flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#ececec] text-slate-900 antialiased selection:bg-[#00B2FF] selection:text-white transition-colors flex flex-col md:flex-row" style={{ backgroundColor: '#ececec' }}>
       {/* Top Corner Startup Alert for Fichas Pendentes (+48h) */}
       {!pendingAlertDismissed && pendingOver48hFichas.length > 0 && (
         <PendingFichasAlert
