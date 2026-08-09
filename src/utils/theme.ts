@@ -37,13 +37,16 @@ export interface SidebarColorOption {
 
 export const SIDEBAR_COLORS: SidebarColorOption[] = [
   { id: 'default', name: 'Branco / Padrão', bg: '#FFFFFF', text: '#0F172A', border: '#E2E8F0', isDark: false },
-  { id: 'navy', name: 'Azul Marinho Escuro', bg: '#0F172A', text: '#FFFFFF', border: '#1E293B', isDark: true },
-  { id: 'cyan', name: 'Azul Cyan SisMob', bg: '#004B87', text: '#FFFFFF', border: '#00335E', isDark: true },
-  { id: 'emerald', name: 'Verde Saúde', bg: '#064E3B', text: '#FFFFFF', border: '#022C22', isDark: true },
-  { id: 'graphite', name: 'Cinza Grafite', bg: '#1E293B', text: '#FFFFFF', border: '#334155', isDark: true },
-  { id: 'burgundy', name: 'Vinho Executivo', bg: '#881337', text: '#FFFFFF', border: '#4C0519', isDark: true },
-  { id: 'amber', name: 'Dourado Escuro', bg: '#78350F', text: '#FFFFFF', border: '#451A03', isDark: true },
-  { id: 'cinza_médio', name: 'Cinza Suave (#a6ada7)', bg: '#a6ada7', text: '#101712', border: '#8c948d', isDark: false },
+  { id: 'hospital_blue', name: 'Azul Hospitalar MINSA', bg: '#004B87', text: '#FFFFFF', border: '#00335E', isDark: true },
+  { id: 'cyan_sismob', name: 'Cyan Mobilização (#00B2FF)', bg: '#00B2FF', text: '#FFFFFF', border: '#0084BD', isDark: true },
+  { id: 'navy', name: 'Azul Marinho Institucional', bg: '#0B192C', text: '#FFFFFF', border: '#1E3E62', isDark: true },
+  { id: 'emerald', name: 'Verde Saúde Comunitária', bg: '#064E3B', text: '#FFFFFF', border: '#022C22', isDark: true },
+  { id: 'teal_med', name: 'Teal Prevenção & Cuidado', bg: '#0F766E', text: '#FFFFFF', border: '#115E59', isDark: true },
+  { id: 'hospital_soft', name: 'Verde Menta Hospitalar', bg: '#059669', text: '#FFFFFF', border: '#047857', isDark: true },
+  { id: 'graphite', name: 'Grafite Executivo Pró', bg: '#1E293B', text: '#FFFFFF', border: '#334155', isDark: true },
+  { id: 'indigo', name: 'Índigo Saúde Digital', bg: '#312E81', text: '#FFFFFF', border: '#1E1B4B', isDark: true },
+  { id: 'burgundy', name: 'Vinho Cruz Vermelha', bg: '#881337', text: '#FFFFFF', border: '#4C0519', isDark: true },
+  { id: 'cinza_suave', name: 'Cinza Suave Neutro (#ECECEC)', bg: '#DCDCDC', text: '#0F172A', border: '#C0C0C0', isDark: false },
 ];
 
 export const THEMES: Theme[] = [

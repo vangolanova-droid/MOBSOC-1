@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   FileSpreadsheet,
   Newspaper,
+  Settings,
 } from 'lucide-react';
 import { Coordination, User } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -24,9 +25,11 @@ import {
   Theme,
   THEMES,
   AVAILABLE_FONTS,
+  SIDEBAR_COLORS,
   UserThemeConfig,
   saveUserConfig,
   applyThemeVariables,
+  getUserConfig,
 } from '../utils/theme';
 
 interface HeaderProps {
@@ -124,6 +127,18 @@ export const Header: React.FC<HeaderProps> = ({
     if (onUpdateThemeConfig) onUpdateThemeConfig(updated);
   };
 
+  const handleSelectSidebarColor = (colorId: string) => {
+    const currentConfig = themeConfig || getUserConfig();
+    const updated = { ...currentConfig, sidebarColor: colorId };
+    saveUserConfig(updated);
+    applyThemeVariables(updated);
+    if (onUpdateThemeConfig) {
+      onUpdateThemeConfig(updated);
+    }
+  };
+
+  const activeSidebarColorId = themeConfig?.sidebarColor || 'default';
+
   return (
     <header
       className="sticky top-0 z-50 flex h-[48px] w-full items-center justify-between border-b border-white/20 bg-[#00B2FF] px-3 text-white shadow-sm md:px-4 transition-colors shrink-0"
@@ -168,76 +183,6 @@ export const Header: React.FC<HeaderProps> = ({
           <span>{isOnline ? 'Servidor Online' : 'Modo Local'}</span>
         </div>
 
-        {/* Color Palette / Theme Settings Button */}
-        <button
-          onClick={() => setIsPaletteOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-          title="Personalizar Tema & Aparência do Sistema"
-          id="btn-header-palette"
-        >
-          <Palette className="h-4 w-4 text-white" />
-          <span className="hidden sm:inline">Tema & Estilo</span>
-        </button>
-
-        {/* Quick Print Button */}
-        <button
-          onClick={handleQuickPrint}
-          className="hidden md:flex items-center justify-center rounded-xl border border-white/25 bg-white/15 p-2 text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-          title="Imprimir Relatório Atual"
-          id="btn-quick-print"
-        >
-          <Printer className="h-4 w-4" />
-        </button>
-
-        {/* AI Assistant Button */}
-        <button
-          onClick={onOpenAiModal}
-          className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-          id="btn-ai-assistant"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-          <span className="hidden sm:inline">Análise IA</span>
-        </button>
-
-        {/* Audit Logs Button (Admin Only) */}
-        {user.tipo === 'admin' && onOpenAuditLogs && (
-          <button
-            onClick={onOpenAuditLogs}
-            className="hidden md:flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-            title="Histórico de Auditoria & Alterações"
-            id="btn-header-audit"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-white/90" />
-            <span>Auditoria</span>
-          </button>
-        )}
-
-        {/* Admin Notepad Button */}
-        {user.tipo === 'admin' && onOpenNotepad && (
-          <button
-            onClick={onOpenNotepad}
-            className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-            title="Bloco de Notas do Administrador"
-            id="btn-header-notepad"
-          >
-            <Notebook className="h-3.5 w-3.5 text-amber-300" />
-            <span className="hidden sm:inline">Bloco de Notas</span>
-          </button>
-        )}
-
-        {/* Admin Portal News Button */}
-        {user.tipo === 'admin' && onOpenPortalNews && (
-          <button
-            onClick={onOpenPortalNews}
-            className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-medium text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs"
-            title="Publicar e gerir notícias na página inicial"
-            id="btn-header-portal-news"
-          >
-            <Newspaper className="h-3.5 w-3.5 text-sky-300" />
-            <span className="hidden sm:inline">Notícias Portal</span>
-          </button>
-        )}
-
         {/* Quick New Ficha */}
         <button
           onClick={onNewFicha}
@@ -247,6 +192,17 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           <span>Nova Ficha</span>
+        </button>
+
+        {/* Configurações (Settings Gear Icon) Button */}
+        <button
+          onClick={() => setIsPaletteOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-bold text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs cursor-pointer"
+          title="Configurações do Sistema e Cores"
+          id="btn-header-configuracoes"
+        >
+          <Settings className="h-4 w-4 text-white animate-spin-slow" />
+          <span className="hidden sm:inline">Configurações</span>
         </button>
 
         {/* User Badge */}
@@ -278,33 +234,132 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* Theme Customization Modal */}
+      {/* Settings / Configurações & Color Customization Modal */}
       {isPaletteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-5 text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-[#0B5CAD]" />
+                <Settings className="h-5 w-5 text-blue-600" />
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  Configuração de Tema do Sistema
+                  Configurações do Sistema
                 </h3>
               </div>
               <button
                 onClick={() => setIsPaletteOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
-              Selecione o tema institucional oficial para a aplicação. As preferências são salvas localmente.
-            </p>
-
-            {/* Temas Oficiais */}
+            {/* Quick Actions inside Settings */}
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                1. Temas Oficiais
+                1. Ferramentas & Atalhos
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button
+                  onClick={() => {
+                    setIsPaletteOpen(false);
+                    onOpenAiModal();
+                  }}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:border-blue-300 transition"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  <span>Análise IA</span>
+                </button>
+
+                {user.tipo === 'admin' && onOpenNotepad && (
+                  <button
+                    onClick={() => {
+                      setIsPaletteOpen(false);
+                      onOpenNotepad();
+                    }}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 hover:border-amber-300 transition"
+                  >
+                    <Notebook className="h-4 w-4 text-amber-600" />
+                    <span>Bloco Notas</span>
+                  </button>
+                )}
+
+                {user.tipo === 'admin' && onOpenPortalNews && (
+                  <button
+                    onClick={() => {
+                      setIsPaletteOpen(false);
+                      onOpenPortalNews();
+                    }}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-50 hover:border-sky-300 transition"
+                  >
+                    <Newspaper className="h-4 w-4 text-sky-500" />
+                    <span>Notícias</span>
+                  </button>
+                )}
+
+                {user.tipo === 'admin' && onOpenAuditLogs && (
+                  <button
+                    onClick={() => {
+                      setIsPaletteOpen(false);
+                      onOpenAuditLogs();
+                    }}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:border-indigo-300 transition"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-indigo-500" />
+                    <span>Auditoria</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsPaletteOpen(false);
+                    handleQuickPrint();
+                  }}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition"
+                >
+                  <Printer className="h-4 w-4 text-slate-500" />
+                  <span>Imprimir</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Cores do Sidebar */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                2. Cores do Menu Lateral (Sidebar)
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {SIDEBAR_COLORS.map((col) => {
+                  const isSelected = activeSidebarColorId === col.id;
+                  return (
+                    <button
+                      key={col.id}
+                      onClick={() => handleSelectSidebarColor(col.id)}
+                      className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition text-left ${
+                        isSelected
+                          ? 'border-blue-500 ring-2 ring-blue-500/30'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-400'
+                      }`}
+                      style={{
+                        backgroundColor: col.bg,
+                        color: col.text,
+                      }}
+                    >
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border shrink-0 shadow-xs"
+                        style={{ backgroundColor: col.bg, borderColor: col.border }}
+                      />
+                      <span className="truncate flex-1">{col.name}</span>
+                      {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Temas Oficiais */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                3. Temas Oficiais do Sistema
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {THEMES.map((t) => {

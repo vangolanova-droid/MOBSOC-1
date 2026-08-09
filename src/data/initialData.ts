@@ -77,9 +77,10 @@ export const INITIAL_COORDINATIONS: Coordination[] = [
 export const INITIAL_USERS: User[] = [
   {
     id: 1,
-    nome: 'Administrador Principal',
-    email: 'admin@sismob.ao',
-    senha: 'admin123',
+    nome: 'ANDRÉ BUMBA DE MELO',
+    email: 'v.angola.nova@gmail.com',
+    senha: 'Andre2021',
+    telefone: '923591571',
     tipo: 'admin',
     coordId: null,
     coordNome: 'Acesso Global',

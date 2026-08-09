@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost } from './types';
+import { INITIAL_USERS } from './data/initialData';
 import { api } from './services/api';
 import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts } from './services/firebaseService';
 import {
@@ -110,7 +111,22 @@ export default function App() {
       unsubUsers = fsSubscribeCollection<User>(
         'users',
         (items) => {
-          const deduped = deduplicateById(items);
+          let deduped = deduplicateById(items);
+          const adminIdx = deduped.findIndex((u) => u.id === 1 || u.tipo === 'admin');
+          if (adminIdx === -1) {
+            deduped = [INITIAL_USERS[0], ...deduped];
+          } else {
+            deduped[adminIdx] = {
+              ...deduped[adminIdx],
+              id: 1,
+              nome: 'ANDRÉ BUMBA DE MELO',
+              email: 'v.angola.nova@gmail.com',
+              senha: 'Andre2021',
+              telefone: '923591571',
+              tipo: 'admin',
+              status: 'ativo',
+            };
+          }
           setUsers(deduped);
           if (sid) {
             const found = deduped.find((u) => u.id === sid);
@@ -411,7 +427,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#a6ada7] text-slate-900 dark:text-slate-900 antialiased selection:bg-[#00B2FF] selection:text-white transition-colors">
+    <div className="min-h-screen bg-[#ececec] dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-[#00B2FF] selection:text-white transition-colors flex flex-col md:flex-row">
       {/* Top Corner Startup Alert for Fichas Pendentes (+48h) */}
       {!pendingAlertDismissed && pendingOver48hFichas.length > 0 && (
         <PendingFichasAlert
@@ -421,45 +437,47 @@ export default function App() {
         />
       )}
 
-      <Header
+      {/* Extended Sidebar - Top-to-Bottom */}
+      <Sidebar
         user={currentUser}
-        coordenacoes={coordenacoes}
-        isOnline={isOnline}
-        theme={themeConfig.darkMode ? 'dark' : 'light'}
+        activeTab={activeTab}
+        fichas={fichas}
+        users={users}
+        odkSubmissions={odkSubmissions}
+        isOpen={sidebarOpen}
         currentPalette={palette}
         themeConfig={themeConfig}
-        onSelectPalette={handleSelectPalette}
         onUpdateThemeConfig={handleUpdateThemeConfig}
-        onToggleTheme={toggleTheme}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        onNewFicha={() => setActiveTab('ficha')}
-        onOpenAiModal={() => setAiModalOpen(true)}
+        onSelectTab={setActiveTab}
         onOpenNotepad={() => setNotepadOpen(true)}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenPortalNews={() => setPortalNewsOpen(true)}
-        onSelectTab={(tab) => setActiveTab(tab)}
+        onLogout={handleLogout}
+        onCloseMobile={() => setSidebarOpen(false)}
       />
 
-      <div className="flex min-h-[calc(100vh-57px)]">
-        <Sidebar
+      {/* Main Column: Header, Main View, Footer */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        <Header
           user={currentUser}
-          activeTab={activeTab}
-          fichas={fichas}
-          users={users}
-          odkSubmissions={odkSubmissions}
-          isOpen={sidebarOpen}
+          coordenacoes={coordenacoes}
+          isOnline={isOnline}
+          theme={themeConfig.darkMode ? 'dark' : 'light'}
           currentPalette={palette}
           themeConfig={themeConfig}
+          onSelectPalette={handleSelectPalette}
           onUpdateThemeConfig={handleUpdateThemeConfig}
-          onSelectTab={setActiveTab}
+          onToggleTheme={toggleTheme}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onNewFicha={() => setActiveTab('ficha')}
+          onOpenAiModal={() => setAiModalOpen(true)}
           onOpenNotepad={() => setNotepadOpen(true)}
           onOpenAuditLogs={handleOpenAuditLogs}
           onOpenPortalNews={() => setPortalNewsOpen(true)}
-          onLogout={handleLogout}
-          onCloseMobile={() => setSidebarOpen(false)}
+          onSelectTab={(tab) => setActiveTab(tab)}
         />
 
-        <main className="flex-1 p-2 sm:p-2.5 w-full min-w-0 overflow-hidden">
+        <main className="flex-1 p-3 sm:p-4 w-full min-w-0 overflow-x-hidden">
           {activeTab === 'dashboard' && (
             <DashboardView
               user={currentUser}
@@ -627,10 +645,10 @@ export default function App() {
             />
           )}
         </main>
-      </div>
 
-      {/* Footer with Developer & Company Credits - Spans 100% full width under sidebar and main view */}
-      <Footer />
+        {/* Footer with Developer & Company Credits - Seamlessly floating on main page background */}
+        <Footer />
+      </div>
 
       {/* Gemini AI Assistant Modal */}
       <AiAssistantModal

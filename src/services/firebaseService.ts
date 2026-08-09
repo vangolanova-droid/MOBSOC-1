@@ -109,6 +109,13 @@ let initialized = false;
 export async function initFirestoreDatabase(): Promise<void> {
   if (initialized) return;
   try {
+    // ALWAYS force update doc '1' in Firestore with the current Admin credentials
+    try {
+      await setDoc(doc(db, COLS.USERS, '1'), cleanData(INITIAL_USERS[0]));
+    } catch (e) {
+      console.warn('Could not force update admin doc 1:', e);
+    }
+
     const metaSnap = await getDoc(META_DOC);
     if (!metaSnap.exists()) {
       console.log('Primeira inicialização do Firestore: semeando dados iniciais...');
@@ -198,6 +205,33 @@ export async function fsGetUsers(): Promise<User[]> {
   const snap = await getDocs(collection(db, COLS.USERS));
   const items: User[] = [];
   snap.forEach((d) => items.push(d.data() as User));
+
+  // Auto-sync Administrator credentials to ensure latest configuration
+  const adminIndex = items.findIndex((u) => u.id === 1 || u.tipo === 'admin');
+  if (adminIndex !== -1) {
+    const admin = items[adminIndex];
+    if (
+      admin.email !== 'v.angola.nova@gmail.com' ||
+      admin.nome !== 'ANDRÉ BUMBA DE MELO' ||
+      admin.senha !== 'Andre2021' ||
+      admin.telefone !== '923591571'
+    ) {
+      const updatedAdmin: User = {
+        ...admin,
+        nome: 'ANDRÉ BUMBA DE MELO',
+        email: 'v.angola.nova@gmail.com',
+        senha: 'Andre2021',
+        telefone: '923591571',
+      };
+      items[adminIndex] = updatedAdmin;
+      try {
+        await setDoc(doc(db, COLS.USERS, String(admin.id)), cleanData(updatedAdmin));
+      } catch (e) {
+        console.warn('Could not auto-sync admin doc to firestore:', e);
+      }
+    }
+  }
+
   return items.sort((a, b) => a.id - b.id);
 }
 

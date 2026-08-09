@@ -137,18 +137,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile overlay - strictly under header */}
+      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 top-[57px] z-40 bg-slate-950/50 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs md:hidden"
           onClick={onCloseMobile}
         />
       )}
 
       <aside
-        className={`fixed top-[57px] bottom-0 left-0 z-40 flex flex-col border-r transition-all duration-300 md:sticky md:top-[57px] md:h-[calc(100vh-57px)] shrink-0 overflow-y-auto ${
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r transition-all duration-300 md:sticky md:top-0 md:h-screen shrink-0 overflow-y-auto ${
           isOpen
-            ? 'w-64 translate-x-0 opacity-100'
+            ? 'w-76 translate-x-0 opacity-100'
             : 'w-0 -translate-x-full opacity-0 pointer-events-none border-none p-0 overflow-hidden md:w-0 md:p-0 md:border-none'
         }`}
         style={{

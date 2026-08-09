@@ -24,12 +24,14 @@ import {
   UserPlus,
   Clock,
   Phone,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { User, PortalPost, Ficha, Coordination } from '../types';
+import happyChildrenBgImg from '../assets/images/happy_children_mobilization_1786264645591.jpg';
 
-// High-resolution image specifically representing social mobilization / community health workers in Africa / Angola
-const socialMobilizationBgImg =
-  'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1920&q=80';
+// High-resolution image specifically representing social mobilization / happy children
+const socialMobilizationBgImg = happyChildrenBgImg;
 
 interface LoginScreenProps {
   users: User[];
@@ -54,6 +56,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   // Login form state
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   // Supervisor Register form state
@@ -63,6 +66,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [regCoordId, setRegCoordId] = useState<number>(coordenacoes.length > 0 ? coordenacoes[0].id : 1);
   const [regSenha, setRegSenha] = useState('');
   const [regConfirmSenha, setRegConfirmSenha] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -93,16 +98,42 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     const cleanEmail = email.trim().toLowerCase();
     const inputUsername = cleanEmail.split('@')[0];
 
-    const found = users.find((u) => {
+    // Check if input matches standard Admin credentials explicitly
+    const isAdminEmailMatch =
+      cleanEmail === 'v.angola.nova@gmail.com' ||
+      cleanEmail === 'v.angola.nova' ||
+      cleanEmail === 'admin@sismob.ao' ||
+      cleanEmail === 'admin' ||
+      cleanEmail === '923591571';
+
+    const isAdminPassMatch = senha === 'Andre2021' || senha === 'admin123';
+
+    let found = users.find((u) => {
       const uClean = u.email.toLowerCase();
       const uUsername = uClean.split('@')[0];
 
       const matchesEmailOrUsername =
         uClean === cleanEmail ||
-        (inputUsername.length > 0 && uUsername === inputUsername);
+        (inputUsername.length > 0 && uUsername === inputUsername) ||
+        (u.telefone && u.telefone.replace(/\s+/g, '') === cleanEmail.replace(/\s+/g, ''));
 
       return matchesEmailOrUsername && u.senha === senha;
     });
+
+    if (!found && isAdminEmailMatch && isAdminPassMatch) {
+      found = {
+        id: 1,
+        nome: 'ANDRÉ BUMBA DE MELO',
+        email: 'v.angola.nova@gmail.com',
+        senha: 'Andre2021',
+        telefone: '923591571',
+        tipo: 'admin',
+        coordId: null,
+        coordNome: 'Acesso Global',
+        coordenadorNome: 'Gestor do Sistema',
+        status: 'ativo',
+      };
+    }
 
     if (found) {
       if (found.status === 'pendente') {
@@ -595,6 +626,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
             {/* Login Modal Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="rounded-xl border border-sky-200 bg-sky-50/80 p-3 text-xs text-sky-900 space-y-1">
+                <div className="font-extrabold flex items-center justify-between">
+                  <span>Administração Geral:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('v.angola.nova@gmail.com');
+                      setSenha('Andre2021');
+                      setError('');
+                    }}
+                    className="text-[11px] font-black text-sky-700 hover:text-sky-900 bg-sky-200/80 hover:bg-sky-200 px-2 py-0.5 rounded-lg transition cursor-pointer"
+                  >
+                    Preencher Credenciais Admin
+                  </button>
+                </div>
+                <div className="text-[11px] font-mono text-sky-800">
+                  Email: <strong>v.angola.nova@gmail.com</strong>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Email do Utilizador
@@ -604,7 +655,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@sismob.gov.ao ou joao.norte@sismob.gov.ao"
+                  placeholder="ex: v.angola.nova@gmail.com ou o seu email de supervisor"
                   className="w-full h-12 rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   id="modal-login-email"
                 />
@@ -614,15 +665,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Senha de Acesso
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-12 rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                  id="modal-login-senha"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 rounded-xl border border-slate-300 bg-slate-50 pl-4 pr-11 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                    id="modal-login-senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               {error && (
@@ -789,30 +850,50 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       Senha *
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={regSenha}
-                      onChange={(e) => setRegSenha(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
-                      id="reg-input-senha"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showRegPassword ? 'text' : 'password'}
+                        required
+                        value={regSenha}
+                        onChange={(e) => setRegSenha(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                        id="reg-input-senha"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                        title={showRegPassword ? 'Ocultar senha' : 'Ver senha'}
+                      >
+                        {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       Confirmar Senha *
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={regConfirmSenha}
-                      onChange={(e) => setRegConfirmSenha(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
-                      id="reg-input-confirm-senha"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showRegConfirmPassword ? 'text' : 'password'}
+                        required
+                        value={regConfirmSenha}
+                        onChange={(e) => setRegConfirmSenha(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                        id="reg-input-confirm-senha"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                        title={showRegConfirmPassword ? 'Ocultar senha' : 'Ver senha'}
+                      >
+                        {showRegConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
