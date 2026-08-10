@@ -291,6 +291,16 @@ export const Header: React.FC<HeaderProps> = ({
       style={{ backgroundColor: primaryColor }}
     >
       <div className="flex items-center gap-3">
+        <ActionTooltip content="Mostrar / Esconder o menu lateral de navegação">
+          <button
+            onClick={onToggleSidebar}
+            className="rounded-lg p-2 transition text-white/90 hover:bg-white/15 hover:text-white cursor-pointer"
+            title="Mostrar / Esconder Menu Lateral"
+            id="btn-hamburger"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </ActionTooltip>
         <div className="flex items-center gap-2.5">
           <div
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-black shadow-sm text-sm"
