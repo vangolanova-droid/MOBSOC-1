@@ -176,11 +176,7 @@ export default function App() {
       fsSubscribeCollection<PortalPost>(
         'portal_posts',
         (items) => {
-          if (items.length > 0) {
-            setPortalPosts(items.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-          } else {
-            fsGetPortalPosts().then((posts) => setPortalPosts(posts));
-          }
+          setPortalPosts(deduplicateById(items).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
         },
         (a, b) => b.createdAt.localeCompare(a.createdAt)
       );
@@ -202,13 +198,15 @@ export default function App() {
     await fsSaveGoal(goal);
   };
 
-  const handleSavePortalPost = async (post: PortalPost) => {
+  const handleSavePortalPost = useCallback(async (post: PortalPost) => {
     await fsSavePortalPost(post);
-  };
+    setPortalPosts((prev) => deduplicateById([post, ...prev]));
+  }, []);
 
-  const handleDeletePortalPost = async (id: string) => {
+  const handleDeletePortalPost = useCallback(async (id: string) => {
     await fsDeletePortalPost(id);
-  };
+    setPortalPosts((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     try {
@@ -463,6 +461,10 @@ export default function App() {
         <Header
           user={currentUser}
           coordenacoes={coordenacoes}
+          fichas={fichas}
+          odkSubmissions={odkSubmissions}
+          auditLogs={auditLogs}
+          users={users}
           isOnline={isOnline}
           theme={themeConfig.darkMode ? 'dark' : 'light'}
           currentPalette={palette}
@@ -488,10 +490,14 @@ export default function App() {
               coordenacoes={coordenacoes}
               users={users}
               goals={goals}
+              portalPosts={portalPosts}
               onNewFicha={() => setActiveTab('ficha')}
               onViewAllFichas={() => setActiveTab('listFichas')}
               onOpenAiModal={() => setAiModalOpen(true)}
               onOpenGoalModal={() => setGoalModalOpen(true)}
+              onOpenPortalNews={() => setPortalNewsOpen(true)}
+              onSavePortalPost={handleSavePortalPost}
+              onDeletePortalPost={handleDeletePortalPost}
             />
           )}
 

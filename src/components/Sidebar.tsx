@@ -469,12 +469,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       style={activeTab === 'utilizadores' ? { backgroundColor: primaryColor } : undefined}
                       id="nav-utilizadores"
                     >
-                      <div className="flex items-center gap-2">
-                        <Users className={`h-4 w-4 ${activeTab === 'utilizadores' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                        <span>Utilizadores</span>
-                      </div>
+                      <Users className={`h-4 w-4 shrink-0 ${activeTab === 'utilizadores' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                      <span>Utilizadores</span>
                       {users.filter((u) => u.status === 'pendente').length > 0 && (
-                        <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950 animate-pulse">
+                        <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950 animate-pulse">
                           {users.filter((u) => u.status === 'pendente').length}
                         </span>
                       )}
@@ -488,7 +486,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       style={activeTab === 'coordenacoes' ? { backgroundColor: primaryColor } : undefined}
                       id="nav-coordenacoes"
                     >
-                      <Building2 className={`h-4 w-4 ${activeTab === 'coordenacoes' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                      <Building2 className={`h-4 w-4 shrink-0 ${activeTab === 'coordenacoes' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                       <span>Coordenações</span>
                     </button>
                   </ActionTooltip>

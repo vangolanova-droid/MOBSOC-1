@@ -246,6 +246,37 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-slate-700">
+              Coordenação Responsável
+            </label>
+            {isAdmin ? (
+              <select
+                value={coordId}
+                onChange={(e) => setCoordId(Number(e.target.value))}
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                id="select-ficha-coord"
+              >
+                {coordenacoes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={
+                  coordenacoes.find((c) => c.id === user.coordId)?.nome ||
+                  user.coordNome ||
+                  '—'
+                }
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+              />
+            )}
+          </div>
+
           <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
             <label className="block text-xs font-semibold text-slate-700">
               Bairro / Comunidade <span className="text-red-500">*</span>
@@ -354,37 +385,6 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="input-ficha-telefone"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Coordenação Responsável
-            </label>
-            {isAdmin ? (
-              <select
-                value={coordId}
-                onChange={(e) => setCoordId(Number(e.target.value))}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="select-ficha-coord"
-              >
-                {coordenacoes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                readOnly
-                value={
-                  coordenacoes.find((c) => c.id === user.coordId)?.nome ||
-                  user.coordNome ||
-                  '—'
-                }
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
-              />
-            )}
           </div>
         </div>
       </div>

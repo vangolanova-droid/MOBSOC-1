@@ -21,6 +21,7 @@ import {
   XCircle,
   AlertTriangle,
   ShieldCheck,
+  ChevronDown,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Ficha, User, Coordination, Mobilizador, FichaTableData } from '../types';
@@ -530,27 +531,40 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                     <td className="p-2 sm:p-2.5 font-mono text-slate-400">{i + 1}</td>
                     <td className="p-2 sm:p-2.5 font-mono text-slate-600">{f.data}</td>
                     <td className="p-2 sm:p-2.5 font-medium">
-                      {isApproved ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>Aprovada</span>
-                        </span>
-                      ) : isRejected ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 border border-red-200">
-                          <XCircle className="h-3 w-3" />
-                          <span>Rejeitada</span>
-                        </span>
-                      ) : pending48h ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800 border border-amber-300">
-                          <AlertTriangle className="h-3 w-3 text-amber-600" />
-                          <span>Pendente (+48h)</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
-                          <Clock className="h-3 w-3 text-amber-500" />
-                          <span>Pendente</span>
-                        </span>
-                      )}
+                      <div className="relative inline-flex items-center">
+                        <select
+                          value={f.status || 'pendente'}
+                          onChange={(e) =>
+                            handleUpdateStatus(
+                              f.id,
+                              e.target.value as 'aprovada' | 'pendente' | 'rejeitada'
+                            )
+                          }
+                          disabled={!onUpdateFicha}
+                          className={`appearance-none cursor-pointer rounded-full pl-2.5 pr-6 py-1 text-[11px] font-extrabold border transition-all outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                            isApproved
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                              : isRejected
+                              ? 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:border-red-700'
+                              : pending48h
+                              ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
+                              : 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                          }`}
+                          title="Clique para alterar o estado desta ficha diretamente"
+                          id={`inline-status-select-${f.id}`}
+                        >
+                          <option value="pendente" className="bg-white text-slate-900 font-bold">
+                            ⏳ Pendente {pending48h ? '(+48h)' : ''}
+                          </option>
+                          <option value="aprovada" className="bg-white text-emerald-800 font-bold">
+                            ✅ Aprovada
+                          </option>
+                          <option value="rejeitada" className="bg-white text-red-800 font-bold">
+                            ❌ Rejeitada
+                          </option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 opacity-60 text-slate-600 dark:text-slate-300" />
+                      </div>
                     </td>
                     <td className="p-2 sm:p-2.5 font-medium">
                       <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700">

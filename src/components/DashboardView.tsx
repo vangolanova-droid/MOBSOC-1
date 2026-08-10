@@ -21,6 +21,10 @@ import {
   MessageSquare,
   Sliders,
   ShieldAlert,
+  Newspaper,
+  Trash2,
+  Edit3,
+  Megaphone,
 } from 'lucide-react';
 import {
   BarChart,
@@ -38,7 +42,8 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
-import { Coordination, CoordinationGoal, Ficha, Mobilizador, User } from '../types';
+import { MapaFichasView } from './MapaFichasView';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
 interface DashboardViewProps {
@@ -48,10 +53,14 @@ interface DashboardViewProps {
   coordenacoes: Coordination[];
   users: User[];
   goals?: CoordinationGoal[];
+  portalPosts?: PortalPost[];
   onNewFicha: () => void;
   onViewAllFichas: () => void;
   onOpenAiModal: () => void;
   onOpenGoalModal?: () => void;
+  onOpenPortalNews?: () => void;
+  onSavePortalPost?: (post: PortalPost) => Promise<void>;
+  onDeletePortalPost?: (id: string) => Promise<void>;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -61,10 +70,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   coordenacoes,
   users,
   goals = [],
+  portalPosts = [],
   onNewFicha,
   onViewAllFichas,
   onOpenAiModal,
   onOpenGoalModal,
+  onOpenPortalNews,
+  onSavePortalPost,
+  onDeletePortalPost,
 }) => {
   const isAdmin = user.tipo === 'admin';
 
@@ -672,7 +685,127 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* Mural de Notícias e Informações do Portal */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xs space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400 font-bold border border-sky-100 dark:border-sky-800">
+              <Newspaper className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <h2 className="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <span>Notícias, Comunicados & Informações da Página Inicial</span>
+                <span className="rounded-full bg-sky-100 dark:bg-sky-900/60 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:text-sky-300">
+                  {portalPosts.length} {portalPosts.length === 1 ? 'publicação' : 'publicações'}
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Informações oficiais, comunicados de saúde, brigadas móveis e avisos operacionais
+              </p>
+            </div>
+          </div>
+
+          {isAdmin && onOpenPortalNews && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenPortalNews}
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
+                id="dash-btn-criar-noticia"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                <span>Criar Nova Publicação</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* List of Posts */}
+        {portalPosts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-slate-500 space-y-2">
+            <Newspaper className="h-8 w-8 mx-auto text-slate-400 opacity-60" />
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Nenhuma publicação ou informação registada na página inicial.
+            </p>
+            {isAdmin && onOpenPortalNews && (
+              <button
+                onClick={onOpenPortalNews}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Adicionar Primeira Publicação</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {portalPosts.map((post) => (
+              <div
+                key={post.id}
+                className="relative flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-3.5 hover:border-blue-300 dark:hover:border-blue-700 transition shadow-xs group"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-md bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-extrabold text-blue-800 dark:text-blue-300">
+                      {post.categoria || 'Notícia'}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {post.data}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                    {post.titulo}
+                  </h3>
+
+                  {post.subtitulo && (
+                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 line-clamp-2">
+                      {post.subtitulo}
+                    </p>
+                  )}
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-3">
+                    {post.conteudo}
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                    Autor: {post.autor || 'Admin'}
+                  </span>
+
+                  {isAdmin && (
+                    <div className="flex items-center gap-1.5">
+                      {onOpenPortalNews && (
+                        <button
+                          onClick={onOpenPortalNews}
+                          className="p-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition"
+                          title="Editar Publicação"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          if (window.confirm(`Tem a certeza que deseja eliminar a publicação "${post.titulo}"? Esta acção é permanente.`)) {
+                            if (onDeletePortalPost) {
+                              await onDeletePortalPost(post.id);
+                            }
+                          }
+                        }}
+                        className="p-1.5 rounded-md bg-red-50 dark:bg-red-950 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 transition font-bold flex items-center gap-1"
+                        title="Eliminar Publicação"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span className="text-[10px]">Eliminar</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pessoas Alcançadas - Verde Claro */}
         <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
@@ -766,6 +899,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Mapa de Distribuição Geográfica em Tempo Real */}
+      <MapaFichasView
+        fichas={fichas}
+        coordenacoes={coordenacoes}
+        className="w-full min-h-[420px]"
+      />
 
       {/* Charts Section Grid */}
       {/* Chart 1: Progresso Diário vs Target da Campanha (Recharts) */}
