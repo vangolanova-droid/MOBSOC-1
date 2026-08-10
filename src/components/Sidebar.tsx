@@ -1,27 +1,39 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   LayoutDashboard,
-  FilePlus,
-  ListFilter,
-  UserCheck2,
-  BarChart3,
-  BookOpen,
-  PieChart,
+  Plus,
+  FileText,
   Users,
-  Building2,
-  LogOut,
-  Clock,
-  ShieldAlert,
-  FolderKanban,
-  Notebook,
-  ShieldCheck,
   Wallet,
-  FileSpreadsheet,
+  Clock,
+  Smartphone,
+  BadgeCheck,
+  Database,
+  FileBarChart,
+  PieChart,
+  UserCog,
+  Network,
+  NotebookPen,
+  Newspaper,
+  History,
+  Settings,
+  LogOut,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronLeft,
+  ChevronRight,
+  ShieldAlert,
   Palette,
   Check,
-  Smartphone,
-  PanelLeftClose,
-  Newspaper,
+  Building2,
+  FolderKanban,
+  UserCheck2,
+  ListFilter,
+  FilePlus,
+  BookOpen,
+  BarChart3,
+  ShieldCheck,
+  Notebook,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -71,7 +83,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isAdmin = user.tipo === 'admin';
   const todayStr = new Date().toISOString().split('T')[0];
-  const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Calculate active sidebar color preset
   const activeSidebarColorId = themeConfig?.sidebarColor || 'default';
@@ -89,9 +102,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   // Calculate delay & alert status for Admin vs Supervisor
-  const alertStatus = React.useMemo(() => {
+  const alertStatus = useMemo(() => {
     if (isAdmin) {
-      const supervisores = users.filter((u) => u.tipo === 'user' || u.tipo === 'supervisor' || u.tipo === 'coordenador');
+      const supervisores = users.filter(
+        (u) => u.tipo === 'user' || u.tipo === 'supervisor' || u.tipo === 'coordenador'
+      );
       let count = 0;
       supervisores.forEach((sup) => {
         const hasFichaToday = fichas.some(
@@ -108,538 +123,572 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [isAdmin, users, fichas, todayStr, user.id]);
 
-  const pendingOdkCount = React.useMemo(() => {
+  const pendingOdkCount = useMemo(() => {
     if (isAdmin) {
       return odkSubmissions.filter((s) => s.status === 'pendente').length;
     }
     return odkSubmissions.filter((s) => s.supervisorId === user.id && s.status === 'pendente').length;
   }, [isAdmin, odkSubmissions, user.id]);
 
+  const pendingUsersCount = useMemo(() => {
+    return users.filter((u) => u.status === 'pendente').length;
+  }, [users]);
+
   const handleNav = (tab: string) => {
     onSelectTab(tab);
+    onCloseMobile();
   };
 
-  const primaryColor = currentPalette?.colors?.primary || '#00B2FF';
+  const primaryColor = currentPalette?.colors?.primary || '#2563EB';
 
-  const getNavBtnClass = (isActive: boolean) => {
+  // Helper for item classes
+  const getItemClass = (isActive: boolean) => {
     if (isActive) {
-      return 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-white shadow-xs transition';
+      return 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold shadow-md';
     }
-    if (currentSidebarPreset.isDark) {
-      return 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-100 hover:bg-white/10 hover:text-white transition';
-    }
-    return 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 hover:bg-slate-200/80 hover:text-black transition';
+    return 'text-[#A1A1AA] hover:bg-[#27272A] hover:text-white font-medium';
   };
-
-  const textContrastClass = currentSidebarPreset.isDark ? 'text-white' : 'text-slate-900';
-  const subtextContrastClass = currentSidebarPreset.isDark ? 'text-slate-200' : 'text-slate-800';
-  const sectionTitleClass = currentSidebarPreset.isDark ? 'text-slate-300' : 'text-slate-900';
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile overlay backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden"
           onClick={onCloseMobile}
         />
       )}
 
+      {/* Main Sidebar Component */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r transition-all duration-300 md:sticky md:top-0 md:h-screen shrink-0 overflow-y-auto ${
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col bg-[#18181B] text-white border-r border-[#27272A] transition-all duration-300 ease-in-out md:sticky md:top-0 md:h-screen shrink-0 ${
           isOpen
-            ? 'w-76 translate-x-0 opacity-100'
-            : 'w-0 -translate-x-full opacity-0 pointer-events-none border-none p-0 overflow-hidden md:w-0 md:p-0 md:border-none'
+            ? isCollapsed
+              ? 'w-72 md:w-20 translate-x-0'
+              : 'w-72 translate-x-0'
+            : '-translate-x-full md:translate-x-0 md:w-20 overflow-hidden'
         }`}
-        style={{
-          backgroundColor: currentSidebarPreset.bg,
-          color: currentSidebarPreset.text,
-          borderColor: currentSidebarPreset.border,
-        }}
+        id="app-sidebar"
       >
-        {/* User Card Header & Hide Sidebar Button */}
-        <div
-          className="border-b p-3 flex items-center justify-between gap-2"
-          style={{ borderColor: currentSidebarPreset.border }}
-        >
-          <div className="flex-1 min-w-0">
-            <ActionTooltip content="Abre as definições do seu perfil de utilizador, onde pode alterar dados pessoais, senha e foto.">
+        {/* Header Branding & Collapse Toggle */}
+        <div className="flex h-16 items-center justify-between border-b border-[#27272A] px-3.5 shrink-0">
+          {!isCollapsed ? (
+            <div className="flex items-center gap-2.5 min-w-0">
               <div
-                onClick={() => handleNav('perfil')}
-                className={`flex items-center gap-3 rounded-xl border p-2 shadow-2xs cursor-pointer transition group w-full ${
-                  currentSidebarPreset.isDark
-                    ? 'bg-white/10 border-white/20 hover:bg-white/20'
-                    : 'bg-slate-100 border-slate-300 hover:bg-slate-200/80'
-                }`}
-                title="Clique para abrir e gerir Meu Perfil"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-black text-white shadow-sm"
+                style={{ backgroundColor: primaryColor }}
               >
-                {/* Avatar Circle */}
-                <div
-                  className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-white font-bold text-xs shadow-xs border"
-                  style={{ backgroundColor: primaryColor, borderColor: primaryColor }}
-                >
-                  {user.fotoUrl ? (
-                    <img
-                      src={user.fotoUrl}
-                      alt={user.nome}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{user.nome.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className={`text-xs font-extrabold truncate flex items-center justify-between gap-1 ${textContrastClass}`}>
-                    <span className="truncate group-hover:opacity-80 transition">{user.nome}</span>
-                    <span
-                      className="shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold border"
-                      style={{
-                        backgroundColor: currentSidebarPreset.isDark ? 'rgba(255,255,255,0.2)' : `${primaryColor}15`,
-                        color: currentSidebarPreset.isDark ? '#FFFFFF' : primaryColor,
-                        borderColor: currentSidebarPreset.isDark ? 'rgba(255,255,255,0.4)' : `${primaryColor}30`,
-                      }}
-                    >
-                      {user.tipo === 'admin' ? 'Admin' : 'Sup'}
-                    </span>
-                  </div>
-                  <div className={`text-[10px] font-semibold truncate ${subtextContrastClass}`}>
-                    {user.coordNome || 'Direção Geral'}
-                  </div>
-                </div>
+                <Database className="h-5 w-5" />
               </div>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <h2 className="text-xs font-black uppercase tracking-wider text-white truncate">
+                  Gestão Vacinação
+                </h2>
+                <p className="text-[10px] font-semibold text-[#A1A1AA] truncate">
+                  Portal Institucional
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#2563EB] text-white font-black shadow-sm">
+              <Database className="h-5 w-5" />
+            </div>
+          )}
+
+          {/* Expand / Collapse Button (Desktop) & Close (Mobile) */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden md:flex p-1.5 rounded-lg text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition cursor-pointer"
+              title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
+              id="btn-toggle-collapse-sidebar"
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
+
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 rounded-lg text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition cursor-pointer"
+              title="Fechar Menu"
+              id="btn-close-mobile-sidebar"
+            >
+              <PanelLeftClose className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Items Container */}
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4 scrollbar-thin scrollbar-thumb-zinc-800">
+          {/* 1. PRINCIPAL */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                PRINCIPAL
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            <ActionTooltip content="Dashboard — Painel principal de estatísticas e metas" side="right">
+              <button
+                onClick={() => handleNav('dashboard')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'dashboard'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-dashboard"
+              >
+                <LayoutDashboard className="h-4.5 w-4.5 shrink-0" />
+                {!isCollapsed && <span>Dashboard</span>}
+              </button>
             </ActionTooltip>
           </div>
 
-          <ActionTooltip content="Esconder / Ocultar o menu lateral de navegação">
-            <button
-              onClick={onCloseMobile}
-              className={`p-2 rounded-xl border transition cursor-pointer shrink-0 ${
-                currentSidebarPreset.isDark
-                  ? 'bg-white/10 border-white/20 hover:bg-white/20 text-white'
-                  : 'bg-slate-100 border-slate-300 hover:bg-slate-200 text-slate-700'
-              }`}
-              title="Esconder Menu Lateral"
-              id="btn-hide-sidebar"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
-          </ActionTooltip>
-        </div>
+          {/* 2. REGISTOS DE CAMPO */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                REGISTOS DE CAMPO
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-4">
-          {/* Main Section */}
-          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-              Principal
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Visualiza o painel principal de indicadores, gráficos de progresso diário e totais acumulados.">
-                <button
-                  onClick={() => handleNav('dashboard')}
-                  className={getNavBtnClass(activeTab === 'dashboard')}
-                  style={activeTab === 'dashboard' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-dashboard"
-                >
-                  <LayoutDashboard className={`h-4 w-4 ${activeTab === 'dashboard' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>Dashboard</span>
-                </button>
-              </ActionTooltip>
-            </div>
-          </div>
-
-          {/* Grupo 1: REGISTOS DE CAMPO */}
-          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center justify-between">
-              <span>Registos de Campo</span>
-              <FolderKanban className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Abre o formulário para registar uma nova ficha de mobilização de vacinação em campo.">
-                <button
-                  onClick={() => handleNav('ficha')}
-                  className={getNavBtnClass(activeTab === 'ficha')}
-                  style={activeTab === 'ficha' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-ficha"
-                >
-                  <FilePlus className={`h-4 w-4 ${activeTab === 'ficha' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>Nova Ficha</span>
-                </button>
-              </ActionTooltip>
-
-              <ActionTooltip content="Aceda à lista de todas as fichas submetidas, com filtros de busca e exportação Excel/PDF.">
-                <button
-                  onClick={() => handleNav('listFichas')}
-                  className={getNavBtnClass(activeTab === 'listFichas')}
-                  style={activeTab === 'listFichas' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-listFichas"
-                >
-                  <ListFilter className={`h-4 w-4 ${activeTab === 'listFichas' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>Fichas Registadas</span>
-                </button>
-              </ActionTooltip>
-            </div>
-          </div>
-
-          {/* Grupo 2: RH-MC (Recursos Humanos - Mobilizadores Comunitários) */}
-          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center justify-between">
-              <span>RH-MC (Mobilizadores)</span>
-              <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Gere e visualiza a lista de mobilizadores comunitários atribuídos à sua equipa ou coordenação.">
-                <button
-                  onClick={() => handleNav('mobilizadores')}
-                  className={getNavBtnClass(
-                    activeTab === 'mobilizadores' ||
-                      activeTab === 'verMobilizadores' ||
-                      activeTab === 'cadastrarMobilizador'
-                  )}
-                  style={
-                    activeTab === 'mobilizadores' ||
-                    activeTab === 'verMobilizadores' ||
-                    activeTab === 'cadastrarMobilizador'
-                      ? { backgroundColor: primaryColor }
-                      : undefined
-                  }
-                  id="nav-mobilizadores"
-                >
-                  <UserCheck2 className={`h-4 w-4 ${
-                    activeTab === 'mobilizadores' ||
-                    activeTab === 'verMobilizadores' ||
-                    activeTab === 'cadastrarMobilizador'
-                      ? 'text-white'
-                      : 'text-slate-500 dark:text-slate-400'
-                  }`} />
-                  <span>Mobilizadores (RH-MC)</span>
-                </button>
-              </ActionTooltip>
-
-              {isAdmin && (
-                <ActionTooltip content="Controlo financeiro de pagamentos, folhas de presença e subsidiação de mobilizadores.">
-                  <button
-                    onClick={() => handleNav('financas')}
-                    className={getNavBtnClass(activeTab === 'financas')}
-                    style={activeTab === 'financas' ? { backgroundColor: primaryColor } : undefined}
-                    id="nav-financas"
-                  >
-                    <Wallet className={`h-4 w-4 ${activeTab === 'financas' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                    <span>Finanças & Subsídios</span>
-                  </button>
-                </ActionTooltip>
-              )}
-            </div>
-          </div>
-
-          {/* Grupo 3: MONITORIZAÇÃO & ATRASOS */}
-          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center justify-between">
-              <span>Monitorização & Atrasos</span>
-              <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Monitoriza em tempo real quais supervisores ou equipas ainda não submeteram fichas no dia de hoje.">
-                <button
-                  onClick={() => handleNav('atrasos')}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
-                    activeTab === 'atrasos'
-                      ? 'text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  style={activeTab === 'atrasos' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-atrasos"
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <ShieldAlert className={`h-4 w-4 ${activeTab === 'atrasos' ? 'text-white' : 'text-amber-600 dark:text-amber-500'}`} />
-                    <span className="truncate">
-                      {isAdmin ? 'Controlo de Atrasos' : 'Alertas de Atraso'}
-                    </span>
-                  </div>
-                  {alertStatus.hasAlert && (
-                    <span
-                      className={`ml-1 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        activeTab === 'atrasos'
-                          ? 'bg-white'
-                          : 'bg-amber-100 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
-                      }`}
-                      style={activeTab === 'atrasos' ? { color: primaryColor } : undefined}
-                    >
-                      {isAdmin ? alertStatus.count : 'Pendente'}
-                    </span>
-                  )}
-                </button>
-              </ActionTooltip>
-            </div>
-          </div>
-
-          {/* Grupo 4: INTEGRAÇÃO ODK COLLECT */}
-          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center justify-between">
-              <span>ODK Collect Central</span>
-              <Smartphone className="h-3.5 w-3.5 text-emerald-500" />
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Módulo de verificação, upload de capturas de ecrã e aprovação de formulários ODK Collect.">
-                <button
-                  onClick={() => handleNav('odk')}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
-                    activeTab === 'odk'
-                      ? 'text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  style={activeTab === 'odk' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-odk-collect"
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <Smartphone className={`h-4 w-4 ${activeTab === 'odk' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                    <span className="truncate">Confirmação ODK</span>
-                  </div>
-                  {pendingOdkCount > 0 ? (
-                    <span
-                      className={`ml-1 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        activeTab === 'odk'
-                          ? 'bg-white text-emerald-700'
-                          : 'bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
-                      }`}
-                    >
-                      {pendingOdkCount}
-                    </span>
-                  ) : (
-                    <span className="ml-1 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">
-                      ODK
-                    </span>
-                  )}
-                </button>
-              </ActionTooltip>
-            </div>
-          </div>
-
-
-          {/* Admin Section */}
-          <div>
-            <div className="px-3 pb-2 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-              {isAdmin ? 'Administração & Análise' : 'Análise Operacional'}
-            </div>
-            <div className="space-y-1">
-              <ActionTooltip content="Apresenta o resumo consolidado dos dados por coordenação, município e período de campanha.">
-                <button
-                  onClick={() => handleNav('consolidado')}
-                  className={getNavBtnClass(activeTab === 'consolidado')}
-                  style={activeTab === 'consolidado' ? { backgroundColor: primaryColor } : undefined}
-                  id="nav-consolidado"
-                >
-                  <BarChart3 className={`h-4 w-4 ${activeTab === 'consolidado' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>Consolidado</span>
-                </button>
-              </ActionTooltip>
-
-              {/* Permissão restrita apenas para Administrador */}
-              {isAdmin && (
-                <>
-                  <ActionTooltip content="Gera relatórios institucionais oficiais em formato impresso ou PDF.">
-                    <button
-                      onClick={() => handleNav('relatorios')}
-                      className={getNavBtnClass(activeTab === 'relatorios')}
-                      style={activeTab === 'relatorios' ? { backgroundColor: primaryColor } : undefined}
-                      id="nav-relatorios"
-                    >
-                      <BookOpen className={`h-4 w-4 ${activeTab === 'relatorios' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                      <span>Relatórios Oficiais</span>
-                    </button>
-                  </ActionTooltip>
-
-                  <ActionTooltip content="Exibe gráficos comparativos detalhados de desempenho, cobertura e taxas de aceitação.">
-                    <button
-                      onClick={() => handleNav('graficos')}
-                      className={getNavBtnClass(activeTab === 'graficos')}
-                      style={activeTab === 'graficos' ? { backgroundColor: primaryColor } : undefined}
-                      id="nav-graficos"
-                    >
-                      <PieChart className={`h-4 w-4 ${activeTab === 'graficos' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                      <span>Gráficos Analíticos</span>
-                    </button>
-                  </ActionTooltip>
-
-                  <ActionTooltip content="Gere as contas de acesso dos supervisores, coordenadores e administradores do sistema.">
-                    <button
-                      onClick={() => handleNav('utilizadores')}
-                      className={getNavBtnClass(activeTab === 'utilizadores')}
-                      style={activeTab === 'utilizadores' ? { backgroundColor: primaryColor } : undefined}
-                      id="nav-utilizadores"
-                    >
-                      <Users className={`h-4 w-4 shrink-0 ${activeTab === 'utilizadores' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                      <span>Utilizadores</span>
-                      {users.filter((u) => u.status === 'pendente').length > 0 && (
-                        <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950 animate-pulse">
-                          {users.filter((u) => u.status === 'pendente').length}
-                        </span>
-                      )}
-                    </button>
-                  </ActionTooltip>
-
-                  <ActionTooltip content="Gere as unidades de coordenação provincial, municipal e locais de vacinação.">
-                    <button
-                      onClick={() => handleNav('coordenacoes')}
-                      className={getNavBtnClass(activeTab === 'coordenacoes')}
-                      style={activeTab === 'coordenacoes' ? { backgroundColor: primaryColor } : undefined}
-                      id="nav-coordenacoes"
-                    >
-                      <Building2 className={`h-4 w-4 shrink-0 ${activeTab === 'coordenacoes' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                      <span>Coordenações</span>
-                    </button>
-                  </ActionTooltip>
-
-                  {onOpenNotepad && (
-                    <ActionTooltip content="Abre um bloco de notas privado para anotações rápidas e lembretes da administração.">
-                      <button
-                        onClick={() => {
-                          onCloseMobile();
-                          onOpenNotepad();
-                        }}
-                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-[#1596EC]/10 hover:text-[#1596EC] transition"
-                        id="nav-notepad"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Notebook className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <span>Bloco de Notas</span>
-                        </div>
-                        <span className="rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[9px] font-medium text-slate-600 dark:text-slate-300">
-                          ADMIN
-                        </span>
-                      </button>
-                    </ActionTooltip>
-                  )}
-
-                  {onOpenPortalNews && (
-                    <ActionTooltip content="Publicar e gerir notícias, comunicados e avisos apresentados na página inicial do portal.">
-                      <button
-                        onClick={() => {
-                          onCloseMobile();
-                          onOpenPortalNews();
-                        }}
-                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-sky-500/10 hover:text-sky-500 transition"
-                        id="nav-portal-news"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Newspaper className="h-4 w-4 text-sky-500" />
-                          <span>Notícias do Portal</span>
-                        </div>
-                        <span className="rounded-full bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 text-[9px] font-medium text-sky-500">
-                          PORTAL
-                        </span>
-                      </button>
-                    </ActionTooltip>
-                  )}
-
-                  {onOpenAuditLogs && (
-                    <ActionTooltip content="Aceda ao registo detalhado de auditoria com todas as ações efetuadas na plataforma.">
-                      <button
-                        onClick={() => {
-                          onCloseMobile();
-                          onOpenAuditLogs();
-                        }}
-                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-[#1596EC]/10 hover:text-[#1596EC] transition"
-                        id="nav-audit-logs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <ShieldCheck className="h-4 w-4 text-[#1596EC]" />
-                          <span>Histórico de Auditoria</span>
-                        </div>
-                        <span className="rounded-full bg-[#1596EC]/10 border border-[#1596EC]/20 px-2 py-0.5 text-[9px] font-medium text-[#1596EC]">
-                          AUDIT
-                        </span>
-                      </button>
-                    </ActionTooltip>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
-
-        {/* Footer with Sidebar Color Switcher & Logout */}
-        <div
-          className="border-t p-3 space-y-2.5"
-          style={{ borderColor: currentSidebarPreset.border }}
-        >
-          {/* Quick Sidebar Color Switcher Button */}
-          <div className="space-y-1.5">
-            <ActionTooltip content="Permite alterar a cor de fundo e aparência do menu de navegação lateral.">
+            <ActionTooltip content="Nova Ficha — Registar nova ficha de campo" side="right">
               <button
-                onClick={() => setColorPickerOpen(!colorPickerOpen)}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition shadow-2xs ${
-                  currentSidebarPreset.isDark
-                    ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                    : 'bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200'
-                }`}
-                title="Clique para alterar a cor do menu lateral"
-                id="btn-sidebar-color"
+                onClick={() => handleNav('ficha')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'ficha'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-nova-ficha"
               >
-                <div className="flex items-center gap-2 truncate">
-                  <span
-                    className="h-3.5 w-3.5 rounded-full border shrink-0 shadow-xs"
-                    style={{ backgroundColor: currentSidebarPreset.bg, borderColor: currentSidebarPreset.border }}
-                  />
-                  <span className="truncate">Cor do Sidebar: {currentSidebarPreset.name.split(' ')[0]}</span>
-                </div>
-                <Palette className="h-4 w-4 shrink-0 text-blue-500" />
+                <Plus className="h-4.5 w-4.5 shrink-0 text-emerald-400" />
+                {!isCollapsed && <span>Nova Ficha</span>}
               </button>
             </ActionTooltip>
 
-            {/* Sidebar Color Selector Dropdown */}
-            {colorPickerOpen && (
-              <div className="p-2 rounded-xl border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 space-y-1.5 shadow-lg">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-100 px-1">
-                  Selecione a Cor do Sidebar:
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {SIDEBAR_COLORS.map((col) => {
-                    const isSelected = activeSidebarColorId === col.id;
-                    return (
-                      <button
-                        key={col.id}
-                        onClick={() => {
-                          handleSelectSidebarColor(col.id);
-                          setColorPickerOpen(false);
-                        }}
-                        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] font-bold transition text-left ${
-                          isSelected
-                            ? 'ring-2 ring-blue-500 border-blue-600 font-extrabold'
-                            : 'border-slate-300 dark:border-slate-700 hover:border-slate-500'
-                        }`}
-                        style={{
-                          backgroundColor: col.bg,
-                          color: col.text,
-                        }}
-                      >
-                        <span
-                          className="h-3 w-3 rounded-full border shrink-0"
-                          style={{ backgroundColor: col.bg, borderColor: col.border }}
-                        />
-                        <span className="truncate flex-1">{col.name.split(' ')[0]}</span>
-                        {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
+            <ActionTooltip content="Fichas Registadas — Lista completa de fichas submetidas" side="right">
+              <button
+                onClick={() => handleNav('listFichas')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'listFichas'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-fichas-registadas"
+              >
+                <FileText className="h-4.5 w-4.5 shrink-0" />
+                {!isCollapsed && <span>Fichas Registadas</span>}
+              </button>
+            </ActionTooltip>
+          </div>
+
+          {/* 3. RH-MC */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                RH-MC
               </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            <ActionTooltip content="Mobilizadores (RH-MC) — Recursos Humanos de Mobilização" side="right">
+              <button
+                onClick={() => handleNav('mobilizadores')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'mobilizadores' ||
+                    activeTab === 'verMobilizadores' ||
+                    activeTab === 'cadastrarMobilizador'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-mobilizadores"
+              >
+                <Users className="h-4.5 w-4.5 shrink-0" />
+                {!isCollapsed && <span>Mobilizadores (RH-MC)</span>}
+              </button>
+            </ActionTooltip>
+          </div>
+
+          {/* 4. FINANÇAS & MONITORIZAÇÃO */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                FINANÇAS & MONITORIZAÇÃO
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            {isAdmin && (
+              <ActionTooltip content="Finanças & Subsídios — Gestão financeira e pagamentos" side="right">
+                <button
+                  onClick={() => handleNav('financas')}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                    activeTab === 'financas'
+                  )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                  id="nav-financas"
+                >
+                  <Wallet className="h-4.5 w-4.5 shrink-0 text-amber-400" />
+                  {!isCollapsed && <span>Finanças & Subsídios</span>}
+                </button>
+              </ActionTooltip>
+            )}
+
+            <ActionTooltip content="Controlo de Atrasos — Monitorização de submissões em tempo real" side="right">
+              <button
+                onClick={() => handleNav('atrasos')}
+                className={`relative flex w-full items-center ${
+                  isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+                } py-2.5 text-xs transition cursor-pointer rounded-xl ${getItemClass(
+                  activeTab === 'atrasos'
+                )}`}
+                id="nav-atrasos"
+              >
+                {!isCollapsed ? (
+                  <>
+                    <div className="flex items-center gap-3 truncate">
+                      <Clock className="h-4.5 w-4.5 shrink-0 text-amber-500" />
+                      <span className="truncate">
+                        {isAdmin ? 'Controlo de Atrasos' : 'Alertas de Atraso'}
+                      </span>
+                    </div>
+                    {alertStatus.hasAlert && (
+                      <span className="shrink-0 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.2">
+                        {isAdmin ? alertStatus.count : '!'}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-5 w-5 shrink-0 text-amber-500" />
+                    {alertStatus.hasAlert && (
+                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                    )}
+                  </>
+                )}
+              </button>
+            </ActionTooltip>
+          </div>
+
+          {/* 5. ODK COLLECT */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                ODK COLLECT
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            <ActionTooltip content="ODK Collect Central — Painel de dados ODK" side="right">
+              <button
+                onClick={() => handleNav('odk')}
+                className={`relative flex w-full items-center ${
+                  isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+                } py-2.5 text-xs transition cursor-pointer rounded-xl ${getItemClass(
+                  activeTab === 'odk'
+                )}`}
+                id="nav-odk-central"
+              >
+                {!isCollapsed ? (
+                  <>
+                    <div className="flex items-center gap-3 truncate">
+                      <Smartphone className="h-4.5 w-4.5 shrink-0 text-sky-400" />
+                      <span className="truncate">ODK Collect Central</span>
+                    </div>
+                    {pendingOdkCount > 0 && (
+                      <span className="shrink-0 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black px-1.5 py-0.2">
+                        {pendingOdkCount}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Smartphone className="h-5 w-5 shrink-0 text-sky-400" />
+                    {pendingOdkCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500" />
+                    )}
+                  </>
+                )}
+              </button>
+            </ActionTooltip>
+
+            <ActionTooltip content="Confirmação ODK — Validação de capturas de ecrã e ficheiros" side="right">
+              <button
+                onClick={() => handleNav('odk')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'odk'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-odk-confirmacao"
+              >
+                <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-emerald-400" />
+                {!isCollapsed && <span>Confirmação ODK</span>}
+              </button>
+            </ActionTooltip>
+          </div>
+
+          {/* 6. ADMINISTRAÇÃO & ANÁLISE */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                ADMINISTRAÇÃO & ANÁLISE
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            <ActionTooltip content="Consolidado — Resumo de estatísticas acumuladas" side="right">
+              <button
+                onClick={() => handleNav('consolidado')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'consolidado'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-consolidado"
+              >
+                <Database className="h-4.5 w-4.5 shrink-0" />
+                {!isCollapsed && <span>Consolidado</span>}
+              </button>
+            </ActionTooltip>
+
+            {isAdmin && (
+              <>
+                <ActionTooltip content="Relatórios Oficiais — Relatórios estruturados para impressão/PDF" side="right">
+                  <button
+                    onClick={() => handleNav('relatorios')}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                      activeTab === 'relatorios'
+                    )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    id="nav-relatorios"
+                  >
+                    <FileBarChart className="h-4.5 w-4.5 shrink-0 text-purple-400" />
+                    {!isCollapsed && <span>Relatórios Oficiais</span>}
+                  </button>
+                </ActionTooltip>
+
+                <ActionTooltip content="Gráficos Analíticos — Visualizações gráficas de cobertura e metas" side="right">
+                  <button
+                    onClick={() => handleNav('graficos')}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                      activeTab === 'graficos'
+                    )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    id="nav-graficos"
+                  >
+                    <PieChart className="h-4.5 w-4.5 shrink-0 text-indigo-400" />
+                    {!isCollapsed && <span>Gráficos Analíticos</span>}
+                  </button>
+                </ActionTooltip>
+
+                <ActionTooltip content="Utilizadores — Gestão de contas de utilizadores do sistema" side="right">
+                  <button
+                    onClick={() => handleNav('utilizadores')}
+                    className={`relative flex w-full items-center ${
+                      isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+                    } py-2.5 text-xs transition cursor-pointer rounded-xl ${getItemClass(
+                      activeTab === 'utilizadores'
+                    )}`}
+                    id="nav-utilizadores"
+                  >
+                    {!isCollapsed ? (
+                      <>
+                        <div className="flex items-center gap-3 truncate">
+                          <UserCog className="h-4.5 w-4.5 shrink-0 text-blue-400" />
+                          <span className="truncate">Utilizadores</span>
+                        </div>
+                        {pendingUsersCount > 0 && (
+                          <span className="shrink-0 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.2 animate-pulse">
+                            {pendingUsersCount}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <UserCog className="h-5 w-5 shrink-0 text-blue-400" />
+                        {pendingUsersCount > 0 && (
+                          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                        )}
+                      </>
+                    )}
+                  </button>
+                </ActionTooltip>
+
+                <ActionTooltip content="Coordenações — Gestão das coordenações provinciais e municipais" side="right">
+                  <button
+                    onClick={() => handleNav('coordenacoes')}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                      activeTab === 'coordenacoes'
+                    )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    id="nav-coordenacoes"
+                  >
+                    <Network className="h-4.5 w-4.5 shrink-0 text-teal-400" />
+                    {!isCollapsed && <span>Coordenações</span>}
+                  </button>
+                </ActionTooltip>
+              </>
             )}
           </div>
 
-          <ActionTooltip content="Encerra com segurança a sua sessão de utilizador no sistema.">
+          {/* 7. FERRAMENTAS */}
+          {onOpenNotepad && isAdmin && (
+            <div className="space-y-1">
+              {!isCollapsed ? (
+                <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                  FERRAMENTAS
+                </div>
+              ) : (
+                <div className="h-px bg-[#27272A] my-2" />
+              )}
+
+              <ActionTooltip content="Bloco de Notas — Anotações e relatórios rápidos da administração" side="right">
+                <button
+                  onClick={() => {
+                    onCloseMobile();
+                    onOpenNotepad();
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer text-[#A1A1AA] hover:bg-[#27272A] hover:text-white font-medium ${
+                    isCollapsed ? 'justify-center px-0' : ''
+                  }`}
+                  id="nav-bloco-notas"
+                >
+                  <NotebookPen className="h-4.5 w-4.5 shrink-0 text-amber-400" />
+                  {!isCollapsed && <span>Bloco de Notas</span>}
+                </button>
+              </ActionTooltip>
+            </div>
+          )}
+
+          {/* 8. PORTAL */}
+          {onOpenPortalNews && isAdmin && (
+            <div className="space-y-1">
+              {!isCollapsed ? (
+                <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                  PORTAL
+                </div>
+              ) : (
+                <div className="h-px bg-[#27272A] my-2" />
+              )}
+
+              <ActionTooltip content="Notícias do Portal — Comunicados e anúncios institucionais" side="right">
+                <button
+                  onClick={() => {
+                    onCloseMobile();
+                    onOpenPortalNews();
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer text-[#A1A1AA] hover:bg-[#27272A] hover:text-white font-medium ${
+                    isCollapsed ? 'justify-center px-0' : ''
+                  }`}
+                  id="nav-noticias-portal"
+                >
+                  <Newspaper className="h-4.5 w-4.5 shrink-0 text-sky-400" />
+                  {!isCollapsed && <span>Notícias do Portal</span>}
+                </button>
+              </ActionTooltip>
+            </div>
+          )}
+
+          {/* 9. AUDITORIA */}
+          {onOpenAuditLogs && isAdmin && (
+            <div className="space-y-1">
+              {!isCollapsed ? (
+                <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                  AUDITORIA
+                </div>
+              ) : (
+                <div className="h-px bg-[#27272A] my-2" />
+              )}
+
+              <ActionTooltip content="Histórico de Auditoria — Registos e logs de segurança" side="right">
+                <button
+                  onClick={() => {
+                    onCloseMobile();
+                    onOpenAuditLogs();
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer text-[#A1A1AA] hover:bg-[#27272A] hover:text-white font-medium ${
+                    isCollapsed ? 'justify-center px-0' : ''
+                  }`}
+                  id="nav-historico-auditoria"
+                >
+                  <History className="h-4.5 w-4.5 shrink-0 text-blue-400" />
+                  {!isCollapsed && <span>Histórico de Auditoria</span>}
+                </button>
+              </ActionTooltip>
+            </div>
+          )}
+
+          {/* 10. ADMIN */}
+          <div className="space-y-1">
+            {!isCollapsed ? (
+              <div className="px-2 pb-1 text-[10px] font-extrabold tracking-wider text-[#A1A1AA] uppercase">
+                ADMIN
+              </div>
+            ) : (
+              <div className="h-px bg-[#27272A] my-2" />
+            )}
+
+            <ActionTooltip content="Administração — Configurações do perfil e preferências" side="right">
+              <button
+                onClick={() => handleNav('perfil')}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition cursor-pointer ${getItemClass(
+                  activeTab === 'perfil'
+                )} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                id="nav-administracao"
+              >
+                <Settings className="h-4.5 w-4.5 shrink-0" />
+                {!isCollapsed && <span>Administração</span>}
+              </button>
+            </ActionTooltip>
+          </div>
+        </nav>
+
+        {/* Bottom Profile & Logout Footer */}
+        <div className="border-t border-[#27272A] p-2.5 space-y-2 bg-[#18181B] shrink-0">
+          {/* User Profile Card */}
+          <ActionTooltip content="Meu Perfil — Gerir dados pessoais e palavra-passe" side="right">
+            <div
+              onClick={() => handleNav('perfil')}
+              className={`flex items-center gap-2.5 rounded-xl border border-[#27272A] bg-[#27272A]/50 p-2 text-white hover:bg-[#27272A] cursor-pointer transition ${
+                isCollapsed ? 'justify-center px-0' : ''
+              }`}
+              id="btn-sidebar-user-profile"
+            >
+              <div
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full font-extrabold text-xs text-white shadow-xs"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {user.fotoUrl ? (
+                  <img src={user.fotoUrl} alt={user.nome} className="h-full w-full object-cover" />
+                ) : (
+                  <span>{user.nome ? user.nome.charAt(0).toUpperCase() : 'U'}</span>
+                )}
+              </div>
+
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex items-center justify-between gap-1 text-xs font-bold text-white">
+                    <span className="truncate">{user.nome}</span>
+                    <span className="shrink-0 rounded-md bg-[#3F3F46] px-1.5 py-0.2 text-[9px] font-extrabold text-[#A1A1AA]">
+                      {isAdmin ? 'Admin' : 'Sup'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#A1A1AA] truncate">
+                    {user.coordNome || 'Direção Geral'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ActionTooltip>
+
+          {/* Sair (Logout) Button */}
+          <ActionTooltip content="Sair do sistema" side="right">
             <button
               onClick={onLogout}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition shadow-2xs ${
-                currentSidebarPreset.isDark
-                  ? 'border-white/20 bg-white/10 text-white hover:bg-red-600 hover:border-red-600'
-                  : 'border-slate-300 bg-white text-slate-900 hover:border-red-300 hover:bg-red-50 hover:text-red-700'
+              className={`flex w-full items-center gap-2.5 rounded-xl border border-[#3F3F46]/60 bg-[#27272A]/30 py-2 px-3 text-xs font-bold text-[#A1A1AA] hover:bg-red-600/90 hover:border-red-600 hover:text-white transition cursor-pointer ${
+                isCollapsed ? 'justify-center px-0' : ''
               }`}
-              id="btn-logout"
+              id="btn-sidebar-logout"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!isCollapsed && <span>Sair</span>}
             </button>
           </ActionTooltip>
         </div>
@@ -647,3 +696,4 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+

@@ -294,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({
         <ActionTooltip content="Mostrar / Esconder o menu lateral de navegação">
           <button
             onClick={onToggleSidebar}
-            className="rounded-lg p-2 transition text-white/90 hover:bg-white/15 hover:text-white cursor-pointer"
+            className="md:hidden rounded-lg p-2 transition text-white/90 hover:bg-white/15 hover:text-white cursor-pointer"
             title="Mostrar / Esconder Menu Lateral"
             id="btn-hamburger"
           >
