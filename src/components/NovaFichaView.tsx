@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RotateCcw, MapPin, Calculator, HelpCircle, UserCheck } from 'lucide-react';
-import { Coordination, Ficha, FichaTableData, Mobilizador, User } from '../types';
+import { Save, RotateCcw, MapPin, Calculator, HelpCircle, UserCheck, ShieldAlert, Activity } from 'lucide-react';
+import { CasoPFA, Coordination, Ficha, FichaTableData, Mobilizador, User } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 import { useToast } from '../context/ToastContext';
 
@@ -72,6 +72,30 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
   const [motivo, setMotivo] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // PFA (Paralisia Flácida Aguda) State
+  const [pfaDetetado, setPfaDetetado] = useState(false);
+  const [pfaNomeCrianca, setPfaNomeCrianca] = useState('');
+  const [pfaIdadeCrianca, setPfaIdadeCrianca] = useState('');
+  const [pfaSexoCrianca, setPfaSexoCrianca] = useState<'Masculino' | 'Feminino'>('Masculino');
+  
+  // Guardião / Encarregado com quem vive
+  const [pfaComQuemVive, setPfaComQuemVive] = useState<string>('Pais');
+  const [pfaNomePai, setPfaNomePai] = useState('');
+  const [pfaNomeMae, setPfaNomeMae] = useState('');
+  const [pfaNomeEncarregado, setPfaNomeEncarregado] = useState('');
+  const [pfaTelefoneEncarregado, setPfaTelefoneEncarregado] = useState('');
+  const [pfaMorada, setPfaMorada] = useState('');
+  const [pfaTempoEstagio, setPfaTempoEstagio] = useState('3 dias');
+  const [pfaMembroAfetado, setPfaMembroAfetado] = useState('Perna Esquerda');
+  const [pfaFebreNoInicio, setPfaFebreNoInicio] = useState<'Sim' | 'Não' | 'Desconhecido'>('Sim');
+  const [pfaSintomas, setPfaSintomas] = useState('');
+
+  // Acompanhamento Técnico de Saúde
+  const [pfaEstaAcompanhada, setPfaEstaAcompanhada] = useState<'Sim' | 'Não' | 'Em Processo'>('Sim');
+  const [pfaTecnicoAcompanhante, setPfaTecnicoAcompanhante] = useState('');
+  const [pfaTecnicoTelefone, setPfaTecnicoTelefone] = useState('');
+  const [pfaDataUltimoAcompanhamento, setPfaDataUltimoAcompanhamento] = useState('');
+
   useEffect(() => {
     if (!isAdmin && user.coordId) {
       setCoordId(user.coordId);
@@ -134,6 +158,26 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
     setSim(0);
     setNao(0);
     setMotivo('');
+
+    // Reset PFA
+    setPfaDetetado(false);
+    setPfaNomeCrianca('');
+    setPfaIdadeCrianca('');
+    setPfaSexoCrianca('Masculino');
+    setPfaComQuemVive('Pais');
+    setPfaNomePai('');
+    setPfaNomeMae('');
+    setPfaNomeEncarregado('');
+    setPfaTelefoneEncarregado('');
+    setPfaMorada('');
+    setPfaTempoEstagio('3 dias');
+    setPfaMembroAfetado('Perna Esquerda');
+    setPfaFebreNoInicio('Sim');
+    setPfaSintomas('');
+    setPfaEstaAcompanhada('Sim');
+    setPfaTecnicoAcompanhante('');
+    setPfaTecnicoTelefone('');
+    setPfaDataUltimoAcompanhamento('');
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -147,6 +191,24 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
       return;
     }
 
+    if (pfaDetetado) {
+      if (!pfaNomeCrianca.trim()) {
+        showToast('Por favor preencha o nome da criança no caso de PFA.', 'error');
+        return;
+      }
+      if (pfaComQuemVive === 'Pais') {
+        if (!pfaNomePai.trim() && !pfaNomeMae.trim()) {
+          showToast('Por favor preencha o nome do Pai e/ou da Mãe da criança.', 'error');
+          return;
+        }
+      } else {
+        if (!pfaNomeEncarregado.trim()) {
+          showToast(`Por favor preencha o nome do encarregado (${pfaComQuemVive}).`, 'error');
+          return;
+        }
+      }
+    }
+
     const selectedCoord = coordenacoes.find((c) => c.id === Number(coordId));
     const coordNome = selectedCoord ? selectedCoord.nome : user.coordNome || '—';
     const coordenadorNome = selectedCoord?.coordenador || user.coordenadorNome || '—';
@@ -154,6 +216,47 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
     const selectedMob = mobilizadores.find(
       (m) => m.nome.toLowerCase().trim() === mobilizador.toLowerCase().trim()
     );
+
+    const calculatedEncarregado = pfaComQuemVive === 'Pais'
+      ? ([pfaNomePai.trim(), pfaNomeMae.trim()].filter(Boolean).join(' e ') || 'Pais')
+      : pfaNomeEncarregado.trim();
+
+    // Build PFA Case array if detected
+    const pfaCasosList: CasoPFA[] = pfaDetetado
+      ? [
+          {
+            id: `pfa_${Date.now()}`,
+            provincia,
+            municipio,
+            comuna,
+            bairro: bairro.trim(),
+            dataDetecao: data,
+            nomeCrianca: pfaNomeCrianca.trim(),
+            idadeCrianca: pfaIdadeCrianca.trim() || 'Não especificada',
+            sexoCrianca: pfaSexoCrianca,
+            comQuemVive: pfaComQuemVive,
+            nomePai: pfaNomePai.trim(),
+            nomeMae: pfaNomeMae.trim(),
+            nomeEncarregado: calculatedEncarregado,
+            telefoneEncarregado: pfaTelefoneEncarregado.trim() || telefone.trim(),
+            morada: pfaMorada.trim() || bairro.trim(),
+            tempoEstagio: pfaTempoEstagio.trim() || '3 dias',
+            membroAfetado: pfaMembroAfetado,
+            febreNoInicio: pfaFebreNoInicio,
+            sintomasDescricao: pfaSintomas.trim(),
+            estaAcompanhada: pfaEstaAcompanhada,
+            tecnicoAcompanhante: pfaTecnicoAcompanhante.trim(),
+            tecnicoTelefone: pfaTecnicoTelefone.trim(),
+            dataUltimoAcompanhamento: pfaDataUltimoAcompanhamento.trim(),
+            mobilizadorNome: mobilizador.trim(),
+            mobilizadorTelefone: telefone.trim(),
+            coordId: Number(coordId),
+            coordNome,
+            statusNotificacao: pfaEstaAcompanhada === 'Sim' ? 'Em Acompanhamento' : 'Pendente de Investigação',
+            createdAt: new Date().toISOString(),
+          },
+        ]
+      : [];
 
     setIsSaving(true);
     try {
@@ -179,6 +282,8 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
         sim,
         nao,
         motivo: motivo.trim(),
+        pfaDetetado,
+        pfaCasos: pfaCasosList,
       });
       showToast('Ficha gravada com sucesso!', 'success');
       handleReset();
@@ -622,6 +727,317 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             id="input-ficha-motivo"
           />
         </div>
+      </div>
+
+      {/* Secção Especial de Vigilância de PFA (Paralisia Flácida Aguda) */}
+      <div className={`rounded-2xl border p-6 shadow-sm space-y-4 transition-all ${
+        pfaDetetado ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-white'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <ShieldAlert className={`h-4 w-4 ${pfaDetetado ? 'text-rose-600' : 'text-slate-500'}`} />
+            <span>Vigilância Epidemiológica - Paralisia Flácida Aguda (PFA)</span>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={pfaDetetado}
+              onChange={(e) => setPfaDetetado(e.target.checked)}
+              className="sr-only peer"
+              id="checkbox-pfa-detetado"
+            />
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
+            <span className="ml-3 text-xs font-bold text-slate-800">
+              {pfaDetetado ? 'CASO DE PFA ENCONTRADO!' : 'Registar Caso de PFA nesta área'}
+            </span>
+          </label>
+        </div>
+
+        {pfaDetetado ? (
+          <div className="space-y-4 pt-2">
+            <div className="p-3 bg-rose-100/70 border border-rose-200 rounded-xl text-xs text-rose-900 font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4 text-rose-600 shrink-0" />
+              <span>
+                <strong>Atenção:</strong> Insira os dados da criança com sintomas de paralisia e dos respetivos pais. Este caso será encaminhado automaticamente para o painel de vigilância epidemiológica municipal.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Nome Completo da Criança <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Esperança Mateus Paulo"
+                  value={pfaNomeCrianca}
+                  onChange={(e) => setPfaNomeCrianca(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Idade da Criança <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 3 anos ou 18 meses"
+                  value={pfaIdadeCrianca}
+                  onChange={(e) => setPfaIdadeCrianca(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Sexo da Criança
+                </label>
+                <select
+                  value={pfaSexoCrianca}
+                  onChange={(e) => setPfaSexoCrianca(e.target.value as any)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600"
+                >
+                  <option value="Masculino">Masculino</option>
+                  <option value="Feminino">Feminino</option>
+                </select>
+              </div>
+
+              {/* Com quem vive a criação / Grau de Parentesco */}
+              <div className="sm:col-span-2 lg:col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Com quem vive a criança? (Encarregados) <span className="text-rose-600">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Selecione com quem reside a criança para adaptar os campos de identificação
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {[
+                    { id: 'Pais', label: 'Com os Pais' },
+                    { id: 'Pai', label: 'Apenas Pai' },
+                    { id: 'Mãe', label: 'Apenas Mãe' },
+                    { id: 'Tio', label: 'Tio' },
+                    { id: 'Tia', label: 'Tia' },
+                    { id: 'Cunhada', label: 'Cunhada' },
+                    { id: 'Irmã', label: 'Irmã' },
+                    { id: 'Irmão', label: 'Irmão' },
+                    { id: 'Primo', label: 'Primo' },
+                    { id: 'Prima', label: 'Prima' },
+                    { id: 'Outro', label: 'Outro Encarregado' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPfaComQuemVive(item.id)}
+                      className={`h-9 px-3 text-xs font-bold rounded-lg border transition text-center cursor-pointer ${
+                        pfaComQuemVive === item.id
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Campos Dinâmicos de Acordo com Parentesco */}
+                {pfaComQuemVive === 'Pais' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-1">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Nome Completo do Pai <span className="text-rose-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Mateus Paulo"
+                        value={pfaNomePai}
+                        onChange={(e) => setPfaNomePai(e.target.value)}
+                        className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Nome Completo da Mãe <span className="text-rose-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Ana Maria"
+                        value={pfaNomeMae}
+                        onChange={(e) => setPfaNomeMae(e.target.value)}
+                        className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Nome Completo do Encarregado ({pfaComQuemVive}) <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={`Ex: Nome do(a) ${pfaComQuemVive} responsável pela criança`}
+                      value={pfaNomeEncarregado}
+                      onChange={(e) => setPfaNomeEncarregado(e.target.value)}
+                      className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Telefone de Contacto do Encarregado
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 924112233"
+                  value={pfaTelefoneEncarregado}
+                  onChange={(e) => setPfaTelefoneEncarregado(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Morada / Ponto de Referência Detalhado
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Rua do Chafariz, Casa nº 42"
+                  value={pfaMorada}
+                  onChange={(e) => setPfaMorada(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Tempo de Estágio / Início dos Sintomas
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 5 dias, 2 semanas"
+                  value={pfaTempoEstagio}
+                  onChange={(e) => setPfaTempoEstagio(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Membro Afetado
+                </label>
+                <select
+                  value={pfaMembroAfetado}
+                  onChange={(e) => setPfaMembroAfetado(e.target.value)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600"
+                >
+                  <option value="Perna Esquerda">Perna Esquerda</option>
+                  <option value="Perna Direita">Perna Direita</option>
+                  <option value="Ambas as Pernas">Ambas as Pernas</option>
+                  <option value="Braço Esquerdo/Direito">Braço Esquerdo/Direito</option>
+                  <option value="Todos os Membros">Todos os Membros</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Febre no Início da Paralisia?
+                </label>
+                <select
+                  value={pfaFebreNoInicio}
+                  onChange={(e) => setPfaFebreNoInicio(e.target.value as any)}
+                  className="mt-1.5 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600"
+                >
+                  <option value="Sim">Sim</option>
+                  <option value="Não">Não</option>
+                  <option value="Desconhecido">Desconhecido</option>
+                </select>
+              </div>
+
+              {/* Secção de Acompanhamento por Técnico de Saúde */}
+              <div className="sm:col-span-2 lg:col-span-3 p-3.5 bg-sky-50/60 border border-sky-200 rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-xs font-bold text-sky-900 uppercase tracking-wide">
+                    Acompanhamento por Técnico de Saúde / Epidemiologia
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-slate-700">A criança está a ser acompanhada?</span>
+                    <select
+                      value={pfaEstaAcompanhada}
+                      onChange={(e) => setPfaEstaAcompanhada(e.target.value as any)}
+                      className="h-8 rounded-lg border border-sky-300 bg-white px-2 text-xs font-bold text-sky-900 outline-none focus:border-sky-600"
+                    >
+                      <option value="Sim">Sim (Está Acompanhada)</option>
+                      <option value="Em Processo">Em Processo / Aguarda Técnico</option>
+                      <option value="Não">Não (Sem Acompanhamento)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {pfaEstaAcompanhada !== 'Não' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700">
+                        Nome do Técnico Responsável
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Dr. Manuel Santos (Epidemiologia)"
+                        value={pfaTecnicoAcompanhante}
+                        onChange={(e) => setPfaTecnicoAcompanhante(e.target.value)}
+                        className="mt-1 w-full h-9 rounded-lg border border-sky-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-sky-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700">
+                        Telefone / Contacto do Técnico
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 923112233"
+                        value={pfaTecnicoTelefone}
+                        onChange={(e) => setPfaTecnicoTelefone(e.target.value)}
+                        className="mt-1 w-full h-9 rounded-lg border border-sky-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-sky-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700">
+                        Data da Última Visita / Acompanhamento
+                      </label>
+                      <input
+                        type="date"
+                        value={pfaDataUltimoAcompanhamento}
+                        onChange={(e) => setPfaDataUltimoAcompanhamento(e.target.value)}
+                        className="mt-1 w-full h-9 rounded-lg border border-sky-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-sky-600"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Observações e Sintomas Detalhados
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Descreva a fraqueza muscular, perda de mobilidade ou observações da família..."
+                  value={pfaSintomas}
+                  onChange={(e) => setPfaSintomas(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-rose-200 bg-white p-3 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">
+            Assinale a opção acima caso os mobilizadores tenham detetado alguma criança com fraqueza ou paralisia súbita de pernas/braços nesta área.
+          </p>
+        )}
       </div>
 
       {/* Action Buttons */}

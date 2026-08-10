@@ -421,6 +421,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 iconColor: 'text-blue-400',
                 tooltip: 'Aceda à lista de todas as fichas submetidas.',
               })}
+              {renderNavItem({
+                id: 'nav-casos-pfa',
+                tab: 'casosPFA',
+                label: 'Casos de PFA (Vigilância)',
+                icon: ShieldAlert,
+                iconColor: 'text-rose-500',
+                tooltip: 'Vigilância Epidemiológica de Paralisia Flácida Aguda e Notificação Pólio (UNICEF/WHO).',
+                badge: (
+                  <span className="rounded-full bg-rose-500 text-white px-1.5 py-0.2 text-[9px] font-extrabold animate-pulse">
+                    PFA
+                  </span>
+                ),
+              })}
             </div>
           </div>
 

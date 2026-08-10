@@ -314,9 +314,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="text-lg font-bold tracking-tight text-white">
               SisMob
             </span>
-            <span className="hidden text-xs text-white/80 font-medium sm:inline sm:ml-2">
-              Sistema de Mobilização de Saúde
-            </span>
           </div>
         </div>
       </div>
@@ -330,6 +327,26 @@ export const Header: React.FC<HeaderProps> = ({
           {isOnline ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}
           <span>{isOnline ? 'Servidor Online' : 'Modo Local'}</span>
         </div>
+
+        {/* Dark Mode Direct Button */}
+        <button
+          onClick={onToggleTheme}
+          className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-xs font-bold text-white hover:bg-white/25 transition shadow-xs backdrop-blur-xs cursor-pointer"
+          title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Dark'}
+          id="btn-header-dark-mode"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun className="h-4 w-4 text-amber-300" />
+              <span className="hidden sm:inline">Modo Claro</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-4 w-4 text-slate-100" />
+              <span className="hidden sm:inline">Modo Dark</span>
+            </>
+          )}
+        </button>
 
         {/* Quick New Ficha */}
         <button

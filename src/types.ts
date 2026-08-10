@@ -58,6 +58,55 @@ export interface FichaTableData {
   [key: string]: [number, number]; // [locais, pessoas]
 }
 
+export interface CasoPFA {
+  id: string;
+  fichaId?: number;
+  provincia: string;
+  municipio: string;
+  comuna?: string;
+  bairro: string;
+  dataDetecao: string;
+  
+  // Dados da Criança
+  nomeCrianca: string;
+  idadeCrianca: string; // e.g. "3 anos", "14 meses"
+  sexoCrianca: 'Masculino' | 'Feminino';
+  
+  // Dados dos Pais / Encarregados
+  comQuemVive?: string; // 'Pais' | 'Tio' | 'Tia' | 'Cunhada' | 'Irmã' | 'Irmão' | 'Primo' | 'Prima' | 'Outro'
+  nomePai?: string;
+  nomeMae?: string;
+  nomeEncarregado: string;
+  telefoneEncarregado: string;
+  morada: string;
+  pontoReferencia?: string;
+  
+  // Detalhes do Estágio da Paralisia
+  tempoEstagio: string; // e.g. "4 dias", "2 semanas"
+  membroAfetado?: string; // e.g. "Perna Esquerda", "Ambas as Pernas"
+  febreNoInicio?: 'Sim' | 'Não' | 'Desconhecido';
+  sintomasDescricao?: string;
+  
+  // Acompanhamento Técnico
+  estaAcompanhada?: 'Sim' | 'Não' | 'Em Processo';
+  tecnicoAcompanhante?: string;
+  tecnicoTelefone?: string;
+  dataUltimoAcompanhamento?: string;
+  
+  // Mobilizador & Coordenação
+  mobilizadorNome: string;
+  mobilizadorTelefone?: string;
+  coordId?: number | null;
+  coordNome: string;
+  
+  // Vigilância Epidemiológica
+  statusNotificacao: 'Notificado à Vigilância' | 'Pendente de Investigação' | 'Em Acompanhamento' | 'Descartado';
+  dataNotificacaoCS?: string;
+  centroSaudeReferencia?: string;
+  observacoesNotificacao?: string;
+  createdAt: string;
+}
+
 export interface Ficha {
   id: number;
   provincia: string;
@@ -81,6 +130,8 @@ export interface Ficha {
   sim: number;
   nao: number;
   motivo?: string;
+  pfaDetetado?: boolean;
+  pfaCasos?: CasoPFA[];
   createdAt?: string;
   status?: 'pendente' | 'aprovada' | 'rejeitada';
 }

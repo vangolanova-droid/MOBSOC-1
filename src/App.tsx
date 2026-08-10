@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost } from './types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost, CasoPFA } from './types';
 import { INITIAL_USERS } from './data/initialData';
 import { api } from './services/api';
-import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts } from './services/firebaseService';
+import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts, fsSaveCasoPFA, fsUpdateCasoPFA } from './services/firebaseService';
 import {
   Theme,
   UserThemeConfig,
@@ -25,6 +25,7 @@ import { PerfilView } from './components/PerfilView';
 import { MobilizadoresView } from './components/MobilizadoresView';
 import { AtrasosView } from './components/AtrasosView';
 import { ODKCollectView } from './components/ODKCollectView';
+import { PFACasesView } from './components/PFACasesView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
@@ -50,6 +51,7 @@ export default function App() {
   const [coordenacoes, setCoordenacoes] = useState<Coordination[]>([]);
   const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>([]);
   const [fichas, setFichas] = useState<Ficha[]>([]);
+  const [casosPFA, setCasosPFA] = useState<CasoPFA[]>([]);
   const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>([]);
   const [goals, setGoals] = useState<CoordinationGoal[]>([]);
   const [portalPosts, setPortalPosts] = useState<PortalPost[]>([]);
@@ -153,6 +155,12 @@ export default function App() {
         'fichas',
         (items) => setFichas(deduplicateById(items)),
         (a, b) => Number(b.id) - Number(a.id)
+      );
+
+      fsSubscribeCollection<CasoPFA>(
+        'casos_pfa',
+        (items) => setCasosPFA(deduplicateById(items)),
+        (a, b) => b.createdAt.localeCompare(a.createdAt)
       );
 
       fsSubscribeCollection<ODKSubmission>(
@@ -322,8 +330,26 @@ export default function App() {
   const handleSaveFicha = useCallback(async (fichaPartial: Partial<Ficha>) => {
     const created = await api.createFicha(fichaPartial, currentUser);
     setFichas((prev) => deduplicateById([created, ...prev]));
+
+    // If PFA cases were attached, save them to the PFA collection
+    if (fichaPartial.pfaCasos && fichaPartial.pfaCasos.length > 0) {
+      for (const caso of fichaPartial.pfaCasos) {
+        await fsSaveCasoPFA({ ...caso, fichaId: created.id });
+      }
+    }
+
     setActiveTab('listFichas');
   }, [currentUser]);
+
+  const handleSaveCasoPFA = useCallback(async (caso: CasoPFA) => {
+    await fsSaveCasoPFA(caso);
+    setCasosPFA((prev) => deduplicateById([caso, ...prev]));
+  }, []);
+
+  const handleUpdateCasoPFA = useCallback(async (id: string, fields: Partial<CasoPFA>) => {
+    await fsUpdateCasoPFA(id, fields);
+    setCasosPFA((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c)));
+  }, []);
 
   const handleDeleteFicha = useCallback(async (id: number) => {
     if (!currentUser) {
@@ -486,6 +512,7 @@ export default function App() {
             <DashboardView
               user={currentUser}
               fichas={fichas}
+              casosPFA={casosPFA}
               mobilizadores={mobilizadores}
               coordenacoes={coordenacoes}
               users={users}
@@ -493,6 +520,7 @@ export default function App() {
               portalPosts={portalPosts}
               onNewFicha={() => setActiveTab('ficha')}
               onViewAllFichas={() => setActiveTab('listFichas')}
+              onViewPFACases={() => setActiveTab('casosPFA')}
               onOpenAiModal={() => setAiModalOpen(true)}
               onOpenGoalModal={() => setGoalModalOpen(true)}
               onOpenPortalNews={() => setPortalNewsOpen(true)}
@@ -554,6 +582,16 @@ export default function App() {
               coordenacoes={coordenacoes}
               mobilizadores={mobilizadores}
               onNewFicha={() => setActiveTab('ficha')}
+            />
+          )}
+
+          {activeTab === 'casosPFA' && (
+            <PFACasesView
+              user={currentUser}
+              casosPFA={casosPFA}
+              coordenacoes={coordenacoes}
+              onSaveCasoPFA={handleSaveCasoPFA}
+              onUpdateCasoPFA={handleUpdateCasoPFA}
             />
           )}
 

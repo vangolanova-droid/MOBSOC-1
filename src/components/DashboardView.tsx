@@ -43,12 +43,13 @@ import {
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { MapaFichasView } from './MapaFichasView';
-import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User } from '../types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User, CasoPFA } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
 interface DashboardViewProps {
   user: User;
   fichas: Ficha[];
+  casosPFA?: CasoPFA[];
   mobilizadores: Mobilizador[];
   coordenacoes: Coordination[];
   users: User[];
@@ -56,6 +57,7 @@ interface DashboardViewProps {
   portalPosts?: PortalPost[];
   onNewFicha: () => void;
   onViewAllFichas: () => void;
+  onViewPFACases?: () => void;
   onOpenAiModal: () => void;
   onOpenGoalModal?: () => void;
   onOpenPortalNews?: () => void;
@@ -66,6 +68,7 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   fichas,
+  casosPFA = [],
   mobilizadores,
   coordenacoes,
   users,
@@ -73,6 +76,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   portalPosts = [],
   onNewFicha,
   onViewAllFichas,
+  onViewPFACases,
   onOpenAiModal,
   onOpenGoalModal,
   onOpenPortalNews,
@@ -246,7 +250,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {onViewPFACases && (
+            <ActionTooltip content="Abre o painel de vigilância de Paralisia Flácida Aguda (PFA) para controlo epidemiológico da Pólio (UNICEF/OMS).">
+              <button
+                onClick={onViewPFACases}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 px-3 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer animate-pulse"
+                id="dash-btn-pfa"
+              >
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                <span>Casos PFA ({casosPFA.length})</span>
+              </button>
+            </ActionTooltip>
+          )}
+
           <ActionTooltip content="Abre a inteligência artificial para resumir dados, gerar relatórios operacionais e identificar tendências no terreno.">
             <button
               onClick={onOpenAiModal}

@@ -10,13 +10,14 @@ import {
   getDocFromServer,
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, PortalPost } from '../types';
+import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, PortalPost, CasoPFA } from '../types';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
   INITIAL_MOBILIZADORES,
   INITIAL_USERS,
   INITIAL_ODK_SUBMISSIONS,
+  INITIAL_CASOS_PFA,
 } from '../data/initialData';
 
 // Firestore collection names
@@ -31,6 +32,7 @@ const COLS = {
   ADMIN_MESSAGES: 'admin_messages',
   ODK_SUBMISSIONS: 'odk_submissions',
   PORTAL_POSTS: 'portal_posts',
+  CASOS_PFA: 'casos_pfa',
 };
 
 const META_DOC = doc(db, 'system_metadata', 'initial_seed');
@@ -159,6 +161,13 @@ export async function initFirestoreDatabase(): Promise<void> {
       if (portalSnap.empty) {
         for (const p of DEFAULT_PORTAL_POSTS) {
           await setDoc(doc(db, COLS.PORTAL_POSTS, p.id), cleanData(p));
+        }
+      }
+
+      const pfaSnap = await getDocs(collection(db, COLS.CASOS_PFA));
+      if (pfaSnap.empty) {
+        for (const pfa of INITIAL_CASOS_PFA) {
+          await setDoc(doc(db, COLS.CASOS_PFA, pfa.id), cleanData(pfa));
         }
       }
 
@@ -521,6 +530,35 @@ export async function fsSavePortalPost(post: PortalPost): Promise<void> {
 
 export async function fsDeletePortalPost(id: string): Promise<void> {
   await deleteDoc(doc(db, COLS.PORTAL_POSTS, id));
+}
+
+// --- VIGILÂNCIA EPIDEMIOLÓGICA (CASOS DE PFA) ---
+export async function fsGetCasosPFA(): Promise<CasoPFA[]> {
+  try {
+    await initFirestoreDatabase();
+    const snap = await getDocs(collection(db, COLS.CASOS_PFA));
+    const items: CasoPFA[] = [];
+    snap.forEach((d) => items.push(d.data() as CasoPFA));
+    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  } catch (err) {
+    console.warn('fsGetCasosPFA error:', err);
+    return [];
+  }
+}
+
+export async function fsSaveCasoPFA(caso: CasoPFA): Promise<CasoPFA> {
+  const cleaned = cleanData(caso);
+  await setDoc(doc(db, COLS.CASOS_PFA, caso.id), cleaned);
+  return caso;
+}
+
+export async function fsUpdateCasoPFA(id: string, fields: Partial<CasoPFA>): Promise<void> {
+  const cleaned = cleanData(fields);
+  await updateDoc(doc(db, COLS.CASOS_PFA, id), cleaned);
+}
+
+export async function fsDeleteCasoPFA(id: string): Promise<void> {
+  await deleteDoc(doc(db, COLS.CASOS_PFA, id));
 }
 
 // --- CLEAR ALL TEST DATA FROM FIREBASE DATABASE ---
