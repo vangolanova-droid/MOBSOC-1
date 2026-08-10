@@ -56,7 +56,7 @@ export default function App() {
   const [portalNewsOpen, setPortalNewsOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [notepadOpen, setNotepadOpen] = useState(false);
