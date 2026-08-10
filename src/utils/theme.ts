@@ -37,6 +37,7 @@ export interface SidebarColorOption {
 
 export const SIDEBAR_COLORS: SidebarColorOption[] = [
   { id: 'default', name: 'Branco / Padrão', bg: '#FFFFFF', text: '#0F172A', border: '#E2E8F0', isDark: false },
+  { id: 'black', name: 'Preto Puro / Noite', bg: '#000000', text: '#FFFFFF', border: '#1F2937', isDark: true },
   { id: 'hospital_blue', name: 'Azul Hospitalar MINSA', bg: '#004B87', text: '#FFFFFF', border: '#00335E', isDark: true },
   { id: 'cyan_sismob', name: 'Cyan Mobilização (#00B2FF)', bg: '#00B2FF', text: '#FFFFFF', border: '#0084BD', isDark: true },
   { id: 'navy', name: 'Azul Marinho Institucional', bg: '#0B192C', text: '#FFFFFF', border: '#1E3E62', isDark: true },
