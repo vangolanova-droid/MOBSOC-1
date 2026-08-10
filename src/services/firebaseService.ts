@@ -148,6 +148,20 @@ export async function initFirestoreDatabase(): Promise<void> {
         }
       }
 
+      const odkSnap = await getDocs(collection(db, COLS.ODK_SUBMISSIONS));
+      if (odkSnap.empty) {
+        for (const item of INITIAL_ODK_SUBMISSIONS) {
+          await setDoc(doc(db, COLS.ODK_SUBMISSIONS, String(item.id)), cleanData(item));
+        }
+      }
+
+      const portalSnap = await getDocs(collection(db, COLS.PORTAL_POSTS));
+      if (portalSnap.empty) {
+        for (const p of DEFAULT_PORTAL_POSTS) {
+          await setDoc(doc(db, COLS.PORTAL_POSTS, p.id), cleanData(p));
+        }
+      }
+
       await setDoc(META_DOC, { seeded: true, timestamp: new Date().toISOString() });
     }
     initialized = true;
@@ -430,18 +444,12 @@ export async function fsSavePaymentStatuses(statuses: Record<number, 'pendente' 
 // --- ODK COLLECT SUBMISSIONS ---
 export async function fsGetOdkSubmissions(): Promise<ODKSubmission[]> {
   try {
+    await initFirestoreDatabase();
     const snap = await getDocs(collection(db, COLS.ODK_SUBMISSIONS));
-    if (snap.empty) {
-      // Seed initial sample ODK submissions
-      for (const item of INITIAL_ODK_SUBMISSIONS) {
-        await setDoc(doc(db, COLS.ODK_SUBMISSIONS, String(item.id)), cleanData(item));
-      }
-      return INITIAL_ODK_SUBMISSIONS as ODKSubmission[];
-    }
     return snap.docs.map((d) => d.data() as ODKSubmission);
   } catch (err) {
-    console.warn('fsGetOdkSubmissions fallback:', err);
-    return INITIAL_ODK_SUBMISSIONS as ODKSubmission[];
+    console.warn('fsGetOdkSubmissions error:', err);
+    return [];
   }
 }
 
@@ -496,19 +504,14 @@ const DEFAULT_PORTAL_POSTS: PortalPost[] = [
 
 export async function fsGetPortalPosts(): Promise<PortalPost[]> {
   try {
+    await initFirestoreDatabase();
     const snap = await getDocs(collection(db, COLS.PORTAL_POSTS));
-    if (snap.empty) {
-      for (const p of DEFAULT_PORTAL_POSTS) {
-        await setDoc(doc(db, COLS.PORTAL_POSTS, p.id), cleanData(p));
-      }
-      return DEFAULT_PORTAL_POSTS;
-    }
     const items: PortalPost[] = [];
     snap.forEach((d) => items.push(d.data() as PortalPost));
     return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch (err) {
     console.warn('fsGetPortalPosts error:', err);
-    return DEFAULT_PORTAL_POSTS;
+    return [];
   }
 }
 

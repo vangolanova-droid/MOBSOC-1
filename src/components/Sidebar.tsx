@@ -641,7 +641,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id="btn-logout"
             >
               <LogOut className="h-4 w-4" />
-              <span>Sair do Sistema</span>
+              <span>Sair</span>
             </button>
           </ActionTooltip>
         </div>

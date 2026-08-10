@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost } from './types';
 import { INITIAL_USERS } from './data/initialData';
 import { api } from './services/api';
@@ -210,7 +210,7 @@ export default function App() {
     await fsDeletePortalPost(id);
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       const [f, u, c, m] = await Promise.all([
         api.getFichas(),
@@ -225,7 +225,7 @@ export default function App() {
     } catch (e) {
       console.warn('Refresh warning:', e);
     }
-  };
+  }, []);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -249,107 +249,108 @@ export default function App() {
   };
 
   // User Actions
-  const handleCreateUser = async (userPartial: Partial<User>) => {
+  const handleCreateUser = useCallback(async (userPartial: Partial<User>) => {
     const created = await api.createUser(userPartial, currentUser);
     setUsers((prev) => deduplicateById([created, ...prev]));
-  };
+  }, [currentUser]);
 
-  const handleUpdateUser = async (id: number, fields: Partial<User>) => {
+  const handleUpdateUser = useCallback(async (id: number, fields: Partial<User>) => {
     const updated = await api.updateUser(id, fields, currentUser);
     setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
     if (currentUser && currentUser.id === id) {
       setCurrentUser(updated);
     }
-  };
+  }, [currentUser]);
 
-  const handleDeleteUser = async (id: number) => {
+  const handleDeleteUser = useCallback(async (id: number) => {
     if (currentUser?.tipo !== 'admin') {
       throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
     }
     await api.deleteUser(id, currentUser);
     setUsers((prev) => prev.filter((u) => u.id !== id));
-  };
+  }, [currentUser]);
 
   // Coordination Actions
-  const handleCreateCoordination = async (nome: string, coordenador?: string, bairros?: string[]) => {
+  const handleCreateCoordination = useCallback(async (nome: string, coordenador?: string, bairros?: string[]) => {
     const created = await api.createCoordination(nome, coordenador, bairros, currentUser);
     setCoordenacoes((prev) => deduplicateById([...prev, created]));
-  };
+  }, [currentUser]);
 
-  const handleUpdateCoordination = async (id: number, fields: Partial<Coordination>) => {
+  const handleUpdateCoordination = useCallback(async (id: number, fields: Partial<Coordination>) => {
     const updated = await api.updateCoordination(id, fields, currentUser);
     setCoordenacoes((prev) => prev.map((c) => (c.id === id ? updated : c)));
-  };
+  }, [currentUser]);
 
-  const handleDeleteCoordination = async (id: number) => {
+  const handleDeleteCoordination = useCallback(async (id: number) => {
     if (currentUser?.tipo !== 'admin') {
       throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
     }
     await api.deleteCoordination(id, currentUser);
     setCoordenacoes((prev) => prev.filter((c) => c.id !== id));
-  };
+  }, [currentUser]);
 
   // Mobilizador Actions
-  const handleCreateMobilizador = async (mobPartial: Partial<Mobilizador>) => {
+  const handleCreateMobilizador = useCallback(async (mobPartial: Partial<Mobilizador>) => {
     const created = await api.createMobilizador(mobPartial, currentUser);
     setMobilizadores((prev) => deduplicateById([...prev, created]));
-  };
+  }, [currentUser]);
 
-  const handleUpdateMobilizador = async (id: number, fields: Partial<Mobilizador>) => {
+  const handleUpdateMobilizador = useCallback(async (id: number, fields: Partial<Mobilizador>) => {
     if (currentUser?.tipo !== 'admin') {
       throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
     }
     const updated = await api.updateMobilizador(id, fields, currentUser);
     setMobilizadores((prev) => prev.map((m) => (m.id === id ? updated : m)));
-  };
+  }, [currentUser]);
 
-  const handleDeleteMobilizador = async (id: number) => {
-    if (currentUser?.tipo !== 'admin') {
-      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+  const handleDeleteMobilizador = useCallback(async (id: number) => {
+    if (!currentUser) {
+      throw new Error('Sessão expirada. Por favor inicie sessão novamente.');
     }
     await api.deleteMobilizador(id, currentUser);
     setMobilizadores((prev) => prev.filter((m) => m.id !== id));
-  };
+  }, [currentUser]);
 
   // Clear test data
-  const handleClearTestData = async () => {
+  const handleClearTestData = useCallback(async () => {
     if (currentUser?.tipo !== 'admin') {
       throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
     }
     await api.clearAllTestData(currentUser);
     setFichas([]);
     setMobilizadores([]);
-  };
-  const handleSaveFicha = async (fichaPartial: Partial<Ficha>) => {
+  }, [currentUser]);
+
+  const handleSaveFicha = useCallback(async (fichaPartial: Partial<Ficha>) => {
     const created = await api.createFicha(fichaPartial, currentUser);
     setFichas((prev) => deduplicateById([created, ...prev]));
     setActiveTab('listFichas');
-  };
+  }, [currentUser]);
 
-  const handleDeleteFicha = async (id: number) => {
-    if (currentUser?.tipo !== 'admin') {
-      throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
+  const handleDeleteFicha = useCallback(async (id: number) => {
+    if (!currentUser) {
+      throw new Error('Sessão expirada. Por favor inicie sessão novamente.');
     }
     await api.deleteFicha(id, currentUser);
     setFichas((prev) => prev.filter((f) => f.id !== id));
-  };
+  }, [currentUser]);
 
-  const handleUpdateFicha = async (id: number, fields: Partial<Ficha>) => {
+  const handleUpdateFicha = useCallback(async (id: number, fields: Partial<Ficha>) => {
     const isOnlyStatusUpdate = Object.keys(fields).every((k) => k === 'status');
     if (currentUser?.tipo !== 'admin' && !isOnlyStatusUpdate) {
       throw new Error('CONTACTA O ADMINISTRADOR INFORMANDO O MOTIVO PARA A PERMISSÃO\nTelefone/whatsApp: +244 923591571 / +244 953855260');
     }
     const updated = await api.updateFicha(id, fields, currentUser);
     setFichas((prev) => prev.map((f) => (f.id === id ? updated : f)));
-  };
+  }, [currentUser]);
 
   // ODK Submission Actions
-  const handleCreateOdkSubmission = async (subData: Partial<ODKSubmission>) => {
+  const handleCreateOdkSubmission = useCallback(async (subData: Partial<ODKSubmission>) => {
     const created = await api.createOdkSubmission(subData, currentUser);
     setOdkSubmissions((prev) => deduplicateById([created, ...prev]));
-  };
+  }, [currentUser]);
 
-  const handleUpdateOdkSubmissionStatus = async (
+  const handleUpdateOdkSubmissionStatus = useCallback(async (
     id: string,
     status: 'confirmado' | 'divergencia' | 'pendente',
     adminNotes?: string
@@ -372,16 +373,16 @@ export default function App() {
           : s
       )
     );
-  };
+  }, [currentUser]);
 
-  const handleDeleteOdkSubmission = async (id: string) => {
+  const handleDeleteOdkSubmission = useCallback(async (id: string) => {
     try {
       await api.deleteOdkSubmission(id, currentUser);
     } catch (err) {
       console.warn('Erro ao apagar no Firestore, eliminando localmente:', err);
     }
     setOdkSubmissions((prev) => prev.filter((s) => String(s.id) !== String(id)));
-  };
+  }, [currentUser]);
 
 
   if (loading) {

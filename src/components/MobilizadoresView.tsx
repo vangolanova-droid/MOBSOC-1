@@ -49,7 +49,7 @@ interface MobilizadoresViewProps {
   onDeleteMobilizador: (id: number) => Promise<void>;
 }
 
-export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
+export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   user,
   users = [],
   mobilizadores,
@@ -1706,4 +1706,4 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = ({
       )}
     </div>
   );
-};
+});

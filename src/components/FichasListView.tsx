@@ -45,7 +45,7 @@ interface FichasListViewProps {
   onClearTestData?: () => Promise<void>;
 }
 
-export const FichasListView: React.FC<FichasListViewProps> = ({
+export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
   user,
   users = [],
   fichas,
@@ -1001,4 +1001,4 @@ export const FichasListView: React.FC<FichasListViewProps> = ({
       />
     </div>
   );
-};
+});
