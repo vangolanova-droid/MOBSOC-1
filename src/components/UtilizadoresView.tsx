@@ -29,7 +29,13 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   const [coordId, setCoordId] = useState<number>(
     coordenacoes.length > 0 ? coordenacoes[0].id : 1
   );
+  const [ronda, setRonda] = useState('1ª Ronda');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal State for Password Reset
+  const [resetUser, setResetUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   // Modal State for Delete Confirmation
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
@@ -58,6 +64,30 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
     }
   };
 
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUser) return;
+    if (!newPassword.trim()) {
+      showToast('Por favor introduza a nova senha.', 'error');
+      return;
+    }
+    setIsResetting(true);
+    try {
+      if (onUpdateUser) {
+        await onUpdateUser(resetUser.id, { senha: newPassword.trim() });
+        showToast(`Senha do utilizador "${resetUser.nome}" atualizada com sucesso!`, 'success');
+        setResetUser(null);
+        setNewPassword('');
+      } else {
+        showToast('Atualização não suportada.', 'error');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Erro ao alterar a senha.', 'error');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim() || !email.trim() || !senha.trim()) {
@@ -73,6 +103,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
         email: email.trim(),
         senha: senha.trim(),
         tipo,
+        ronda: tipo === 'supervisor' ? ronda : '1ª Ronda',
         coordId: tipo === 'admin' ? null : Number(coordId),
         coordNome: tipo === 'admin' ? 'Acesso Global' : selectedCoord?.nome || '—',
         coordenadorNome: tipo === 'admin' ? 'Direção Geral' : selectedCoord?.coordenador || '—',
@@ -285,7 +316,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
             </select>
           </div>
 
-          {tipo === 'supervisor' ? (
+          {tipo === 'supervisor' && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
                 Coordenação
@@ -303,31 +334,37 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                 ))}
               </select>
             </div>
-          ) : (
-            <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full h-11 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
-                id="btn-add-user"
-              >
-                + Adicionar Utilizador
-              </button>
-            </div>
           )}
 
           {tipo === 'supervisor' && (
-            <div className="flex items-end sm:col-span-2 lg:col-span-5">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-11 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-6 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
-                id="btn-add-supervisor"
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">
+                Ronda Atribuída
+              </label>
+              <select
+                value={ronda}
+                onChange={(e) => setRonda(e.target.value)}
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                id="select-user-ronda"
               >
-                + Adicionar Supervisor
-              </button>
+                <option value="1ª Ronda">1ª Ronda</option>
+                <option value="2ª Ronda">2ª Ronda</option>
+                <option value="3ª Ronda">3ª Ronda</option>
+                <option value="4ª Ronda">4ª Ronda</option>
+              </select>
             </div>
           )}
+
+          <div className="flex items-end sm:col-span-2 lg:col-span-5">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-11 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-6 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
+              id="btn-add-user"
+            >
+              + {tipo === 'supervisor' ? 'Adicionar Supervisor' : 'Adicionar Administrador'}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -341,6 +378,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                 <th className="p-3.5">Nome</th>
                 <th className="p-3.5">Email / Contacto</th>
                 <th className="p-3.5">Perfil</th>
+                <th className="p-3.5">Ronda</th>
                 <th className="p-3.5">Estado</th>
                 <th className="p-3.5">Coordenação</th>
                 <th className="p-3.5">Coordenador Responsável</th>
@@ -368,6 +406,11 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                     </span>
                   </td>
                   <td className="p-3.5">
+                    <span className="inline-flex items-center rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700 border border-slate-200">
+                      {u.ronda || '1ª Ronda'}
+                    </span>
+                  </td>
+                  <td className="p-3.5">
                     {u.status === 'pendente' ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
                         <Clock className="h-3 w-3 text-amber-600" />
@@ -390,19 +433,31 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                           : 'Gestor do Sistema')}
                   </td>
                   <td className="p-3.5 text-right">
-                    {u.id === 1 ? (
-                      <span className="text-xs text-slate-400 font-mono">Protegido</span>
-                    ) : (
-                      <div className="flex items-center justify-end gap-1.5">
-                        {u.status === 'pendente' && (
-                          <button
-                            onClick={() => handleApproveUser(u)}
-                            className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white transition shadow-2xs"
-                            title="Aprovar Registo"
-                          >
-                            Aprovar
-                          </button>
-                        )}
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* Password Reset/Recovery Button for Admin & Supervisors */}
+                      <button
+                        onClick={() => {
+                          setResetUser(u);
+                          setNewPassword('');
+                        }}
+                        className="rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 text-[11px] font-bold text-amber-800 transition flex items-center gap-1"
+                        title="Restaurar / Recuperar Senha"
+                      >
+                        <Lock className="h-3 w-3 text-amber-600" />
+                        <span>Reset Senha</span>
+                      </button>
+
+                      {u.status === 'pendente' && (
+                        <button
+                          onClick={() => handleApproveUser(u)}
+                          className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white transition shadow-2xs"
+                          title="Aprovar Registo"
+                        >
+                          Aprovar
+                        </button>
+                      )}
+
+                      {u.id !== 1 && (
                         <button
                           onClick={() => setDeletingUser(u)}
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
@@ -410,8 +465,8 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -419,6 +474,64 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* MODAL RESET/RESTAURAR SENHA */}
+      {resetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-amber-600 font-extrabold text-sm">
+                <Lock className="h-4 w-4" />
+                <span>Restaurar / Alterar Senha</span>
+              </div>
+              <button
+                onClick={() => setResetUser(null)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Defina a nova senha de acesso para o utilizador{' '}
+              <strong className="text-slate-900">{resetUser.nome}</strong> ({resetUser.email}).
+            </p>
+
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nova Senha de Acesso
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Digite a nova senha..."
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 font-mono outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setResetUser(null)}
+                  className="h-10 px-4 text-xs font-bold text-slate-600 rounded-xl hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  className="h-10 px-5 text-xs font-bold text-white rounded-xl bg-amber-600 hover:bg-amber-700 shadow-xs transition disabled:opacity-50"
+                >
+                  {isResetting ? 'A guardar...' : 'Confirmar Nova Senha'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

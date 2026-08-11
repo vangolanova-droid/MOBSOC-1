@@ -182,6 +182,7 @@ export const api = {
       fotoUrl: user.fotoUrl || '',
       status: user.status || 'ativo',
       telefone: user.telefone || '',
+      ronda: user.ronda || '1ª Ronda',
       createdAt: new Date().toISOString(),
     };
 

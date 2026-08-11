@@ -68,12 +68,13 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [nome, setNome] = useState('');
   const [morada, setMorada] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [funcao, setFuncao] = useState('Mobilizador Comunitário');
+  const [funcao] = useState('Mobilizador Comunitário');
   const [ronda, setRonda] = useState('1ª Ronda');
   const [coordId, setCoordId] = useState<number>(() => {
     if (!isAdmin && user.coordId) return user.coordId;
     return coordenacoes.length > 0 ? coordenacoes[0].id : 1;
   });
+  const [selectedSupervisorId, setSelectedSupervisorId] = useState<number | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'geral' | 'supervisor' | 'coordenacao' | 'financas'>(initialTab);
@@ -428,6 +429,10 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
     const selectedCoord = coordenacoes.find((c) => c.id === Number(coordId));
     const coordNome = selectedCoord ? selectedCoord.nome : user.coordNome || '—';
 
+    const selectedSup = users.find((u) => u.id === selectedSupervisorId);
+    const assignedSupervisorId = isAdmin ? (selectedSup ? selectedSup.id : undefined) : user.id;
+    const assignedSupervisorNome = isAdmin ? (selectedSup ? selectedSup.nome : 'Sem Supervisor Atribuído') : user.nome;
+
     setIsSubmitting(true);
     try {
       await onCreateMobilizador({
@@ -435,12 +440,12 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
         nome: nome.trim(),
         morada: morada.trim(),
         telefone: telefone.trim(),
-        funcao: funcao.trim() || 'Mobilizador Comunitário',
+        funcao: 'Mobilizador Comunitário',
         ronda,
         coordId: Number(coordId),
         coordNome,
-        supervisorId: user.id,
-        supervisorNome: user.nome,
+        supervisorId: assignedSupervisorId,
+        supervisorNome: assignedSupervisorNome,
       });
 
       showToast(`Mobilizador "${nome.trim()}" (ID: ${nextPreviewCodigoId}) registado com sucesso!`, 'success');
@@ -449,8 +454,8 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
       setNome('');
       setMorada('');
       setTelefone('');
-      setFuncao('Mobilizador Comunitário');
       setRonda('1ª Ronda');
+      setSelectedSupervisorId(null);
     } catch (err: any) {
       showToast(err.message || 'Erro ao registar mobilizador.', 'error');
     } finally {
@@ -567,15 +572,14 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                Função (Predefinida)
+                Função do Sistema (Específica)
               </label>
               <div className="relative mt-1.5">
                 <input
                   type="text"
-                  value={funcao}
-                  onChange={(e) => setFuncao(e.target.value)}
-                  placeholder="Mobilizador Comunitário"
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition"
+                  readOnly
+                  value="Mobilizador Comunitário"
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-3.5 text-xs font-bold text-slate-700 cursor-not-allowed outline-none"
                   id="input-mob-funcao"
                 />
                 <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
@@ -632,6 +636,29 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                 </div>
               )}
             </div>
+
+            {isAdmin && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Supervisor Responsável
+                </label>
+                <select
+                  value={selectedSupervisorId || ''}
+                  onChange={(e) => setSelectedSupervisorId(e.target.value ? Number(e.target.value) : null)}
+                  className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                  id="select-mob-supervisor"
+                >
+                  <option value="">-- Selecionar Supervisor --</option>
+                  {users
+                    .filter((u) => u.tipo === 'supervisor' && u.status === 'ativo')
+                    .map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.nome} ({sup.ronda || '1ª Ronda'}) - {sup.coordNome || 'Sem Coord.'}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex items-end sm:col-span-1">
               <button

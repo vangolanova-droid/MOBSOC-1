@@ -9,6 +9,7 @@ export interface User {
   coordId: number | null;
   coordNome?: string;
   coordenadorNome?: string;
+  ronda?: string;
   fotoUrl?: string;
   status?: 'ativo' | 'pendente' | 'rejeitado';
   telefone?: string;

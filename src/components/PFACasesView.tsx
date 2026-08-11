@@ -21,6 +21,7 @@ import {
   PieChart as PieIcon,
   BarChart3,
   Check,
+  CheckSquare,
   AlertTriangle,
 } from 'lucide-react';
 import {
@@ -1110,23 +1111,89 @@ export const PFACasesView: React.FC<PFACasesViewProps> = ({
                 </div>
               </div>
 
-              {/* Pais / Localização */}
+              {/* Encarregado / Com quem vive & Localização */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
-                <div className="font-extrabold text-slate-900 uppercase text-[11px] tracking-wider text-blue-700">
-                  Dados dos Pais & Localização
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1.5">
+                    Com quem vive a criança? (Encarregados) *
+                  </label>
+                  <select
+                    value={newCaseData.comQuemVive || 'Pais'}
+                    onChange={(e) => setNewCaseData({ ...newCaseData, comQuemVive: e.target.value })}
+                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-900 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 cursor-pointer"
+                    id="select-pfa-case-com-quem-vive"
+                  >
+                    <option value="Pais">Com os Pais</option>
+                    <option value="Pai">Apenas Pai</option>
+                    <option value="Mãe">Apenas Mãe</option>
+                    <option value="Tio(a)">Tio(a)</option>
+                    <option value="Primo(a)">Primo(a)</option>
+                    <option value="Irmão(ã)">Irmão(ã)</option>
+                    <option value="Cunhado(a)">Cunhado(a)</option>
+                    <option value="Avô(ó)">Avô(ó)</option>
+                    <option value="Outro">Outro Encarregado</option>
+                  </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Nome dos Pais / Encarregado *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Mateus Paulo"
-                      value={newCaseData.nomeEncarregado || ''}
-                      onChange={(e) => setNewCaseData({ ...newCaseData, nomeEncarregado: e.target.value })}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
-                    />
-                  </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {(newCaseData.comQuemVive || 'Pais') === 'Pais' ? (
+                    <>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Nome do Pai *</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Mateus Paulo"
+                          value={newCaseData.nomePai || ''}
+                          onChange={(e) => setNewCaseData({ ...newCaseData, nomePai: e.target.value })}
+                          className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Nome da Mãe *</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Ana Maria"
+                          value={newCaseData.nomeMae || ''}
+                          onChange={(e) => setNewCaseData({ ...newCaseData, nomeMae: e.target.value })}
+                          className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
+                        />
+                      </div>
+                    </>
+                  ) : (newCaseData.comQuemVive || 'Pais') === 'Pai' ? (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Nome do Pai *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Mateus Paulo"
+                        value={newCaseData.nomePai || ''}
+                        onChange={(e) => setNewCaseData({ ...newCaseData, nomePai: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
+                      />
+                    </div>
+                  ) : (newCaseData.comQuemVive || 'Pais') === 'Mãe' ? (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Nome da Mãe *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Ana Maria"
+                        value={newCaseData.nomeMae || ''}
+                        onChange={(e) => setNewCaseData({ ...newCaseData, nomeMae: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Nome do Encarregado ({newCaseData.comQuemVive}) *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Nome do encarregado responsável"
+                        value={newCaseData.nomeEncarregado || ''}
+                        onChange={(e) => setNewCaseData({ ...newCaseData, nomeEncarregado: e.target.value })}
+                        className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 font-medium outline-none focus:border-rose-500"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Telefone do Encarregado</label>
                     <input

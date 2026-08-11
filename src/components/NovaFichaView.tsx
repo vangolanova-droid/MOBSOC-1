@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RotateCcw, MapPin, Calculator, HelpCircle, UserCheck, ShieldAlert, Activity } from 'lucide-react';
+import { Save, RotateCcw, MapPin, Calculator, HelpCircle, UserCheck, ShieldAlert, Activity, CheckSquare } from 'lucide-react';
 import { CasoPFA, Coordination, Ficha, FichaTableData, Mobilizador, User } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 import { useToast } from '../context/ToastContext';
@@ -314,7 +314,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
           <span>Localização & Mobilizador</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
           <div>
             <label className="block text-xs font-semibold text-slate-700">
               Província
@@ -339,6 +339,38 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             />
           </div>
 
+          {/* Coordenação Responsável between Município and Comuna */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700">
+              Coordenação Responsável
+            </label>
+            {isAdmin ? (
+              <select
+                value={coordId}
+                onChange={(e) => setCoordId(Number(e.target.value))}
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                id="select-ficha-coord"
+              >
+                {coordenacoes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={
+                  coordenacoes.find((c) => c.id === user.coordId)?.nome ||
+                  user.coordNome ||
+                  '—'
+                }
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+              />
+            )}
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700">
               Comuna
@@ -351,7 +383,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             />
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+          <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700">
               Bairro / Comunidade <span className="text-red-500">*</span>
             </label>
@@ -383,37 +415,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Data da Atividade <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-ficha-data"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Ronda da Campanha <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={ronda}
-              onChange={(e) => setRonda(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="select-ficha-ronda"
-            >
-              <option value="1ª Ronda">1ª Ronda</option>
-              <option value="2ª Ronda">2ª Ronda</option>
-              <option value="3ª Ronda">3ª Ronda</option>
-              <option value="4ª Ronda">4ª Ronda</option>
-            </select>
-          </div>
-
+          {/* Nome do Mobilizador right after Bairro */}
           <div>
             <label className="block text-xs font-semibold text-slate-700">
               Nome do Mobilizador <span className="text-red-500">*</span>
@@ -463,33 +465,33 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700">
-              Coordenação Responsável
+              Ronda da Campanha <span className="text-red-500">*</span>
             </label>
-            {isAdmin ? (
-              <select
-                value={coordId}
-                onChange={(e) => setCoordId(Number(e.target.value))}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="select-ficha-coord"
-              >
-                {coordenacoes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                readOnly
-                value={
-                  coordenacoes.find((c) => c.id === user.coordId)?.nome ||
-                  user.coordNome ||
-                  '—'
-                }
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
-              />
-            )}
+            <select
+              value={ronda}
+              onChange={(e) => setRonda(e.target.value)}
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              id="select-ficha-ronda"
+            >
+              <option value="1ª Ronda">1ª Ronda</option>
+              <option value="2ª Ronda">2ª Ronda</option>
+              <option value="3ª Ronda">3ª Ronda</option>
+              <option value="4ª Ronda">4ª Ronda</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700">
+              Data da Atividade <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              id="input-ficha-data"
+            />
           </div>
         </div>
       </div>
@@ -805,42 +807,26 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
 
               {/* Com quem vive a criação / Grau de Parentesco */}
               <div className="sm:col-span-2 lg:col-span-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1.5">
                     Com quem vive a criança? (Encarregados) <span className="text-rose-600">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-500 font-medium">
-                    Selecione com quem reside a criança para adaptar os campos de identificação
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {[
-                    { id: 'Pais', label: 'Com os Pais' },
-                    { id: 'Pai', label: 'Apenas Pai' },
-                    { id: 'Mãe', label: 'Apenas Mãe' },
-                    { id: 'Tio', label: 'Tio' },
-                    { id: 'Tia', label: 'Tia' },
-                    { id: 'Cunhada', label: 'Cunhada' },
-                    { id: 'Irmã', label: 'Irmã' },
-                    { id: 'Irmão', label: 'Irmão' },
-                    { id: 'Primo', label: 'Primo' },
-                    { id: 'Prima', label: 'Prima' },
-                    { id: 'Outro', label: 'Outro Encarregado' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setPfaComQuemVive(item.id)}
-                      className={`h-9 px-3 text-xs font-bold rounded-lg border transition text-center cursor-pointer ${
-                        pfaComQuemVive === item.id
-                          ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                  <select
+                    value={pfaComQuemVive}
+                    onChange={(e) => setPfaComQuemVive(e.target.value)}
+                    className="w-full h-11 rounded-xl border border-rose-200 bg-white px-3.5 text-xs font-bold text-slate-900 outline-none transition focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20 cursor-pointer"
+                    id="select-pfa-com-quem-vive"
+                  >
+                    <option value="Pais">Com os Pais</option>
+                    <option value="Pai">Apenas Pai</option>
+                    <option value="Mãe">Apenas Mãe</option>
+                    <option value="Tio(a)">Tio(a)</option>
+                    <option value="Primo(a)">Primo(a)</option>
+                    <option value="Irmão(ã)">Irmão(ã)</option>
+                    <option value="Cunhado(a)">Cunhado(a)</option>
+                    <option value="Avô(ó)">Avô(ó)</option>
+                    <option value="Outro">Outro Encarregado</option>
+                  </select>
                 </div>
 
                 {/* Campos Dinâmicos de Acordo com Parentesco */}
@@ -870,6 +856,32 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
                         className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
                       />
                     </div>
+                  </div>
+                ) : pfaComQuemVive === 'Pai' ? (
+                  <div className="pt-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Nome Completo do Pai <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Mateus Paulo"
+                      value={pfaNomePai}
+                      onChange={(e) => setPfaNomePai(e.target.value)}
+                      className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                    />
+                  </div>
+                ) : pfaComQuemVive === 'Mãe' ? (
+                  <div className="pt-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Nome Completo da Mãe <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Ana Maria"
+                      value={pfaNomeMae}
+                      onChange={(e) => setPfaNomeMae(e.target.value)}
+                      className="mt-1 w-full h-10 rounded-xl border border-rose-200 bg-white px-3.5 text-xs text-slate-900 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20"
+                    />
                   </div>
                 ) : (
                   <div className="pt-1">
