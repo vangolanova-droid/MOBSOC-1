@@ -261,6 +261,7 @@ export const api = {
       morada: mob.morada || '',
       telefone: mob.telefone || '',
       funcao: mob.funcao || 'Mobilizador Comunitário',
+      ronda: mob.ronda || '1ª Ronda',
       coordId: mob.coordId || null,
       coordNome: mob.coordNome || 'Geral',
       supervisorId: mob.supervisorId || null,

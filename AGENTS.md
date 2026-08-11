@@ -81,3 +81,43 @@ Antes de considerar uma tarefa concluída ou abrir PR:
 4. **DESENVOLVER** mantendo o escopo estrito da Issue.
 5. **TESTAR & VERIFICAR** com `lint` e `build`.
 6. **COMMITAR & VINCULAR PR** com as referências `Closes #{numero}`.
+
+---
+
+## Motion Design System — Interface, Loading e Microinterações
+
+### 1. Regra Obrigatória e Referência
+Este projeto adota como referência de Motion Design a skill **Design Motion Principles** (https://github.com/kylezantos/design-motion-principles).
+A implementação de motion deve priorizar: Clareza, Feedback visual, Continuidade, Hierarquia, Velocidade percebida, Suavidade, Performance, Acessibilidade, Consistência e Intencionalidade. Motion não deve ser utilizado apenas como decoração.
+
+### 2. Princípio Central
+Toda alteração de interface deve responder:
+> **O movimento ajuda o utilizador a compreender o que aconteceu, onde algo está ou o que está sendo carregado?**
+Se sim, utilizar motion. Se não, não adicionar animação. O objetivo é uma interface **fluida, profissional e viva**.
+
+### 3. Skeleton Loading Obrigatório
+Toda interface assíncrona deve possuir Skeleton Loading adequado (cards, gráficos, tabelas, filtros, perfis) respeitando a estrutura visual real para **evitar Layout Shift**.
+
+### 4. Lazy Loading e Code Splitting
+Componentes pesados (gráficos, modais complexos, mapas, relatórios) devem utilizar `React.lazy()` e `<Suspense fallback={<PageSkeleton />}>`.
+
+### 5. Animações de Entrada, Saída e Transições
+- Entradas suaves (`opacity: 0 -> 1`, `translateY: 4px -> 0`).
+- Saídas animadas via `AnimatePresence` em modais, toasts e drawers.
+- Transições de estado visualmente contínuas (Salvar -> Salvando... -> ✓ Salvo).
+
+### 6. Feedback Obrigatório e Indicadores de Progresso
+- Toda operação assíncrona relevante e botões de ação devem indicar claramente seu estado (evitando múltiplos envios).
+- Operações mensuráveis (uploads, downloads, exportações) devem exibir progresso real.
+
+### 7. Tabelas, Dashboards, Modais e Sidebar
+- Skeletons em tabelas e dashboards, sem stagger exagerado.
+- Modais e sidebars com entradas/saídas e backdrop animados.
+- Respeito ao estado `:focus-visible` e suporte a `prefers-reduced-motion`.
+
+### 8. Performance, Duração, Easing e Stagger
+- Priorizar `transform` e `opacity`. Evitar animar `width/height/top/left`.
+- Durações curtas (Microinterações: 100-200ms, Modais: 200-350ms).
+- Easings naturais (ex: `cubic-bezier(.2, .8, .2, 1)`). Stagger controlado.
+- Respeitar a regra: **A interface deve parecer viva, mas nunca deve parecer lenta.**
+
