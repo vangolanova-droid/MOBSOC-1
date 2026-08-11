@@ -293,6 +293,7 @@ export const api = {
       morada: fields.morada || '',
       telefone: fields.telefone || '',
       funcao: fields.funcao || 'Mobilizador Comunitário',
+      ronda: fields.ronda || '1ª Ronda',
       coordId: fields.coordId || null,
       coordNome: fields.coordNome || '',
       createdAt: new Date().toISOString(),

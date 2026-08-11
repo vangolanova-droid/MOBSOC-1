@@ -28,6 +28,7 @@ import {
   CheckCheck,
   BellRing,
   Send,
+  Loader2,
 } from 'lucide-react';
 import { Coordination, Ficha, Mobilizador, User } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -69,7 +70,10 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [morada, setMorada] = useState('');
   const [telefone, setTelefone] = useState('');
   const [funcao] = useState('Mobilizador Comunitário');
-  const [ronda, setRonda] = useState('1ª Ronda');
+  const [ronda, setRonda] = useState<string>(() => {
+    if (!isAdmin && user.ronda) return user.ronda;
+    return '1ª Ronda';
+  });
   const [coordId, setCoordId] = useState<number>(() => {
     if (!isAdmin && user.coordId) return user.coordId;
     return coordenacoes.length > 0 ? coordenacoes[0].id : 1;
@@ -441,7 +445,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
         morada: morada.trim(),
         telefone: telefone.trim(),
         funcao: 'Mobilizador Comunitário',
-        ronda,
+        ronda: ronda || '1ª Ronda',
         coordId: Number(coordId),
         coordNome,
         supervisorId: assignedSupervisorId,
@@ -454,7 +458,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
       setNome('');
       setMorada('');
       setTelefone('');
-      setRonda('1ª Ronda');
+      setRonda(!isAdmin && user.ronda ? user.ronda : '1ª Ronda');
       setSelectedSupervisorId(null);
     } catch (err: any) {
       showToast(err.message || 'Erro ao registar mobilizador.', 'error');
@@ -644,7 +648,16 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                 </label>
                 <select
                   value={selectedSupervisorId || ''}
-                  onChange={(e) => setSelectedSupervisorId(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => {
+                    const supId = e.target.value ? Number(e.target.value) : null;
+                    setSelectedSupervisorId(supId);
+                    if (supId) {
+                      const sup = users.find((u) => u.id === supId);
+                      if (sup?.ronda) {
+                        setRonda(sup.ronda);
+                      }
+                    }
+                  }}
                   className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
                   id="select-mob-supervisor"
                 >
@@ -660,15 +673,28 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
               </div>
             )}
 
-            <div className="flex items-end sm:col-span-1">
+            <div className="flex flex-col gap-1.5 sm:col-span-1">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-5 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 active:scale-[0.99]"
+                className={`w-full h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-bold text-white shadow-xs transition-all duration-200 active:scale-[0.99] ${
+                  isSubmitting
+                    ? 'bg-blue-700 cursor-wait opacity-95 ring-2 ring-blue-400/50'
+                    : 'bg-[#00B2FF] hover:bg-[#009ee3]'
+                }`}
                 id="btn-salvar-mobilizador"
               >
-                <UserPlus className="h-4 w-4" />
-                <span>{isSubmitting ? 'A registar...' : 'Registar Mobilizador'}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    <span>A processar ({ronda})...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    <span>Registar Mobilizador</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -1601,10 +1627,21 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-xl bg-[#2E7D32] hover:bg-[#246328] px-5 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50"
+                  className={`rounded-xl px-5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                    isSubmitting
+                      ? 'bg-emerald-800 cursor-wait opacity-95 ring-2 ring-emerald-400/50'
+                      : 'bg-[#2E7D32] hover:bg-[#246328]'
+                  }`}
                   id="btn-submit-edit-mob"
                 >
-                  Guardar Alterações
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-white" />
+                      <span>A guardar ({editRonda})...</span>
+                    </>
+                  ) : (
+                    <span>Guardar Alterações</span>
+                  )}
                 </button>
               </div>
             </form>

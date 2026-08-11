@@ -301,7 +301,13 @@ export async function fsGetMobilizadores(): Promise<Mobilizador[]> {
   await initFirestoreDatabase();
   const snap = await getDocs(collection(db, COLS.MOBILIZADORES));
   const items: Mobilizador[] = [];
-  snap.forEach((d) => items.push(d.data() as Mobilizador));
+  snap.forEach((d) => {
+    const data = d.data() as Mobilizador;
+    if (!data.ronda) {
+      data.ronda = '1ª Ronda';
+    }
+    items.push(data);
+  });
   items.sort((a, b) => a.id - b.id);
 
   // Ensure every mobilizador has a valid codigoId in Firestore
