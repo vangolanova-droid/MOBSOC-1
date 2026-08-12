@@ -236,6 +236,25 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                   placeholder="https://..."
                   className="w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-400"
                 />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="text-[10px] text-slate-400 font-bold self-center mr-1">Sugestões:</span>
+                  {[
+                    { label: 'Brigada Móvel', url: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80' },
+                    { label: 'ODK / Digital', url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80' },
+                    { label: 'Diálogo', url: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1200&q=80' },
+                    { label: 'Saúde / PFA', url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80' },
+                    { label: 'Estatísticas', url: 'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?auto=format&fit=crop&w=1200&q=80' },
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setImagemUrl(preset.url)}
+                      className="rounded-lg bg-slate-800 border border-slate-700 hover:border-sky-400 px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:text-white transition"
+                    >
+                      + {preset.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="md:col-span-2 flex items-center gap-3 pt-2">

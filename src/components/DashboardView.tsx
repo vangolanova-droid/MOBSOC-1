@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Users,
   MapPin,
@@ -25,6 +26,15 @@ import {
   Trash2,
   Edit3,
   Megaphone,
+  Play,
+  Pause,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Printer,
+  X,
+  Radio,
+  Search,
 } from 'lucide-react';
 import {
   BarChart,
@@ -89,6 +99,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const todayStr = new Date().toISOString().split('T')[0];
   const [targetDate, setTargetDate] = useState('2026-08-03');
   const [reminderNotice, setReminderNotice] = useState<string | null>(null);
+
+  // Carousel & Portal News States
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isCarouselPlaying, setIsCarouselPlaying] = useState(true);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('Todos');
+  const [newsSearchQuery, setNewsSearchQuery] = useState<string>('');
+  const [readerPost, setReaderPost] = useState<PortalPost | null>(null);
+
+  // Filter posts for carousel (prefer featured posts, or all posts if no featured)
+  const featuredPosts = portalPosts.filter((p) => p.destaque);
+  const carouselPosts = featuredPosts.length > 0 ? featuredPosts : portalPosts;
+
+  // Auto-advance carousel slide every 5 seconds
+  useEffect(() => {
+    if (!isCarouselPlaying || isCarouselHovered || carouselPosts.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % carouselPosts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isCarouselPlaying, isCarouselHovered, carouselPosts.length]);
+
+  const safeSlideIndex = currentSlideIndex >= carouselPosts.length ? 0 : currentSlideIndex;
+  const activeSlide = carouselPosts[safeSlideIndex];
+
+  // Filtered posts for grid below carousel
+  const filteredGridPosts = portalPosts.filter((p) => {
+    const matchesCat =
+      selectedNewsCategory === 'Todos'
+        ? true
+        : selectedNewsCategory === 'Destaques'
+        ? p.destaque
+        : p.categoria === selectedNewsCategory;
+
+    const matchesSearch =
+      !newsSearchQuery.trim() ||
+      p.titulo.toLowerCase().includes(newsSearchQuery.toLowerCase()) ||
+      (p.subtitulo && p.subtitulo.toLowerCase().includes(newsSearchQuery.toLowerCase())) ||
+      p.conteudo.toLowerCase().includes(newsSearchQuery.toLowerCase());
+
+    return matchesCat && matchesSearch;
+  });
 
   // Filter fichas if supervisor
   const visibleFichas = isAdmin
@@ -285,6 +337,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>Nova Ficha</span>
             </button>
           </ActionTooltip>
+        </div>
+      </div>
+
+      {/* Ticker Marquee Contínuo de Destaques em Movimento */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-2.5 shadow-md text-white">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 shrink-0 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-xs animate-pulse">
+            <Radio className="h-3 w-3 text-white" />
+            <span>EM CAMPO</span>
+          </div>
+
+          <div className="flex-1 overflow-hidden relative">
+            <div className="flex items-center gap-8 whitespace-nowrap animate-marquee text-xs font-bold text-slate-200">
+              <span className="flex items-center gap-1.5 text-sky-300">
+                <Megaphone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <span>Brigadas Móveis ativas no Sumbe: Bairros Chingo, Quissala e 15 de Março em acção intensiva</span>
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="flex items-center gap-1.5 text-emerald-300">
+                <Target className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <span>Meta do Dia: Sensibilização de 12.500 Famílias no Cuanza Sul</span>
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="flex items-center gap-1.5 text-amber-300">
+                <CheckCircle2 className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <span>Sincronização 100% Digital via ODK Collect Central & SisMob</span>
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="flex items-center gap-1.5 text-rose-300">
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                <span>Vigilância Epidemiológica de PFA / Pólio - Notificação em Tempo Real</span>
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="flex items-center gap-1.5 text-sky-300">
+                <Megaphone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <span>Brigadas Móveis ativas no Sumbe: Bairros Chingo, Quissala e 15 de Março em acção intensiva</span>
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="flex items-center gap-1.5 text-emerald-300">
+                <Target className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <span>Meta do Dia: Sensibilização de 12.500 Famílias no Cuanza Sul</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -702,22 +798,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Mural de Notícias e Informações do Portal */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xs space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+      {/* Carrossel Dinâmico & Mural de Publicações */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-5 shadow-2xs space-y-4">
+        {/* Header da Secção */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400 font-bold border border-sky-100 dark:border-sky-800">
-              <Newspaper className="h-4.5 w-4.5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-bold shadow-md">
+              <Newspaper className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <span>Notícias, Comunicados & Informações da Página Inicial</span>
-                <span className="rounded-full bg-sky-100 dark:bg-sky-900/60 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:text-sky-300">
+                <span>Destaques & Publicações em Carrossel Dinâmico</span>
+                <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:text-blue-300">
                   {portalPosts.length} {portalPosts.length === 1 ? 'publicação' : 'publicações'}
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Informações oficiais, comunicados de saúde, brigadas móveis e avisos operacionais
+                Informações em rotação dinâmica, comunicados de saúde, brigadas móveis e avisos operacionais
               </p>
             </div>
           </div>
@@ -726,103 +823,405 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenPortalNews}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-[0.98] cursor-pointer"
                 id="dash-btn-criar-noticia"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                <span>Criar Nova Publicação</span>
+                <span>Gerir / Criar Publicação</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* List of Posts */}
-        {portalPosts.length === 0 ? (
+        {/* 1. CARROSSEL PRINCIPAL (HERO SLIDE) */}
+        {carouselPosts.length > 0 && activeSlide ? (
+          <div className="space-y-3">
+            <div
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              className="relative min-h-[340px] sm:min-h-[400px] md:min-h-[440px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-xl group"
+            >
+              {/* Background Imagem com transição suave */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSlide.id}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+                  className="absolute inset-0"
+                >
+                  {activeSlide.imagemUrl ? (
+                    <img
+                      src={activeSlide.imagemUrl}
+                      alt={activeSlide.titulo}
+                      className="w-full h-full object-cover filter brightness-[0.7] contrast-[1.1] transition-transform duration-700 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950" />
+                  )}
+                  {/* Overlay gradiente escuro para legibilidade perfeita */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20" />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Controles do Carrossel (Overlay Superior) */}
+              <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 px-3 py-1 text-[11px] font-mono font-bold text-white shadow-md">
+                    {safeSlideIndex + 1} / {carouselPosts.length}
+                  </span>
+                  {activeSlide.destaque && (
+                    <span className="rounded-xl bg-amber-500 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-slate-950 shadow-md flex items-center gap-1 uppercase tracking-wider">
+                      <Sparkles className="h-3 w-3" />
+                      Destaque Principal
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 p-1">
+                  <button
+                    onClick={() => setIsCarouselPlaying(!isCarouselPlaying)}
+                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title={isCarouselPlaying ? 'Pausar Carrossel' : 'Iniciar Carrossel'}
+                  >
+                    {isCarouselPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentSlideIndex((prev) => (prev === 0 ? carouselPosts.length - 1 : prev - 1))
+                    }
+                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title="Anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentSlideIndex((prev) => (prev + 1) % carouselPosts.length)}
+                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title="Próximo"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Conteúdo do Slide (Overlay Inferior) */}
+              <div className="absolute bottom-0 inset-x-0 p-5 sm:p-7 z-10 space-y-2.5 max-w-4xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm text-white ${
+                      activeSlide.categoria === 'Brigada Móvel'
+                        ? 'bg-emerald-600'
+                        : activeSlide.categoria === 'Aviso'
+                        ? 'bg-rose-600'
+                        : activeSlide.categoria === 'Guia'
+                        ? 'bg-amber-600'
+                        : activeSlide.categoria === 'Estatística'
+                        ? 'bg-purple-600'
+                        : 'bg-sky-600'
+                    }`}
+                  >
+                    {activeSlide.categoria}
+                  </span>
+
+                  {activeSlide.subtitulo && (
+                    <span className="text-xs font-bold text-sky-300 drop-shadow-sm flex items-center gap-1">
+                      <span>•</span> {activeSlide.subtitulo}
+                    </span>
+                  )}
+
+                  <span className="text-xs text-slate-300 font-mono flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-slate-400" />
+                    {activeSlide.data}
+                  </span>
+                </div>
+
+                <h3 className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
+                  {activeSlide.titulo}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-200 line-clamp-2 sm:line-clamp-3 leading-relaxed font-normal max-w-3xl drop-shadow-sm">
+                  {activeSlide.conteudo}
+                </p>
+
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-[11px] font-semibold text-slate-300">
+                    Emissor: <span className="text-white font-bold">{activeSlide.autor}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setReaderPost(activeSlide)}
+                    className="flex items-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-400 px-4 py-2 text-xs font-black text-slate-950 shadow-lg transition active:scale-95 cursor-pointer"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Ler Publicação Completa</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Linha de Progresso do Temporizador */}
+              {isCarouselPlaying && !isCarouselHovered && (
+                <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-20">
+                  <motion.div
+                    key={`${activeSlide.id}-${currentSlideIndex}`}
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 5, ease: 'linear' }}
+                    className="h-full bg-sky-400 shadow-sm"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Faixa de Miniaturas (Mini-Cards para seleção direta) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+              {carouselPosts.map((post, idx) => (
+                <button
+                  key={post.id}
+                  onClick={() => setCurrentSlideIndex(idx)}
+                  className={`flex-1 min-w-[170px] max-w-[220px] rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                    idx === safeSlideIndex
+                      ? 'border-sky-500 bg-sky-50/90 dark:bg-sky-950/60 ring-2 ring-sky-500/30 shadow-xs'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-500 mb-1">
+                    <span className="truncate text-sky-600 dark:text-sky-400 font-extrabold">{post.categoria}</span>
+                    <span className="font-mono text-[9px] text-slate-400">{post.data}</span>
+                  </div>
+                  <h4 className="text-[11px] font-bold text-slate-900 dark:text-white line-clamp-1 leading-tight">
+                    {post.titulo}
+                  </h4>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
           <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-slate-500 space-y-2">
             <Newspaper className="h-8 w-8 mx-auto text-slate-400 opacity-60" />
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Nenhuma publicação ou informação registada na página inicial.
+              Nenhuma publicação registada na página inicial.
             </p>
-            {isAdmin && onOpenPortalNews && (
-              <button
-                onClick={onOpenPortalNews}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Adicionar Primeira Publicação</span>
-              </button>
-            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {portalPosts.map((post) => (
+        )}
+
+        {/* 2. MURAL COMPLETO DE PUBLICAÇÕES (FILTROS + PESQUISA + GRELA) */}
+        <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            {/* Abas de Categorias */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              {['Todos', 'Destaques', 'Brigada Móvel', 'Notícia', 'Guia', 'Aviso', 'Estatística'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedNewsCategory(cat)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    selectedNewsCategory === cat
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Campo de Pesquisa */}
+            <div className="relative w-full sm:w-64 shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={newsSearchQuery}
+                onChange={(e) => setNewsSearchQuery(e.target.value)}
+                placeholder="Pesquisar notícias..."
+                className="w-full h-8 pl-8 pr-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600"
+              />
+            </div>
+          </div>
+
+          {/* Grelha de Cartões de Notícias */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {filteredGridPosts.map((post) => (
               <div
                 key={post.id}
-                className="relative flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-3.5 hover:border-blue-300 dark:hover:border-blue-700 transition shadow-xs group"
+                className="group flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:border-sky-400 dark:hover:border-sky-500 transition-all duration-200 shadow-2xs hover:shadow-md"
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-extrabold text-blue-800 dark:text-blue-300">
-                      {post.categoria || 'Notícia'}
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-400">
-                      {post.data}
+                {/* Imagem do Cartão */}
+                {post.imagemUrl && (
+                  <div className="relative h-40 w-full overflow-hidden bg-slate-950">
+                    <img
+                      src={post.imagemUrl}
+                      alt={post.titulo}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                    <span className="absolute top-2.5 left-2.5 rounded-lg bg-slate-950/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-sky-300 border border-white/10">
+                      {post.categoria}
                     </span>
                   </div>
+                )}
 
-                  <h3 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                    {post.titulo}
-                  </h3>
+                <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    {!post.imagemUrl && (
+                      <div className="flex items-center justify-between">
+                        <span className="rounded-md bg-sky-100 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 px-2 py-0.5 text-[10px] font-extrabold text-sky-800 dark:text-sky-300">
+                          {post.categoria}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400">{post.data}</span>
+                      </div>
+                    )}
 
-                  {post.subtitulo && (
-                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 line-clamp-2">
-                      {post.subtitulo}
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white leading-tight group-hover:text-sky-600 transition-colors">
+                      {post.titulo}
+                    </h3>
+
+                    {post.subtitulo && (
+                      <p className="text-[11px] font-bold text-sky-600 dark:text-sky-400">
+                        {post.subtitulo}
+                      </p>
+                    )}
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                      {post.conteudo}
                     </p>
-                  )}
+                  </div>
 
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-3">
-                    {post.conteudo}
-                  </p>
-                </div>
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-slate-500">{post.autor}</span>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
-                    Autor: {post.autor || 'Admin'}
-                  </span>
-
-                  {isAdmin && (
                     <div className="flex items-center gap-1.5">
-                      {onOpenPortalNews && (
-                        <button
-                          onClick={onOpenPortalNews}
-                          className="p-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition"
-                          title="Editar Publicação"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
                       <button
-                        onClick={async () => {
-                          if (window.confirm(`Tem a certeza que deseja eliminar a publicação "${post.titulo}"? Esta acção é permanente.`)) {
-                            if (onDeletePortalPost) {
-                              await onDeletePortalPost(post.id);
-                            }
-                          }
-                        }}
-                        className="p-1.5 rounded-md bg-red-50 dark:bg-red-950 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 transition font-bold flex items-center gap-1"
-                        title="Eliminar Publicação"
+                        onClick={() => setReaderPost(post)}
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:text-sky-600 transition cursor-pointer"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span className="text-[10px]">Eliminar</span>
+                        <Eye className="h-3 w-3" />
+                        <span>Ler</span>
                       </button>
+
+                      {isAdmin && (
+                        <>
+                          {onOpenPortalNews && (
+                            <button
+                              onClick={onOpenPortalNews}
+                              className="p-1 rounded-lg text-slate-400 hover:text-blue-600 transition cursor-pointer"
+                              title="Editar"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(`Eliminar a publicação "${post.titulo}"?`)) {
+                                if (onDeletePortalPost) await onDeletePortalPost(post.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 transition cursor-pointer"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}
+
+            {filteredGridPosts.length === 0 && (
+              <div className="col-span-full p-8 text-center text-xs text-slate-500 italic bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+                Nenhuma publicação encontrada para os filtros selecionados.
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      {/* MODAL DE LEITURA COMPLETA DE PUBLICAÇÃO */}
+      {readerPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl text-white space-y-5 max-h-[90vh] overflow-y-auto">
+            {/* Header com Imagem */}
+            {readerPost.imagemUrl && (
+              <div className="relative h-52 sm:h-64 -mx-6 -mt-6 overflow-hidden rounded-t-3xl bg-slate-950">
+                <img
+                  src={readerPost.imagemUrl}
+                  alt={readerPost.titulo}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                <button
+                  onClick={() => setReaderPost(null)}
+                  className="absolute top-4 right-4 rounded-full bg-slate-950/80 p-2 text-slate-300 hover:text-white backdrop-blur-md border border-white/10 cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+
+            {!readerPost.imagemUrl && (
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span className="rounded-lg bg-sky-500/20 border border-sky-400/30 px-2.5 py-1 text-xs font-bold text-sky-300">
+                  {readerPost.categoria}
+                </span>
+                <button
+                  onClick={() => setReaderPost(null)}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Conteúdo Detalhado */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                <span className="font-bold text-sky-400">{readerPost.categoria}</span>
+                <span>•</span>
+                <span className="font-mono">{readerPost.data}</span>
+                <span>•</span>
+                <span>Autor: {readerPost.autor}</span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                {readerPost.titulo}
+              </h2>
+
+              {readerPost.subtitulo && (
+                <h3 className="text-sm font-bold text-sky-300">
+                  {readerPost.subtitulo}
+                </h3>
+              )}
+
+              <div className="border-t border-slate-800 pt-4 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line space-y-3">
+                {readerPost.conteudo}
+              </div>
+            </div>
+
+            {/* Botões do Modal */}
+            <div className="border-t border-slate-800 pt-4 flex items-center justify-between">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700 transition cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Imprimir Comunicado</span>
+              </button>
+
+              <button
+                onClick={() => setReaderPost(null)}
+                className="rounded-xl bg-sky-500 hover:bg-sky-400 px-5 py-2 text-xs font-bold text-slate-950 transition cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pessoas Alcançadas - Verde Claro */}
         <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
