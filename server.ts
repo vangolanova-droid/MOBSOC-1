@@ -1,9 +1,31 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-// In-memory data store with default seeds
+dotenv.config();
+
+// Configuração da chave secreta do JWT (obtida de variável de ambiente ou fallback seguro)
+const JWT_SECRET = process.env.JWT_SECRET || 'sismob_jwt_secret_key_angola_2026_super_secure';
+
+// Interfaces de Tipagem do Express para requisições autenticadas
+export interface UserPayload {
+  id: number;
+  email: string;
+  tipo: 'admin' | 'supervisor';
+  nome: string;
+  coordId?: number | null;
+  coordNome?: string;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user?: UserPayload;
+}
+
+// In-memory data store com dados de demonstração
 let coordenacoes: any[] = [
   { id: 1, nome: 'Coordenação Norte (Sumbe Urbano)', coordenador: 'Dr. Afonso Vunge' },
   { id: 2, nome: 'Coordenação Sul (Chingo / Quissala)', coordenador: 'Dra. Ana Paula' },
@@ -15,37 +37,41 @@ let users: any[] = [
     id: 1,
     nome: 'Administrador Principal',
     email: 'admin@sismob.ao',
-    senha: 'admin123',
+    senha: 'admin123', // Será convertido para hash no arranque do servidor
     tipo: 'admin',
     coordId: null,
     coordNome: 'Acesso Global',
+    coordenadorNome: 'Direção Geral de Saúde',
   },
   {
     id: 2,
     nome: 'João Supervisor Norte',
     email: 'joao@sismob.ao',
-    senha: 'sup123',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
+    coordenadorNome: 'Dr. Afonso Vunge',
   },
   {
     id: 3,
     nome: 'Maria Silva Sul',
     email: 'maria@sismob.ao',
-    senha: 'sup123',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
+    coordenadorNome: 'Dra. Ana Paula',
   },
   {
     id: 4,
     nome: 'Mateus Centro',
     email: 'mateus@sismob.ao',
-    senha: 'sup123',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 3,
     coordNome: 'Coordenação Centro (Aeroporto / Bumba)',
+    coordenadorNome: 'Sr. Carlos Alberto',
   },
 ];
 
@@ -112,83 +138,165 @@ let fichas: any[] = [
     motivo: 'Falta de informação de um dos progenitores',
     createdAt: new Date('2026-08-01T10:30:00Z').toISOString(),
   },
-  {
-    id: 1722700000002,
-    provincia: 'CUANZA-SUL',
-    municipio: 'SUMBE',
-    comuna: 'SEDE',
-    bairro: 'Chingo',
-    data: '2026-08-02',
-    mobilizador: 'Teresa Amélia',
-    telefone: '912345678',
-    coordId: 2,
-    coordNome: 'Coordenação Sul (Chingo / Quissala)',
-    userId: 3,
-    tableData: {
-      casa: [64, 264],
-      igreja: [1, 60],
-      pracas: [2, 90],
-      paragem: [2, 45],
-      creche: [0, 0],
-      escola: [1, 70],
-      agua: [3, 40],
-      outros: [1, 20],
-    },
-    totalLocais: 74,
-    totalPessoas: 589,
-    sim: 130,
-    nao: 8,
-    motivo: 'Criança adentrou a escola',
-    createdAt: new Date('2026-08-02T11:15:00Z').toISOString(),
-  },
-  {
-    id: 1722700000003,
-    provincia: 'CUANZA-SUL',
-    municipio: 'SUMBE',
-    comuna: 'SEDE',
-    bairro: 'Quissala',
-    data: '2026-08-03',
-    mobilizador: 'Domingos Vunge',
-    telefone: '934567890',
-    coordId: 2,
-    coordNome: 'Coordenação Sul (Chingo / Quissala)',
-    userId: 3,
-    tableData: {
-      casa: [54, 223],
-      igreja: [2, 110],
-      pracas: [4, 130],
-      paragem: [3, 55],
-      creche: [2, 42],
-      escola: [2, 120],
-      agua: [5, 65],
-      outros: [3, 45],
-    },
-    totalLocais: 75,
-    totalPessoas: 790,
-    sim: 180,
-    nao: 15,
-    motivo: 'Dúvidas sobre efeitos secundários',
-    createdAt: new Date('2026-08-03T09:00:00Z').toISOString(),
-  },
 ];
 
+/**
+ * Script de Migração/Hashing das Palavras-passe Seed em Texto Simples
+ */
+async function hashSeedPasswords() {
+  for (const u of users) {
+    if (u.senha && !u.senha.startsWith('$2a$') && !u.senha.startsWith('$2b$')) {
+      const hashed = await bcrypt.hash(u.senha, 10);
+      u.senha = hashed;
+    }
+  }
+  console.log('[SisMob Auth] Migração de palavras-passe seed para hash bcrypt concluída.');
+}
+
+/**
+ * Middleware: requireAuth
+ * Valida o Token JWT presente no cabeçalho Authorization: Bearer <token>
+ */
+function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Acesso não autorizado. Token JWT em falta ou mal formatado.' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Token de autenticação inválido ou expirado.' });
+  }
+}
+
+/**
+ * Middleware: requireAdmin
+ * Exige que o utilizador autenticado possua o perfil de Administrador ('admin')
+ */
+function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user || req.user.tipo !== 'admin') {
+    return res.status(403).json({ error: 'Acesso negado. Esta operação exige permissões de Administrador.' });
+  }
+  next();
+}
+
+/**
+ * Sanitiza o objeto do utilizador omitindo o campo da palavra-passe nas respostas
+ */
+function sanitizeUser(user: any) {
+  const { senha, ...safeUser } = user;
+  return safeUser;
+}
+
 async function startServer() {
+  // Converte palavras-passe em texto simples da seed inicial para hashes bcrypt
+  await hashSeedPasswords();
+
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
 
-  // API Routes
-  app.get('/api/health', (_req, res) => {
+  // ---------------------------------------------------------
+  // 1. ROTAS PÚBLICAS (Sem Autenticação)
+  // ---------------------------------------------------------
+
+  app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', serverTime: new Date().toISOString() });
   });
 
-  // Coordenações
-  app.get('/api/coordenacoes', (_req, res) => {
+  // Autenticação: Login e Emissão do Token JWT
+  app.post('/api/login', async (req: Request, res: Response) => {
+    try {
+      const { email, senha } = req.body;
+
+      if (!email || !senha) {
+        return res.status(400).json({ error: 'Email e palavra-passe são obrigatórios.' });
+      }
+
+      const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+      if (!user) {
+        return res.status(401).json({ error: 'Credenciais inválidas (email ou palavra-passe incorretos).' });
+      }
+
+      // Comparação da palavra-passe via bcrypt
+      const isMatch = await bcrypt.compare(senha, user.senha);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Credenciais inválidas (email ou palavra-passe incorretos).' });
+      }
+
+      // Emissão do Token JWT válido por 24 Horas
+      const payload: UserPayload = {
+        id: user.id,
+        email: user.email,
+        tipo: user.tipo,
+        nome: user.nome,
+        coordId: user.coordId,
+        coordNome: user.coordNome,
+      };
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+
+      res.json({
+        token,
+        user: sanitizeUser(user),
+      });
+    } catch (err: any) {
+      console.error('Erro no login:', err);
+      res.status(500).json({ error: 'Erro interno durante a autenticação.' });
+    }
+  });
+
+  // Registo Público de Novos Supervisores
+  app.post('/api/users/public-register', async (req: Request, res: Response) => {
+    try {
+      const { nome, email, senha, coordId } = req.body;
+      if (!nome || !email || !senha) {
+        return res.status(400).json({ error: 'Nome, email e palavra-passe são obrigatórios.' });
+      }
+      if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
+        return res.status(400).json({ error: 'Este email já está registado no sistema.' });
+      }
+
+      const hashedPassword = await bcrypt.hash(senha, 10);
+      const coord = coordenacoes.find((c) => c.id === Number(coordId));
+
+      const newUser = {
+        id: Date.now(),
+        nome,
+        email: email.trim().toLowerCase(),
+        senha: hashedPassword,
+        tipo: 'supervisor',
+        coordId: coordId ? Number(coordId) : null,
+        coordNome: coord ? coord.nome : '—',
+        coordenadorNome: coord ? coord.coordenador || '—' : '—',
+        status: 'ativo',
+        fotoUrl: '',
+      };
+
+      users.push(newUser);
+      res.status(201).json(sanitizeUser(newUser));
+    } catch (err: any) {
+      res.status(500).json({ error: 'Erro ao registar utilizador.' });
+    }
+  });
+
+  // ---------------------------------------------------------
+  // 2. ROTAS PROTEGIDAS (Exigem Token JWT no Header Authorization)
+  // ---------------------------------------------------------
+
+  app.use('/api', requireAuth);
+
+  // COORDENAÇÕES
+  app.get('/api/coordenacoes', (_req: Request, res: Response) => {
     res.json(coordenacoes);
   });
 
-  app.post('/api/coordenacoes', (req, res) => {
+  app.post('/api/coordenacoes', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const { nome, coordenador } = req.body;
     if (!nome) {
       return res.status(400).json({ error: 'Nome da coordenação é obrigatório' });
@@ -198,7 +306,7 @@ async function startServer() {
     res.status(201).json(newCoord);
   });
 
-  app.patch('/api/coordenacoes/:id', (req, res) => {
+  app.patch('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     const coordIndex = coordenacoes.findIndex((c) => c.id === id);
     if (coordIndex === -1) {
@@ -210,72 +318,93 @@ async function startServer() {
     res.json(coordenacoes[coordIndex]);
   });
 
-  app.delete('/api/coordenacoes/:id', (req, res) => {
+  app.delete('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     coordenacoes = coordenacoes.filter((c) => c.id !== id);
     res.json({ success: true });
   });
 
-  // Utilizadores
-  app.get('/api/users', (_req, res) => {
-    res.json(users);
+  // UTILIZADORES
+  app.get('/api/users', (_req: Request, res: Response) => {
+    res.json(users.map(sanitizeUser));
   });
 
-  app.post('/api/users', (req, res) => {
-    const { nome, email, senha, tipo, coordId, fotoUrl } = req.body;
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ error: 'Dados incompletos' });
+  app.post('/api/users', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { nome, email, senha, tipo, coordId, fotoUrl } = req.body;
+      if (!nome || !email || !senha) {
+        return res.status(400).json({ error: 'Dados incompletos' });
+      }
+      if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
+        return res.status(400).json({ error: 'Email já registado no sistema' });
+      }
+
+      const hashedPassword = await bcrypt.hash(senha, 10);
+      const coord = coordenacoes.find((c) => c.id === Number(coordId));
+
+      const newUser = {
+        id: Date.now(),
+        nome,
+        email: email.trim().toLowerCase(),
+        senha: hashedPassword,
+        tipo: tipo || 'supervisor',
+        coordId: tipo === 'admin' ? null : coordId ? Number(coordId) : null,
+        coordNome: tipo === 'admin' ? 'Acesso Global' : coord?.nome || '—',
+        coordenadorNome: tipo === 'admin' ? 'Direção Geral de Saúde' : coord?.coordenador || '—',
+        fotoUrl: fotoUrl || '',
+      };
+
+      users.push(newUser);
+      res.status(201).json(sanitizeUser(newUser));
+    } catch (err: any) {
+      res.status(500).json({ error: 'Erro ao criar utilizador' });
     }
-    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      return res.status(400).json({ error: 'Email já registado no sistema' });
-    }
-    const coord = coordenacoes.find((c) => c.id === coordId);
-    const newUser = {
-      id: Date.now(),
-      nome,
-      email,
-      senha,
-      tipo: tipo || 'supervisor',
-      coordId: tipo === 'admin' ? null : coordId || null,
-      coordNome: tipo === 'admin' ? 'Acesso Global' : coord?.nome || '—',
-      coordenadorNome: tipo === 'admin' ? 'Direção Geral de Saúde' : coord?.coordenador || '—',
-      fotoUrl: fotoUrl || '',
-    };
-    users.push(newUser);
-    res.status(201).json(newUser);
   });
 
-  app.patch('/api/users/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const userIndex = users.findIndex((u) => u.id === id);
-    if (userIndex === -1) {
-      return res.status(404).json({ error: 'Utilizador não encontrado' });
+  app.patch('/api/users/:id', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userIndex = users.findIndex((u) => u.id === id);
+      if (userIndex === -1) {
+        return res.status(404).json({ error: 'Utilizador não encontrado' });
+      }
+
+      // Permissão: Utilizador só pode atualizar o seu próprio perfil ou ser Admin
+      if (req.user?.tipo !== 'admin' && req.user?.id !== id) {
+        return res.status(403).json({ error: 'Sem permissão para alterar este utilizador.' });
+      }
+
+      const { nome, senha, coordId, fotoUrl } = req.body;
+      if (nome) users[userIndex].nome = nome;
+      if (senha) {
+        users[userIndex].senha = await bcrypt.hash(senha, 10);
+      }
+      if (fotoUrl !== undefined) users[userIndex].fotoUrl = fotoUrl;
+      if (coordId !== undefined && req.user?.tipo === 'admin') {
+        users[userIndex].coordId = coordId;
+        const c = coordenacoes.find((x) => x.id === Number(coordId));
+        users[userIndex].coordNome = c ? c.nome : '—';
+        users[userIndex].coordenadorNome = c ? c.coordenador || '—' : '—';
+      }
+
+      res.json(sanitizeUser(users[userIndex]));
+    } catch (err: any) {
+      res.status(500).json({ error: 'Erro ao atualizar utilizador' });
     }
-    const { nome, senha, coordId, fotoUrl } = req.body;
-    if (nome) users[userIndex].nome = nome;
-    if (senha) users[userIndex].senha = senha;
-    if (fotoUrl !== undefined) users[userIndex].fotoUrl = fotoUrl;
-    if (coordId !== undefined) {
-      users[userIndex].coordId = coordId;
-      const c = coordenacoes.find((x) => x.id === coordId);
-      users[userIndex].coordNome = c ? c.nome : '—';
-      users[userIndex].coordenadorNome = c ? c.coordenador || '—' : '—';
-    }
-    res.json(users[userIndex]);
   });
 
-  app.delete('/api/users/:id', (req, res) => {
+  app.delete('/api/users/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     users = users.filter((u) => u.id !== id);
     res.json({ success: true });
   });
 
-  // Mobilizadores
-  app.get('/api/mobilizadores', (_req, res) => {
+  // MOBILIZADORES
+  app.get('/api/mobilizadores', (_req: Request, res: Response) => {
     res.json(mobilizadores);
   });
 
-  app.post('/api/mobilizadores', (req, res) => {
+  app.post('/api/mobilizadores', (req: AuthenticatedRequest, res: Response) => {
     const { nome, morada, telefone, funcao, coordId, supervisorId, supervisorNome } = req.body;
     if (!nome) {
       return res.status(400).json({ error: 'Nome do mobilizador é obrigatório' });
@@ -289,26 +418,26 @@ async function startServer() {
       funcao: funcao || 'Mobilizador Comunitário',
       coordId: coordId ? Number(coordId) : null,
       coordNome: c ? c.nome : 'Geral',
-      supervisorId: supervisorId ? Number(supervisorId) : null,
-      supervisorNome: supervisorNome || '',
+      supervisorId: supervisorId ? Number(supervisorId) : req.user?.id || null,
+      supervisorNome: supervisorNome || req.user?.nome || '',
       createdAt: new Date().toISOString(),
     };
     mobilizadores.push(newMob);
     res.status(201).json(newMob);
   });
 
-  app.delete('/api/mobilizadores/:id', (req, res) => {
+  app.delete('/api/mobilizadores/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     mobilizadores = mobilizadores.filter((m) => m.id !== id);
     res.json({ success: true });
   });
 
-  // Fichas
-  app.get('/api/fichas', (_req, res) => {
+  // FICHAS DE CAMPO
+  app.get('/api/fichas', (_req: Request, res: Response) => {
     res.json(fichas);
   });
 
-  app.post('/api/fichas', (req, res) => {
+  app.post('/api/fichas', (req: AuthenticatedRequest, res: Response) => {
     const fichaData = req.body;
     if (!fichaData.mobilizador || !fichaData.bairro || !fichaData.data) {
       return res.status(400).json({ error: 'Dados obrigatórios em falta' });
@@ -316,26 +445,27 @@ async function startServer() {
     const newFicha = {
       ...fichaData,
       id: fichaData.id || Date.now(),
+      userId: req.user?.id || fichaData.userId,
+      supervisorNome: req.user?.nome || fichaData.supervisorNome,
       createdAt: new Date().toISOString(),
     };
     fichas.unshift(newFicha);
     res.status(201).json(newFicha);
   });
 
-  app.delete('/api/fichas/:id', (req, res) => {
+  app.delete('/api/fichas/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     fichas = fichas.filter((f) => f.id !== id);
     res.json({ success: true });
   });
 
-  // AI Insights Endpoint (Gemini API)
-  app.post('/api/ai-insights', async (req, res) => {
+  // AI INSIGHTS ENDPOINT (GEMINI API)
+  app.post('/api/ai-insights', async (req: AuthenticatedRequest, res: Response) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         return res.status(400).json({
-          error:
-            'A chave GEMINI_API_KEY não está configurada no servidor. Por favor adicione nas definições.',
+          error: 'A chave GEMINI_API_KEY não está configurada no servidor.',
         });
       }
 
@@ -384,7 +514,7 @@ Responda APENAS com um objeto JSON válido (sem tags markdown de código e sem t
 
       const text = response.text || '';
       const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
+
       let parsed;
       try {
         parsed = JSON.parse(cleanJson);
@@ -405,7 +535,9 @@ Responda APENAS com um objeto JSON válido (sem tags markdown de código e sem t
     }
   });
 
-  // Vite Middleware handling
+  // ---------------------------------------------------------
+  // 3. VITE MIDDLEWARE & FICHEIROS ESTÁTICOS
+  // ---------------------------------------------------------
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -415,13 +547,13 @@ Responda APENAS com um objeto JSON válido (sem tags markdown de código e sem t
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SisMob] Server running on http://0.0.0.0:${PORT}`);
+    console.log(`[SisMob Security] Servidor ativo e protegido em http://0.0.0.0:${PORT}`);
   });
 }
 
