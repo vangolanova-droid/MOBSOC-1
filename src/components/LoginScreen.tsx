@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { sanitizeImageUrl } from '../utils/imageUtils';
+import { FIELD_GALLERY_ITEMS, FIELD_MOTIVATIONAL_QUOTES, FieldGalleryItem } from '../data/fieldGalleryData';
 import {
   ArrowRight,
   LogIn,
@@ -18,6 +21,7 @@ import {
   BookOpen,
   Award,
   ChevronRight,
+  ChevronLeft,
   HeartPulse,
   BarChart2,
   Check,
@@ -26,6 +30,15 @@ import {
   Phone,
   Eye,
   EyeOff,
+  Play,
+  Pause,
+  Maximize2,
+  Filter,
+  Quote,
+  Flame,
+  Zap,
+  Compass,
+  Share2,
 } from 'lucide-react';
 import { User, PortalPost, Ficha, Coordination } from '../types';
 import happyChildrenBgImg from '../assets/images/happy_children_mobilization_1786264645591.jpg';
@@ -72,7 +85,48 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [regSuccess, setRegSuccess] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  // Calculate dynamic live statistics if system already has data
+  // Motion Carousel & Gallery States
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [lightboxItem, setLightboxItem] = useState<FieldGalleryItem | null>(null);
+  const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
+
+  // Map portalPosts to FieldGalleryItem format
+  const portalGalleryItems: FieldGalleryItem[] = portalPosts.map((post) => ({
+    id: post.id,
+    titulo: post.titulo,
+    subtitulo: post.subtitulo || post.categoria,
+    legenda: post.conteudo,
+    categoria: post.categoria || 'Mobilização Social',
+    data: post.data,
+    autor: post.autor || 'Administração SisMob',
+    local: post.subtitulo || 'Sumbe, Cuanza Sul',
+    imagemUrl: post.imagemUrl || socialMobilizationBgImg,
+    destaque: post.destaque,
+  }));
+
+  const galleryItemsToDisplay: FieldGalleryItem[] = [
+    ...portalGalleryItems,
+    ...FIELD_GALLERY_ITEMS.filter((item) => !portalGalleryItems.some((p) => p.id === item.id)),
+  ];
+
+  // Auto-advance hero carousel every 5.5 seconds if playing
+  useEffect(() => {
+    if (!isPlaying) return;
+    const sliderTimer = setInterval(() => {
+      setActiveSlideIndex((prev) => (prev + 1) % galleryItemsToDisplay.length);
+    }, 5500);
+    return () => clearInterval(sliderTimer);
+  }, [isPlaying, galleryItemsToDisplay.length]);
+
+  // Auto-advance motivational quote box every 7 seconds
+  useEffect(() => {
+    const quoteTimer = setInterval(() => {
+      setActiveQuoteIndex((prev) => (prev + 1) % FIELD_MOTIVATIONAL_QUOTES.length);
+    }, 7000);
+    return () => clearInterval(quoteTimer);
+  }, []);
   const totalPessoasReal = fichas.reduce((acc, f) => acc + (f.totalPessoas || 0), 0);
   const totalSimReal = fichas.reduce((acc, f) => acc + (f.sim || 0), 0);
   const acceptanceRateReal = totalPessoasReal > 0 ? ((totalSimReal / totalPessoasReal) * 100).toFixed(1) : '98.4';
@@ -251,7 +305,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-300 hidden sm:block">
-                  Sistema Integrado de Mobilização Social • Direção Municipal de Saúde
+                  Programa de Mobilização Social UNICEF & Direção Municipal de Saúde • Sumbe
                 </p>
               </div>
             </div>
@@ -293,237 +347,538 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-4 py-8 md:py-12">
+        <main className="flex-1 px-4 py-6 md:py-10">
           <div className="mx-auto max-w-7xl space-y-8">
-            {/* Full-Width Professional Hero Section */}
-            <div className="w-full rounded-3xl border border-white/25 bg-slate-900/85 p-6 md:p-10 text-white shadow-2xl backdrop-blur-xl flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-3.5 py-1 text-xs font-bold text-sky-300">
-                  <Megaphone className="h-3.5 w-3.5 text-sky-400" />
-                  <span>Campanha Ativa de Mobilização Social & Saúde • Sumbe 2026</span>
-                </div>
-
-                <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-tight text-white max-w-4xl">
-                  {featuredPost ? featuredPost.titulo : 'Mobilização Social & Cobertura de Saúde no Município do Sumbe'}
-                </h1>
-
-                <p className="text-xs md:text-sm text-slate-200 leading-relaxed max-w-3xl font-medium">
-                  {featuredPost
-                    ? featuredPost.conteudo
-                    : 'Plataforma oficial de monitorização, controlo de fichas de campo e gestão das equipas de mobilizadores comunitários. Garantindo que cada família do Sumbe tenha acesso à informação, imunização e cuidados preventivos de saúde.'}
-                </p>
+            
+            {/* CONTINUOUS LIVE MARQUEE TICKER BANNER */}
+            <div className="w-full rounded-2xl bg-slate-950/90 border border-sky-500/30 overflow-hidden py-2.5 backdrop-blur-md relative shadow-xl flex items-center">
+              <div className="flex items-center gap-2 px-3.5 sm:px-4 z-10 bg-slate-950/95 absolute left-0 top-0 bottom-0 pr-4 font-mono text-[11px] font-black uppercase text-amber-400 tracking-wider border-r border-white/15 shadow-md">
+                <Activity className="h-4 w-4 animate-pulse text-amber-400" />
+                <span className="hidden sm:inline">INFORMAÇÃO AO VIVO</span>
+                <span className="sm:hidden">AO VIVO</span>
               </div>
-
-              {/* Real System Key Stats Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/15">
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                  <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Pessoas Alcançadas</div>
-                  <div className="text-xl md:text-2xl font-black text-emerald-400 font-mono mt-1">
-                    {totalPessoasReal > 0 ? totalPessoasReal.toLocaleString() : '12.500+'}
-                  </div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">Registo no Terreno</div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                  <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Adesão Comunitária</div>
-                  <div className="text-xl md:text-2xl font-black text-sky-300 font-mono mt-1">
-                    {acceptanceRateReal}%
-                  </div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">Taxa de Aceitação</div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                  <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Coordenação Líder</div>
-                  <div className="text-xs font-black text-amber-300 truncate mt-1">
-                    {topCoordName}
-                  </div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">
-                    {topCoordVal > 0 ? `${topCoordVal.toLocaleString()} pessoas` : 'Liderança em Dados'}
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                  <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Sectores Ativos</div>
-                  <div className="text-xl md:text-2xl font-black text-purple-300 font-mono mt-1">
-                    {coordenacoes.length > 0 ? coordenacoes.length : '12'}
-                  </div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">Coordenações Sumbe</div>
-                </div>
-              </div>
-
-              {/* Call to Action Row */}
-              <div className="pt-3 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setError('');
-                      setShowLoginModal(true);
-                    }}
-                    className="flex items-center gap-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-xl shadow-emerald-500/25 transition active:scale-95 cursor-pointer"
-                    id="btn-hero-login"
-                  >
-                    <LogIn className="h-4 w-4 stroke-[3]" />
-                    <span>ENTRAR NO FUNCIONAMENTO DO SISTEMA</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setRegSuccess(false);
-                      setRegError('');
-                      setShowRegisterModal(true);
-                    }}
-                    className="flex items-center gap-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 px-5 py-3.5 text-xs font-black text-sky-300 shadow-xl transition active:scale-95 cursor-pointer border border-sky-400/40"
-                    id="btn-hero-register"
-                  >
-                    <UserPlus className="h-4 w-4 text-sky-400" />
-                    <span>SOLICITAR REGISTO DE SUPERVISOR</span>
-                  </button>
-                </div>
-
-                <div className="text-xs text-slate-300 font-medium flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Acesso com Validação pela Direção Municipal de Saúde</span>
+              
+              <div className="flex whitespace-nowrap animate-marquee space-x-12 pl-36 sm:pl-48">
+                <div className="flex items-center space-x-10 text-xs text-slate-200 font-medium">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                    👑 <strong className="text-amber-300">A SABEDORIA TRADICIONAL:</strong> Sobas e líderes reunidos no Tambo do Soba em defesa das crianças do Bairro Mbumba Kupuco.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2">
+                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SisMob.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2">
+                    ★ <strong className="text-emerald-300">CAMPANHA PÓLIO 2026:</strong> "Vamos vacinar todas as crianças menores de 5 anos de idade!"
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2">
+                    🤝 <strong className="text-purple-300">ALIANÇA ESTRATÉGICA:</strong> Saúde Municipal, UNICEF e Sobado unidos no combate à pólio.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2">
+                    🏍️ <strong className="text-amber-300">LOGÍSTICA DE CAMPO:</strong> Motos Kawaseki em rota pelas zonas periurbanas e rurais do Sumbe.
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* SECTOR DE NOTÍCIAS & NOVIDADES DA MOBILIZAÇÃO (DYNAMICALLY LOADED FROM ADMIN POSTS) */}
-            <div className="space-y-4 pt-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/20 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300">
-                    <Newspaper className="h-5 w-5" />
+            {/* SECTOR INSTITUCIONAL UNICEF: LEMA, OBJECTIVOS, FOCO & PREPARAÇÃO */}
+            <div className="w-full rounded-3xl border border-sky-400/30 bg-gradient-to-br from-slate-950/95 via-blue-950/85 to-slate-950/95 p-6 md:p-8 text-white shadow-2xl backdrop-blur-xl space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/15 pb-6">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                      <ShieldCheck className="h-4 w-4 text-sky-400" />
+                      Liderança Técnica UNICEF em Angola
+                    </span>
+                    <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider shadow-xs">
+                      Campanha de Vacinação contra a Pólio
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
+                    Missão UNICEF: Mobilização Social & Proteção Infantil no Sumbe
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-3xl leading-relaxed">
+                    Os mobilizadores comunitários na linha da frente da campanha de vacinação estão sob a responsabilidade e coordenação do <strong className="text-sky-300 font-bold">UNICEF</strong>. Unimos forças com a Direção Municipal de Saúde do Sumbe, Sobas e líderes locais para assegurar que nenhuma criança perca as duas gotas salvadoras.
+                  </p>
+                </div>
+
+                <div className="p-4 sm:p-5 rounded-2xl bg-sky-500/15 border border-sky-400/40 text-sky-100 text-left sm:text-center flex-shrink-0 space-y-1 shadow-inner">
+                  <div className="text-[10px] uppercase font-mono font-bold tracking-widest text-sky-300">Lema Oficial do UNICEF</div>
+                  <div className="text-sm md:text-base font-black text-white italic">"Para Cada Criança, Imunização & Vida Saudável"</div>
+                  <div className="text-[10px] text-slate-300 font-medium">Meta: 100% de Crianças Vacinadas em Cuanza Sul</div>
+                </div>
+              </div>
+
+              {/* 4 Pilar Cards: Foco, Preparação, Engajamento e Monitorização */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-sky-400/40 transition space-y-2 group">
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-300 flex items-center justify-center font-black text-sm">
+                      01
+                    </div>
+                    <span className="text-[10px] font-bold uppercase text-sky-300 bg-sky-950/80 px-2 py-0.5 rounded-lg border border-sky-500/30">
+                      Preparação
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-sky-300 transition">
+                    Formação & Capacitação Técnica
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Instrução rigorosa dos mobilizadores do UNICEF em comunicação interpessoal, escuta ativa e abordagem empática de casa em casa.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-400/40 transition space-y-2 group">
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-black text-sm">
+                      02
+                    </div>
+                    <span className="text-[10px] font-bold uppercase text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                      Engajamento
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
+                    Parceria no Jango & Comunitária
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Aliança sólida com Sobas, parteiras e comités de mães para desmistificar rumores, esclarecer dúvidas e gerar confiança absoluta na vacina.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/40 transition space-y-2 group">
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center font-black text-sm">
+                      03
+                    </div>
+                    <span className="text-[10px] font-bold uppercase text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                      Proximidade
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition">
+                    Proximidade & Logística de Campo
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Deslocação de mobilizadores e brigadas de vacinação a bairros periurbanos, zonas rurais e rotas de difícil acesso com apoio logístico.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-400/40 transition space-y-2 group">
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-300 flex items-center justify-center font-black text-sm">
+                      04
+                    </div>
+                    <span className="text-[10px] font-bold uppercase text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-lg border border-purple-500/30">
+                      Acompanhamento
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition">
+                    Registo Digital ODK & SisMob
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Monitorização georreferenciada e em tempo real para assegurar que cada família visitada seja acompanhada com transparência e precisão.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* FULL-WIDTH INTERACTIVE MOTION HERO CAROUSEL */}
+            {(() => {
+              const currentItem = galleryItemsToDisplay[activeSlideIndex] || galleryItemsToDisplay[0];
+              const cleanImg = sanitizeImageUrl(currentItem.imagemUrl);
+
+              return (
+                <div className="w-full rounded-3xl border border-white/25 bg-slate-900/90 text-white shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-hidden relative group">
+                  
+                  {/* Hero Media Container with Ken Burns Zoom & Transitions */}
+                  <div className="relative w-full h-[320px] sm:h-[400px] md:h-[480px] overflow-hidden bg-slate-950">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentItem.id}
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-0 w-full h-full"
+                      >
+                        <img
+                          src={cleanImg}
+                          alt={currentItem.titulo}
+                          className="w-full h-full object-cover filter brightness-[0.75] contrast-[1.08] transition-transform duration-10000 ease-linear transform scale-105 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = socialMobilizationBgImg;
+                          }}
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Gradient Overlays for Maximum Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/30 to-transparent" />
+
+                    {/* Top Status Badges & Motion Controls */}
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 z-20">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-xl bg-amber-400 text-slate-950 font-black px-3 py-1 text-[11px] uppercase tracking-wider shadow-lg flex items-center gap-1.5 border border-amber-300/40">
+                          <Flame className="h-3.5 w-3.5 fill-slate-950" />
+                          <span>Destaque do Terreno</span>
+                        </span>
+
+                        <span className="hidden sm:inline-flex rounded-xl bg-slate-900/80 text-sky-300 font-bold px-3 py-1 text-[11px] backdrop-blur-md border border-white/20 shadow-md">
+                          {currentItem.categoria}
+                        </span>
+                      </div>
+
+                      {/* Autoplay & Motion Carousel Controls */}
+                      <div className="flex items-center gap-2 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-lg">
+                        <button
+                          onClick={() => setIsPlaying(!isPlaying)}
+                          className="p-1.5 rounded-xl hover:bg-white/20 text-slate-200 transition cursor-pointer"
+                          title={isPlaying ? 'Pausar Movimento Automático' : 'Iniciar Movimento Automático'}
+                        >
+                          {isPlaying ? <Pause className="h-4 w-4 text-emerald-400" /> : <Play className="h-4 w-4 text-amber-400" />}
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            setActiveSlideIndex(
+                              (prev) => (prev - 1 + galleryItemsToDisplay.length) % galleryItemsToDisplay.length
+                            )
+                          }
+                          className="p-1.5 rounded-xl hover:bg-white/20 text-slate-200 transition cursor-pointer"
+                          title="Fotografia Anterior"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+
+                        <span className="text-[11px] font-mono font-bold px-2 text-sky-300">
+                          {activeSlideIndex + 1} / {galleryItemsToDisplay.length}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            setActiveSlideIndex((prev) => (prev + 1) % galleryItemsToDisplay.length)
+                          }
+                          className="p-1.5 rounded-xl hover:bg-white/20 text-slate-200 transition cursor-pointer"
+                          title="Próxima Fotografia"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          onClick={() => setLightboxItem(currentItem)}
+                          className="p-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/40 text-sky-300 transition cursor-pointer ml-1 border border-sky-400/30"
+                          title="Ampliar Foto e Legenda Completa"
+                        >
+                          <Maximize2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bottom Floating Information Overlay (Title & Impact Caption) */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 md:p-10 space-y-3 z-10">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentItem.id}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.5 }}
+                          className="space-y-3 max-w-4xl"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-bold text-sky-300">
+                            <MapPin className="h-4 w-4 text-sky-400" />
+                            <span>{currentItem.subtitulo}</span>
+                            <span className="text-slate-400">•</span>
+                            <Calendar className="h-4 w-4 text-emerald-400" />
+                            <span>{currentItem.data}</span>
+                          </div>
+
+                          <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-snug text-white drop-shadow-md">
+                            {currentItem.titulo}
+                          </h1>
+
+                          {/* IMPACT CAPTION BOX */}
+                          <div className="p-4 rounded-2xl bg-slate-950/80 border border-amber-400/30 backdrop-blur-md shadow-2xl space-y-1">
+                            <div className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                              <span>Legenda de Impacto no Terreno</span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-100 font-normal leading-relaxed">
+                              "{currentItem.legenda}"
+                            </p>
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+                  </div>
+
+                  {/* Real System Key Stats Bar */}
+                  <div className="p-6 md:p-8 space-y-6 bg-slate-900/90 border-t border-white/15">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Pessoas Alcançadas</div>
+                        <div className="text-xl md:text-2xl font-black text-emerald-400 font-mono mt-1">
+                          {totalPessoasReal > 0 ? totalPessoasReal.toLocaleString() : '12.500+'}
+                        </div>
+                        <div className="text-[10px] text-slate-300 mt-0.5">Registo no Terreno</div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Adesão Comunitária</div>
+                        <div className="text-xl md:text-2xl font-black text-sky-300 font-mono mt-1">
+                          {acceptanceRateReal}%
+                        </div>
+                        <div className="text-[10px] text-slate-300 mt-0.5">Taxa de Aceitação</div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Coordenação Líder</div>
+                        <div className="text-xs font-black text-amber-300 truncate mt-1">
+                          {topCoordName}
+                        </div>
+                        <div className="text-[10px] text-slate-300 mt-0.5">
+                          {topCoordVal > 0 ? `${topCoordVal.toLocaleString()} pessoas` : 'Liderança em Dados'}
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[10px] font-bold uppercase text-slate-300 tracking-wider">Sectores Ativos</div>
+                        <div className="text-xl md:text-2xl font-black text-purple-300 font-mono mt-1">
+                          {coordenacoes.length > 0 ? coordenacoes.length : '12'}
+                        </div>
+                        <div className="text-[10px] text-slate-300 mt-0.5">Coordenações Sumbe</div>
+                      </div>
+                    </div>
+
+                    {/* Action Call Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setError('');
+                            setShowLoginModal(true);
+                          }}
+                          className="flex items-center gap-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-xl shadow-emerald-500/25 transition active:scale-95 cursor-pointer"
+                          id="btn-hero-login"
+                        >
+                          <LogIn className="h-4 w-4 stroke-[3]" />
+                          <span>ENTRAR NO FUNCIONAMENTO DO SISTEMA</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setRegSuccess(false);
+                            setRegError('');
+                            setShowRegisterModal(true);
+                          }}
+                          className="flex items-center gap-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 px-5 py-3.5 text-xs font-black text-sky-300 shadow-xl transition active:scale-95 cursor-pointer border border-sky-400/40"
+                          id="btn-hero-register"
+                        >
+                          <UserPlus className="h-4 w-4 text-sky-400" />
+                          <span>SOLICITAR REGISTO DE SUPERVISOR</span>
+                        </button>
+                      </div>
+
+                      <div className="text-xs text-slate-300 font-medium flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <span>Acesso com Validação pela Direção Municipal de Saúde</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ROTATING COMMUNITY QUOTES SECTION */}
+            <div className="w-full rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-slate-950/90 p-5 md:p-6 text-white shadow-xl backdrop-blur-md relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex-shrink-0 mt-1">
+                    <Quote className="h-6 w-6" />
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeQuoteIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.5 }}
+                      className="space-y-1"
+                    >
+                      <p className="text-xs sm:text-sm md:text-base font-semibold text-amber-100 italic leading-relaxed">
+                        "{FIELD_MOTIVATIONAL_QUOTES[activeQuoteIndex].quote}"
+                      </p>
+                      <div className="text-[11px] font-bold text-amber-300 flex items-center gap-2">
+                        <span>— {FIELD_MOTIVATIONAL_QUOTES[activeQuoteIndex].author}</span>
+                        <span className="text-slate-500">•</span>
+                        <span className="text-slate-300 font-normal">{FIELD_MOTIVATIONAL_QUOTES[activeQuoteIndex].cargo}</span>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex items-center gap-1.5 self-end sm:self-center">
+                  {FIELD_MOTIVATIONAL_QUOTES.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveQuoteIndex(idx)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        idx === activeQuoteIndex ? 'w-6 bg-amber-400' : 'w-2 bg-white/20 hover:bg-white/40'
+                      }`}
+                      title={`Depoimento ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTOR DE GALERIA E NOTÍCIAS COM LEGENDAS IMPACTANTES & FILTROS */}
+            <div className="space-y-6 pt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-sky-300">
+                    <Newspaper className="h-6 w-6" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-white uppercase tracking-tight">
-                      Novidades e Actividades da Mobilização (Sumbe)
+                    <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">
+                      Atividades & Galeria de Impacto da Mobilização
                     </h2>
                     <p className="text-xs text-slate-300 font-medium">
-                      Atualizações publicadas pela Administração, rotas de brigadas móveis e metas de campo
+                      Fotografias e registos reais do terreno no Bairro Mbumba Kupuco, Tambo do Soba e Sumbe
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-300 bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                  <Activity className="h-4 w-4 animate-pulse" />
-                  <span>Publicações Oficiais SisMob</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-300 bg-emerald-950/80 px-3.5 py-1.5 rounded-xl border border-emerald-500/40 shadow-inner">
+                    <Activity className="h-4 w-4 animate-pulse text-emerald-400" />
+                    <span>{galleryItemsToDisplay.length} Registos de Terreno</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Grid of News Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {portalPosts.length > 0 ? (
-                  portalPosts.slice(0, 3).map((post) => (
-                    <div
-                      key={post.id}
-                      className="rounded-2xl border border-white/20 bg-slate-900/90 p-5 text-white shadow-xl backdrop-blur-md space-y-3 flex flex-col justify-between hover:border-blue-400/50 transition group"
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mr-1 flex-shrink-0">
+                  <Filter className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Filtrar:</span>
+                </span>
+
+                {['Todos', 'Liderança Tradicional', 'Logística de Campo', 'Parceria Estratégica', 'Sensibilização Direta', 'Mobilização Social', 'Capacitação Técnica', 'Equipa de Campo', 'Gestão & Controlo', 'Comunicação Interpessoal'].map((cat) => {
+                  const isActive = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                        isActive
+                          ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/30'
+                          : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border border-white/10'
+                      }`}
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-sky-300">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-sky-400" />
-                            {post.subtitulo || post.categoria}
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Grid of Gallery Cards with Impact Captions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {galleryItemsToDisplay.filter(
+                  (item) => selectedCategory === 'Todos' || item.categoria === selectedCategory
+                ).map((item, index) => {
+                  const cleanImg = sanitizeImageUrl(item.imagemUrl);
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      whileHover={{ y: -4 }}
+                      className="rounded-2xl border border-white/20 bg-slate-900/90 text-white shadow-2xl backdrop-blur-md flex flex-col justify-between hover:border-sky-400/60 transition group overflow-hidden relative"
+                    >
+                      {/* Image Header with Zoom Hover */}
+                      <div
+                        className="relative h-52 w-full overflow-hidden bg-slate-950 cursor-pointer"
+                        onClick={() => setLightboxItem(item)}
+                      >
+                        <img
+                          src={cleanImg}
+                          alt={item.titulo}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108 filter brightness-[0.9]"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = socialMobilizationBgImg;
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+                        {/* Top Badges */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                          <span className="rounded-lg bg-slate-950/85 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-sky-300 border border-white/15 shadow-sm uppercase tracking-wide">
+                            {item.categoria}
                           </span>
-                          <span>{post.data}</span>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLightboxItem(item);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-sky-500 text-white hover:text-slate-950 transition border border-white/20 cursor-pointer shadow-md"
+                            title="Ampliar Imagem e Ver Legenda"
+                          >
+                            <Maximize2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
 
-                        <h3 className="text-sm font-bold text-white group-hover:text-sky-300 transition line-clamp-2">
-                          {post.titulo}
-                        </h3>
-
-                        <p className="text-xs text-slate-300 font-normal leading-relaxed line-clamp-3">
-                          {post.conteudo}
-                        </p>
+                        {/* Location Pill */}
+                        <div className="absolute bottom-2.5 left-3 text-[10px] font-bold text-sky-300 flex items-center gap-1 bg-slate-950/80 px-2.5 py-0.5 rounded-md border border-white/10">
+                          <MapPin className="h-3 w-3 text-sky-400" />
+                          <span>{item.local}</span>
+                        </div>
                       </div>
 
-                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-sky-400">
-                        <span>{post.autor || 'Direção de Saúde'}</span>
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    {/* Default Post 1 */}
-                    <div className="rounded-2xl border border-white/20 bg-slate-900/90 p-5 text-white shadow-xl backdrop-blur-md space-y-3 flex flex-col justify-between hover:border-blue-400/50 transition group">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-sky-300">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-sky-400" />
-                            Sumbe Urbano & Periferia
-                          </span>
-                          <span>Campanha 2026</span>
+                      {/* Content Box */}
+                      <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                        <div className="space-y-2.5">
+                          <h3 className="text-base font-extrabold text-white group-hover:text-sky-300 transition leading-snug">
+                            {item.titulo}
+                          </h3>
+
+                          {/* PROMINENT IMPACT CAPTION BOX */}
+                          <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-400/25 space-y-1">
+                            <div className="text-[9px] font-mono font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1">
+                              <Sparkles className="h-3 w-3 text-amber-400" />
+                              <span>Legenda de Impacto</span>
+                            </div>
+                            <p className="text-xs text-slate-200 font-normal leading-relaxed line-clamp-4">
+                              "{item.legenda}"
+                            </p>
+                          </div>
                         </div>
 
-                        <h3 className="text-sm font-bold text-white group-hover:text-sky-300 transition line-clamp-2">
-                          Reforço das Brigadas Móveis nos Bairros Chingo, Quissala e Bairro Novo
-                        </h3>
-
-                        <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                          As equipas de mobilizadores comunitários (RH-MC) iniciaram a rota intensiva de sensibilização casa a casa, informando as famílias sobre os postos fixos e avançados de vacinação.
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-sky-400">
-                        <span>Equipa de Saúde Pública</span>
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                      </div>
-                    </div>
-
-                    {/* Default Post 2 */}
-                    <div className="rounded-2xl border border-white/20 bg-slate-900/90 p-5 text-white shadow-xl backdrop-blur-md space-y-3 flex flex-col justify-between hover:border-emerald-400/50 transition group">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-300">
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                            Mapeamento ODK Collect
-                          </span>
-                          <span>Campanha 2026</span>
+                        {/* Card Footer */}
+                        <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-slate-300">
+                          <span className="text-sky-400 truncate max-w-[150px]">{item.autor}</span>
+                          <button
+                            onClick={() => setLightboxItem(item)}
+                            className="flex items-center gap-1 text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                          >
+                            <span>Ver Detalhes</span>
+                            <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
+                          </button>
                         </div>
-
-                        <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition line-clamp-2">
-                          Digitalização Completa dos Registos com ODK Collect Central
-                        </h3>
-
-                        <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                          Mais de 95% dos supervisores já estão a sincronizar dados do ODK Collect em tempo real com o SisMob, reduzindo erros manuais e acelerando o envio de relatórios.
-                        </p>
                       </div>
-
-                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-emerald-400">
-                        <span>Sistema Digital SisMob</span>
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                      </div>
-                    </div>
-
-                    {/* Default Post 3 */}
-                    <div className="rounded-2xl border border-white/20 bg-slate-900/90 p-5 text-white shadow-xl backdrop-blur-md space-y-3 flex flex-col justify-between hover:border-amber-400/50 transition group">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-                          <span className="flex items-center gap-1">
-                            <HeartPulse className="h-3 w-3 text-amber-400" />
-                            Comunicação Interpessoal
-                          </span>
-                          <span>Recomendação</span>
-                        </div>
-
-                        <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition line-clamp-2">
-                          Estratégias de Diálogo para Resolução de Recusas Comunitárias
-                        </h3>
-
-                        <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                          Lançado o novo guia técnico de orientação interpessoal para mobilizadores lidarem com hesitação vacinal em feiras, igrejas e chafarizes comunitários.
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-amber-400">
-                        <span>Guia do Mobilizador</span>
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                      </div>
-                    </div>
-                  </>
-                )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
@@ -914,6 +1269,127 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* FULL-SCREEN LIGHTBOX MODAL FOR FIELD GALLERY */}
+      <AnimatePresence>
+        {lightboxItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/95 backdrop-blur-xl"
+            onClick={() => setLightboxItem(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row text-white"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setLightboxItem(null)}
+                className="absolute top-4 right-4 z-30 p-2 rounded-full bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white transition border border-white/20 shadow-xl cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {/* Lightbox Media Left Column */}
+              <div className="relative w-full md:w-1/2 h-64 md:h-auto bg-slate-950 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <img
+                  src={sanitizeImageUrl(lightboxItem.imagemUrl)}
+                  alt={lightboxItem.titulo}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = socialMobilizationBgImg;
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent md:hidden" />
+                
+                <span className="absolute bottom-3 left-3 rounded-xl bg-slate-950/90 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-sky-300 border border-white/20 shadow-lg flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-sky-400" />
+                  <span>{lightboxItem.local}</span>
+                </span>
+              </div>
+
+              {/* Lightbox Details Right Column */}
+              <div className="p-6 md:p-8 flex-1 flex flex-col justify-between space-y-4 overflow-y-auto max-h-[50vh] md:max-h-full">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-xl bg-sky-500/20 text-sky-300 font-bold px-3 py-1 text-xs border border-sky-400/30">
+                      {lightboxItem.categoria}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">{lightboxItem.data}</span>
+                  </div>
+
+                  <h3 className="text-xl md:text-2xl font-black text-white leading-tight">
+                    {lightboxItem.titulo}
+                  </h3>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-amber-400/30 space-y-2 shadow-inner">
+                    <div className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-amber-400" />
+                      <span>Legenda de Impacto e Contexto de Campo</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-100 font-normal leading-relaxed italic">
+                      "{lightboxItem.legenda}"
+                    </p>
+                  </div>
+
+                  <div className="text-xs text-slate-300 space-y-1">
+                    <div className="font-bold text-sky-400">Origem do Registo:</div>
+                    <p>{lightboxItem.autor}</p>
+                    <p className="text-[11px] text-slate-400">{lightboxItem.subtitulo}</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const currentIndex = galleryItemsToDisplay.findIndex((i) => i.id === lightboxItem.id);
+                        const prevIndex = (currentIndex - 1 + galleryItemsToDisplay.length) % galleryItemsToDisplay.length;
+                        setLightboxItem(galleryItemsToDisplay[prevIndex]);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition border border-white/10 flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const currentIndex = galleryItemsToDisplay.findIndex((i) => i.id === lightboxItem.id);
+                        const nextIndex = (currentIndex + 1) % galleryItemsToDisplay.length;
+                        setLightboxItem(galleryItemsToDisplay[nextIndex]);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition border border-white/10 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Próxima</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setLightboxItem(null);
+                      setShowLoginModal(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 transition shadow-lg cursor-pointer flex items-center gap-1.5"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Entrar no Sistema</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

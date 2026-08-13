@@ -31,8 +31,9 @@ import {
   CheckCheck,
   Filter,
 } from 'lucide-react';
-import { Coordination, User, Ficha, ODKSubmission, AuditLog } from '../types';
+import { Coordination, User, Ficha, ODKSubmission, AuditLog, Mobilizador } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
+import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
 import {
   Theme,
   THEMES,
@@ -63,6 +64,7 @@ interface HeaderProps {
   odkSubmissions?: ODKSubmission[];
   auditLogs?: AuditLog[];
   users?: User[];
+  mobilizadores?: Mobilizador[];
   isOnline: boolean;
   theme?: 'light' | 'dark';
   currentPalette?: Theme;
@@ -86,6 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
   odkSubmissions = [],
   auditLogs = [],
   users = [],
+  mobilizadores = [],
   isOnline,
   theme = 'light',
   currentPalette,
@@ -103,8 +106,18 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isActiveSupervisorsOpen, setIsActiveSupervisorsOpen] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<'todas' | 'fichas' | 'odk' | 'criticas'>('todas');
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(new Set());
+
+  const activeSupervisorsCount = useMemo(() => {
+    const loggedIn = (users || []).filter(
+      (u) =>
+        (u.tipo === 'supervisor' || u.tipo === 'admin') &&
+        (u.isOnline === true || u.isLogged === true || u.id === user.id)
+    );
+    return loggedIn.length;
+  }, [users, user]);
 
   const userCoordination = coordenacoes?.find((c) => c.id === user.coordId);
   const coordenadorNomeDisplay =
@@ -319,6 +332,21 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 text-xs">
+        {/* Indicador de Supervisores a Lançar Dados com Ponto Verde Piscando */}
+        <button
+          onClick={() => setIsActiveSupervisorsOpen(true)}
+          className="flex items-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/60 hover:bg-emerald-900/80 px-3 py-1.5 text-xs font-bold text-white transition shadow-sm backdrop-blur-xs cursor-pointer active:scale-95"
+          title="Supervisores e equipas a lançar dados no sistema em tempo real — Clique para ver as pessoas"
+          id="btn-header-active-supervisors"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+          </span>
+          <span className="text-emerald-300 font-black">{activeSupervisorsCount}</span>
+          <span className="hidden sm:inline text-white font-bold">em Lançamento</span>
+        </button>
+
         {/* Status Indicator */}
         <div
           className="hidden items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white sm:flex backdrop-blur-xs"
@@ -860,6 +888,21 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       )}
+
+      {/* Active Supervisors Modal */}
+      <ActiveSupervisorsModal
+        isOpen={isActiveSupervisorsOpen}
+        onClose={() => setIsActiveSupervisorsOpen(false)}
+        users={users}
+        currentUser={user}
+        fichas={fichas}
+        odkSubmissions={odkSubmissions}
+        coordenacoes={coordenacoes}
+        mobilizadores={mobilizadores}
+        onSelectSupervisorFichas={() => {
+          if (onSelectTab) onSelectTab('listFichas');
+        }}
+      />
     </header>
   );
 };

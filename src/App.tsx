@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost, CasoPFA } from './types';
-import { INITIAL_USERS } from './data/initialData';
+import {
+  INITIAL_USERS,
+  INITIAL_COORDINATIONS,
+  INITIAL_MOBILIZADORES,
+  INITIAL_FICHAS,
+  INITIAL_CASOS_PFA,
+  INITIAL_ODK_SUBMISSIONS,
+} from './data/initialData';
+import { FIELD_GALLERY_ITEMS } from './data/fieldGalleryData';
 import { api } from './services/api';
 import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts, fsSaveCasoPFA, fsUpdateCasoPFA } from './services/firebaseService';
 import {
@@ -47,12 +55,12 @@ function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [coordenacoes, setCoordenacoes] = useState<Coordination[]>([]);
-  const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>([]);
-  const [fichas, setFichas] = useState<Ficha[]>([]);
-  const [casosPFA, setCasosPFA] = useState<CasoPFA[]>([]);
-  const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>([]);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [coordenacoes, setCoordenacoes] = useState<Coordination[]>(INITIAL_COORDINATIONS);
+  const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>(INITIAL_MOBILIZADORES);
+  const [fichas, setFichas] = useState<Ficha[]>(INITIAL_FICHAS);
+  const [casosPFA, setCasosPFA] = useState<CasoPFA[]>(INITIAL_CASOS_PFA);
+  const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>(INITIAL_ODK_SUBMISSIONS);
   const [goals, setGoals] = useState<CoordinationGoal[]>([]);
   const [portalPosts, setPortalPosts] = useState<PortalPost[]>([]);
   const [portalNewsOpen, setPortalNewsOpen] = useState(false);
@@ -234,9 +242,27 @@ export default function App() {
   }, []);
 
   const handleLogin = (user: User) => {
-    setCurrentUser(user);
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const updatedUser: User = {
+      ...user,
+      isOnline: true,
+      isLogged: true,
+      ultimoAcesso: `Hoje às ${timeStr} (Sessão Ativa)`,
+    };
+    setCurrentUser(updatedUser);
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
     api.setSessionUser(user.id);
     setActiveTab('dashboard');
+
+    // Sync online status to Firestore
+    import('./services/firebaseService').then(({ fsUpdateUser }) => {
+      fsUpdateUser(user.id, {
+        isOnline: true,
+        isLogged: true,
+        ultimoAcesso: `Hoje às ${timeStr} (Sessão Ativa)`,
+      }).catch(console.warn);
+    });
+
     api.addAuditLog({
       id: 'log-' + Date.now(),
       timestamp: new Date().toISOString(),
@@ -250,6 +276,24 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    if (currentUser) {
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const offlineUser: User = {
+        ...currentUser,
+        isOnline: false,
+        isLogged: false,
+        ultimoAcesso: `Desconectado às ${timeStr}`,
+      };
+      setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? offlineUser : u)));
+
+      import('./services/firebaseService').then(({ fsUpdateUser }) => {
+        fsUpdateUser(currentUser.id, {
+          isOnline: false,
+          isLogged: false,
+          ultimoAcesso: `Desconectado às ${timeStr}`,
+        }).catch(console.warn);
+      });
+    }
     setCurrentUser(null);
     api.setSessionUser(null);
   };
@@ -409,17 +453,6 @@ export default function App() {
   }, [currentUser]);
 
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-slate-800">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
-          <p className="text-xs font-semibold text-slate-500">A carregar SisMob...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!currentUser) {
     return (
       <LoginScreen
@@ -491,6 +524,7 @@ export default function App() {
           odkSubmissions={odkSubmissions}
           auditLogs={auditLogs}
           users={users}
+          mobilizadores={mobilizadores}
           isOnline={isOnline}
           theme={themeConfig.darkMode ? 'dark' : 'light'}
           currentPalette={palette}

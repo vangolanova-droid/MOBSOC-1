@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { Newspaper, Plus, Trash2, Edit3, X, Check, Megaphone, Calendar, Tag, Image, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Newspaper, Plus, Trash2, Edit3, X, Check, Megaphone, Calendar, Tag, Image, Sparkles, Upload, UploadCloud, AlertCircle } from 'lucide-react';
 import { PortalPost, User } from '../types';
+import { sanitizeImageUrl, convertFileToDataUrl } from '../utils/imageUtils';
 
 interface PortalNewsManagerModalProps {
   user: User;
   posts: PortalPost[];
+  initialPostToEdit?: PortalPost | null;
   onSavePost: (post: PortalPost) => Promise<void>;
   onDeletePost: (id: string) => Promise<void>;
   onClose: () => void;
@@ -13,22 +15,40 @@ interface PortalNewsManagerModalProps {
 export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
   user,
   posts,
+  initialPostToEdit,
   onSavePost,
   onDeletePost,
   onClose,
 }) => {
-  const [editingPost, setEditingPost] = useState<PortalPost | null>(null);
+  const [editingPost, setEditingPost] = useState<PortalPost | null>(initialPostToEdit || null);
   const [isCreating, setIsCreating] = useState(false);
 
   // Form states
-  const [titulo, setTitulo] = useState('');
-  const [subtitulo, setSubtitulo] = useState('');
-  const [conteudo, setConteudo] = useState('');
-  const [categoria, setCategoria] = useState<'Notícia' | 'Aviso' | 'Brigada Móvel' | 'Estatística' | 'Guia'>('Notícia');
-  const [autor, setAutor] = useState(user.nome || 'Administração SisMob');
-  const [destaque, setDestaque] = useState(false);
-  const [imagemUrl, setImagemUrl] = useState('');
+  const [titulo, setTitulo] = useState(initialPostToEdit?.titulo || '');
+  const [subtitulo, setSubtitulo] = useState(initialPostToEdit?.subtitulo || '');
+  const [conteudo, setConteudo] = useState(initialPostToEdit?.conteudo || '');
+  const [categoria, setCategoria] = useState<any>(initialPostToEdit?.categoria || 'Notícia');
+  const [autor, setAutor] = useState(initialPostToEdit?.autor || user.nome || 'Administração SisMob');
+  const [destaque, setDestaque] = useState(!!initialPostToEdit?.destaque);
+  const [imagemUrl, setImagemUrl] = useState(initialPostToEdit?.imagemUrl || '');
   const [saving, setSaving] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialPostToEdit) {
+      setEditingPost(initialPostToEdit);
+      setIsCreating(false);
+      setTitulo(initialPostToEdit.titulo);
+      setSubtitulo(initialPostToEdit.subtitulo || '');
+      setConteudo(initialPostToEdit.conteudo);
+      setCategoria(initialPostToEdit.categoria || 'Notícia');
+      setAutor(initialPostToEdit.autor || user.nome);
+      setDestaque(!!initialPostToEdit.destaque);
+      setImagemUrl(initialPostToEdit.imagemUrl || '');
+      setImageError(false);
+    }
+  }, [initialPostToEdit, user.nome]);
 
   const resetForm = () => {
     setEditingPost(null);
@@ -40,6 +60,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setAutor(user.nome || 'Administração SisMob');
     setDestaque(false);
     setImagemUrl('');
+    setImageError(false);
   };
 
   const handleStartCreate = () => {
@@ -57,6 +78,19 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setAutor(p.autor || user.nome);
     setDestaque(!!p.destaque);
     setImagemUrl(p.imagemUrl || '');
+    setImageError(false);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await convertFileToDataUrl(file);
+      setImagemUrl(dataUrl);
+      setImageError(false);
+    } catch (err: any) {
+      alert(err.message || 'Erro ao carregar imagem do ficheiro.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +100,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setSaving(true);
     try {
       const now = new Date();
+      const sanitizedImg = sanitizeImageUrl(imagemUrl);
       const postToSave: PortalPost = {
         id: editingPost ? editingPost.id : `post-${now.getTime()}`,
         titulo: titulo.trim(),
@@ -75,7 +110,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
         data: now.toISOString().split('T')[0],
         autor: autor.trim() || user.nome,
         destaque,
-        imagemUrl: imagemUrl.trim() || undefined,
+        imagemUrl: sanitizedImg || undefined,
         createdAt: editingPost ? editingPost.createdAt : now.toISOString(),
       };
 
@@ -225,19 +260,88 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">
-                  URL de Imagem Ilustrativa (Opcional)
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-300 uppercase">
+                  Imagem Ilustrativa (Ficheiro Local ou Link)
                 </label>
-                <input
-                  type="text"
-                  value={imagemUrl}
-                  onChange={(e) => setImagemUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-400"
-                />
+
+                {/* Upload or Link Options */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-sky-500/20 border border-sky-400/40 hover:bg-sky-500/30 px-3.5 py-2.5 text-xs font-bold text-sky-300 transition"
+                  >
+                    <UploadCloud className="h-4 w-4 text-sky-400" />
+                    <span>Carregar do Dispositivo</span>
+                  </button>
+
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={imagemUrl}
+                      onChange={(e) => {
+                        setImagemUrl(e.target.value);
+                        setImageError(false);
+                      }}
+                      placeholder="Ou cole o link da imagem (HTTPS / Google Drive / Unsplash)"
+                      className="w-full rounded-xl border border-slate-600 bg-slate-900 p-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Live Image Preview */}
+                {imagemUrl && (
+                  <div className="relative mt-2 rounded-xl border border-slate-700 bg-slate-950 p-2 overflow-hidden flex items-center justify-between gap-3">
+                    <div className="relative h-20 w-32 rounded-lg overflow-hidden bg-slate-900 flex-shrink-0">
+                      <img
+                        src={sanitizeImageUrl(imagemUrl)}
+                        alt="Pré-visualização"
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={() => setImageError(true)}
+                      />
+                    </div>
+
+                    <div className="flex-1 text-xs space-y-1">
+                      {imageError ? (
+                        <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Não foi possível carregar esta imagem do link. Verifique a URL ou selecione um ficheiro.</span>
+                        </div>
+                      ) : (
+                        <div className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Imagem carregada com sucesso!</span>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-400 truncate max-w-xs">{imagemUrl}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagemUrl('');
+                        setImageError(false);
+                      }}
+                      className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition"
+                      title="Remover Imagem"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Preset Suggestions */}
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className="text-[10px] text-slate-400 font-bold self-center mr-1">Sugestões:</span>
+                  <span className="text-[10px] text-slate-400 font-bold self-center mr-1">Imagens Rápidas:</span>
                   {[
                     { label: 'Brigada Móvel', url: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80' },
                     { label: 'ODK / Digital', url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80' },
@@ -248,7 +352,10 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setImagemUrl(preset.url)}
+                      onClick={() => {
+                        setImagemUrl(preset.url);
+                        setImageError(false);
+                      }}
                       className="rounded-lg bg-slate-800 border border-slate-700 hover:border-sky-400 px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:text-white transition"
                     >
                       + {preset.label}

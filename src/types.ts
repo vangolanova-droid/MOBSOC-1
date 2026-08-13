@@ -12,6 +12,9 @@ export interface User {
   ronda?: string;
   fotoUrl?: string;
   status?: 'ativo' | 'pendente' | 'rejeitado';
+  isOnline?: boolean;
+  isLogged?: boolean;
+  ultimoAcesso?: string;
   telefone?: string;
   createdAt?: string;
 }
@@ -204,7 +207,7 @@ export interface PortalPost {
   titulo: string;
   subtitulo?: string;
   conteudo: string;
-  categoria: 'Notícia' | 'Aviso' | 'Brigada Móvel' | 'Estatística' | 'Guia';
+  categoria: 'Notícia' | 'Aviso' | 'Brigada Móvel' | 'Estatística' | 'Guia' | 'Liderança Tradicional' | 'Logística de Campo' | 'Parceria Estratégica' | 'Sensibilização Direta' | 'Mobilização Social' | 'Capacitação Técnica' | 'Equipa de Campo' | 'Gestão & Controlo' | 'Comunicação Interpessoal' | string;
   data: string;
   autor: string;
   destaque?: boolean;

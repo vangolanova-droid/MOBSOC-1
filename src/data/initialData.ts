@@ -86,6 +86,9 @@ export const INITIAL_USERS: User[] = [
     coordNome: 'Acesso Global',
     coordenadorNome: 'Gestor do Sistema',
     status: 'ativo',
+    isOnline: true,
+    isLogged: true,
+    ultimoAcesso: 'Agora (Sessão Ativa)',
   },
   {
     id: 2,
@@ -97,6 +100,9 @@ export const INITIAL_USERS: User[] = [
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
     coordenadorNome: 'Dr. António Manuel',
     status: 'ativo',
+    isOnline: true,
+    isLogged: true,
+    ultimoAcesso: 'Hoje, 12:30 (Sessão Ativa)',
   },
   {
     id: 3,
@@ -108,6 +114,9 @@ export const INITIAL_USERS: User[] = [
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
     coordenadorNome: 'Dra. Luísa Cambuta',
     status: 'ativo',
+    isOnline: false,
+    isLogged: false,
+    ultimoAcesso: 'Ontem às 18:20 (Desconectado)',
   },
   {
     id: 4,
@@ -119,6 +128,9 @@ export const INITIAL_USERS: User[] = [
     coordNome: 'Coordenação Centro (Aeroporto / Bumba)',
     coordenadorNome: 'Eng. Manuel Francisco',
     status: 'ativo',
+    isOnline: false,
+    isLogged: false,
+    ultimoAcesso: 'Há 2 dias (Desconectado)',
   },
 ];
 

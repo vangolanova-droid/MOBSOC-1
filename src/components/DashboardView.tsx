@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { sanitizeImageUrl } from '../utils/imageUtils';
 import {
   Users,
   MapPin,
@@ -53,6 +54,7 @@ import {
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { MapaFichasView } from './MapaFichasView';
+import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
 import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User, CasoPFA } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
@@ -99,6 +101,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const todayStr = new Date().toISOString().split('T')[0];
   const [targetDate, setTargetDate] = useState('2026-08-03');
   const [reminderNotice, setReminderNotice] = useState<string | null>(null);
+  const [isActiveSupervisorsOpen, setIsActiveSupervisorsOpen] = useState(false);
+
+  const activeSupervisorsCount = React.useMemo(() => {
+    const loggedIn = (users || []).filter(
+      (u) =>
+        (u.tipo === 'supervisor' || u.tipo === 'admin') &&
+        (u.isOnline === true || u.isLogged === true || u.id === user.id)
+    );
+    return loggedIn.length;
+  }, [users, user]);
 
   // Carousel & Portal News States
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -316,6 +328,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </ActionTooltip>
           )}
 
+          {/* Botão de Ponto Verde Piscante: Supervisores a Lançar Dados */}
+          <button
+            onClick={() => setIsActiveSupervisorsOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 px-3.5 py-1.5 text-xs font-black text-emerald-800 dark:text-emerald-300 shadow-2xs transition active:scale-95 cursor-pointer"
+            id="dash-btn-supervisores-ativos"
+            title="Clique para ver a lista de pessoas que estão a lançar os dados no sistema agora"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span>{activeSupervisorsCount} Supervisores em Lançamento</span>
+          </button>
+
           <ActionTooltip content="Abre a inteligência artificial para resumir dados, gerar relatórios operacionais e identificar tendências no terreno.">
             <button
               onClick={onOpenAiModal}
@@ -418,7 +444,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Progress Metrics Bar */}
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 rounded-xl p-1">
           {/* Meta Diária - Azul */}
-          <div className="rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/90 dark:bg-blue-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs">
+          <div className="rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/90 dark:bg-blue-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-blue-900 dark:text-blue-200 uppercase tracking-wider">
                 Meta Diária de Fichas
@@ -434,7 +460,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Submetidas Hoje - Verde Claro */}
-          <div className="rounded-xl border-2 border-emerald-400 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs">
+          <div className="rounded-xl border-2 border-emerald-400 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">
                 Submetidas Hoje ({targetDate})
@@ -452,7 +478,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Fichas Pendentes Hoje - Vermelho / Amarelo */}
-          <div className="rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs">
+          <div className="rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/60 p-2.5 sm:p-3 space-y-1 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-red-900 dark:text-red-200 uppercase tracking-wider">
                 Fichas Pendentes Hoje
@@ -500,7 +526,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {/* Pessoas Goal - Verde Claro */}
-            <div className="rounded-xl bg-emerald-50/90 dark:bg-emerald-950/50 p-2.5 sm:p-3 border-2 border-emerald-300 dark:border-emerald-700 space-y-1.5 shadow-xs">
+            <div className="rounded-xl bg-emerald-50/90 dark:bg-emerald-950/50 p-2.5 sm:p-3 border-2 border-emerald-300 dark:border-emerald-700 space-y-1.5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-emerald-900 dark:text-emerald-200">Pessoas Alcançadas</span>
                 <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-300">
@@ -531,7 +557,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Locais Goal - Azul Vivo */}
-            <div className="rounded-xl bg-sky-50/90 dark:bg-sky-950/50 p-2.5 sm:p-3 border-2 border-sky-300 dark:border-sky-700 space-y-1.5 shadow-xs">
+            <div className="rounded-xl bg-sky-50/90 dark:bg-sky-950/50 p-2.5 sm:p-3 border-2 border-sky-300 dark:border-sky-700 space-y-1.5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-sky-900 dark:text-sky-200">Locais Visitados</span>
                 <span className="font-mono font-extrabold text-sky-700 dark:text-sky-300">
@@ -562,7 +588,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Acceptance Goal - Amarelo / Dourado */}
-            <div className="rounded-xl bg-amber-50/90 dark:bg-amber-950/50 p-2.5 sm:p-3 border-2 border-amber-300 dark:border-amber-700 space-y-1.5 shadow-xs">
+            <div className="rounded-xl bg-amber-50/90 dark:bg-amber-950/50 p-2.5 sm:p-3 border-2 border-amber-300 dark:border-amber-700 space-y-1.5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md cursor-pointer">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-amber-900 dark:text-amber-200">Meta Taxa Aceitação</span>
                 <span className="font-mono font-extrabold text-amber-800 dark:text-amber-300">{acceptanceRate}% / 80%</span>
@@ -671,133 +697,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Monitor de Supervisores */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-2.5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 font-bold border border-blue-100">
-              <UserCheck className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-xs font-bold text-slate-900 tracking-tight">
-                Controlo de Submissão por Supervisor
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Verifique se os supervisores entregaram as fichas do dia ({targetDate})
-              </p>
-            </div>
-          </div>
-          <span className="rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700">
-            {supervisorsList.length} Supervisores Registados
-          </span>
-        </div>
-
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-xs text-slate-800">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px] font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="p-2 sm:p-2.5">Supervisor</th>
-                <th className="p-2 sm:p-2.5">Coordenação & Coordenador</th>
-                <th className="p-2 sm:p-2.5 text-center">Fichas Submetidas Hoje ({targetDate})</th>
-                <th className="p-2 sm:p-2.5 text-center">Estado de Entrega</th>
-                <th className="p-2 sm:p-2.5 text-right">Ação / Contacto Directo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {supervisorsList.map((sup) => {
-                const supFichas = todayFichas.filter(
-                  (f) => f.userId === sup.id || f.coordId === sup.coordId
-                );
-                const hasSubmitted = supFichas.length > 0;
-                const coordInfo = coordenacoes.find((c) => c.id === sup.coordId);
-                const coordenador = coordInfo?.coordenador || sup.coordenadorNome || '—';
-
-                return (
-                  <tr key={sup.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-2 sm:p-2.5">
-                      <div className="font-bold text-slate-900 text-xs">{sup.nome}</div>
-                      <div className="text-[10px] text-slate-500 font-mono">{sup.email}</div>
-                    </td>
-                    <td className="p-2 sm:p-2.5">
-                      <div className="font-bold text-blue-600 text-xs">{sup.coordNome || 'Geral'}</div>
-                      <div className="text-[10px] text-emerald-700 font-medium">
-                        Coordenador: {coordenador}
-                      </div>
-                    </td>
-                    <td className="p-2 sm:p-2.5 text-center">
-                      <span
-                        className={`font-mono text-xs font-bold ${
-                          hasSubmitted ? 'text-emerald-600' : 'text-amber-600'
-                        }`}
-                      >
-                        {supFichas.length} fichas
-                      </span>
-                    </td>
-                    <td className="p-2 sm:p-2.5 text-center">
-                      {hasSubmitted ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Entregue
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2.5 py-0.5 text-[11px] font-medium text-red-700">
-                          <AlertCircle className="h-3 w-3" />
-                          Pendente / Em Atraso
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-2 sm:p-2.5 text-right">
-                      {!hasSubmitted ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() =>
-                              sendWhatsAppReminder(
-                                sup.nome,
-                                'supervisor',
-                                '',
-                                sup.coordNome
-                              )
-                            }
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white shadow-xs hover:bg-emerald-700 transition"
-                            title="Abrir WhatsApp com mensagem pré-formatada"
-                          >
-                            <MessageSquare className="h-3 w-3" />
-                            <span>WhatsApp</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setReminderNotice(
-                                `🔔 Alerta de cobrança registado para o Supervisor ${sup.nome} (${sup.email}) referente ao dia ${targetDate}.`
-                              );
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                          >
-                            <Mail className="h-3 w-3" />
-                            <span>Notificar</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-emerald-600 font-bold font-mono">
-                          ✓ Em dia
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {supervisorsList.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-3 text-center text-slate-500 italic">
-                    Nenhum supervisor registado na plataforma.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Carrossel Dinâmico & Mural de Publicações */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-5 shadow-2xs space-y-4">
         {/* Header da Secção */}
@@ -851,12 +750,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
                   className="absolute inset-0"
                 >
-                  {activeSlide.imagemUrl ? (
+                  {activeSlide.imagemUrl && sanitizeImageUrl(activeSlide.imagemUrl) ? (
                     <img
-                      src={activeSlide.imagemUrl}
+                      src={sanitizeImageUrl(activeSlide.imagemUrl)}
                       alt={activeSlide.titulo}
                       className="w-full h-full object-cover filter brightness-[0.7] contrast-[1.1] transition-transform duration-700 group-hover:scale-105"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950" />
@@ -1048,13 +950,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="group flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:border-sky-400 dark:hover:border-sky-500 transition-all duration-200 shadow-2xs hover:shadow-md"
               >
                 {/* Imagem do Cartão */}
-                {post.imagemUrl && (
+                {post.imagemUrl && sanitizeImageUrl(post.imagemUrl) && (
                   <div className="relative h-40 w-full overflow-hidden bg-slate-950">
                     <img
-                      src={post.imagemUrl}
+                      src={sanitizeImageUrl(post.imagemUrl)}
                       alt={post.titulo}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLElement).parentElement!.style.display = 'none';
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
                     <span className="absolute top-2.5 left-2.5 rounded-lg bg-slate-950/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-sky-300 border border-white/10">
@@ -1224,7 +1129,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pessoas Alcançadas - Verde Claro */}
-        <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
+        <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 ease-out hover:scale-[1.02] cursor-pointer space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold text-emerald-950 dark:text-emerald-200 uppercase tracking-wider">
               Total Pessoas Alcançadas
@@ -1247,7 +1152,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Locais Visados - Azul */}
-        <div className="rounded-2xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/90 dark:bg-blue-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
+        <div className="rounded-2xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/90 dark:bg-blue-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 ease-out hover:scale-[1.02] cursor-pointer space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold text-blue-950 dark:text-blue-200 uppercase tracking-wider">
               Locais Visitados
@@ -1270,7 +1175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Total Fichas Submetidas - Sky / Cyan */}
-        <div className="rounded-2xl border-2 border-sky-300 dark:border-sky-700 bg-sky-50/90 dark:bg-sky-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
+        <div className="rounded-2xl border-2 border-sky-300 dark:border-sky-700 bg-sky-50/90 dark:bg-sky-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 ease-out hover:scale-[1.02] cursor-pointer space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold text-sky-950 dark:text-sky-200 uppercase tracking-wider">
               Total Fichas Submetidas
@@ -1293,7 +1198,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Taxa de Aceitação - Amarelo / Dourado */}
-        <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/90 dark:bg-amber-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all space-y-1">
+        <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/90 dark:bg-amber-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 ease-out hover:scale-[1.02] cursor-pointer space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold text-amber-950 dark:text-amber-200 uppercase tracking-wider">
               Taxa de Aceitação
@@ -1559,6 +1464,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Modal de Supervisores a Lançar Dados */}
+      <ActiveSupervisorsModal
+        isOpen={isActiveSupervisorsOpen}
+        onClose={() => setIsActiveSupervisorsOpen(false)}
+        users={users}
+        currentUser={user}
+        fichas={fichas}
+        coordenacoes={coordenacoes}
+        mobilizadores={mobilizadores}
+        onSelectSupervisorFichas={() => onViewAllFichas()}
+      />
     </div>
   );
 };
