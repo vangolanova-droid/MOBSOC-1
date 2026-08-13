@@ -5,15 +5,12 @@ import {
   Copy,
   Download,
   Trash2,
-  Save,
-  Users,
   Plus,
   CheckCircle2,
   Lock,
   KeyRound,
   FileText,
   Clock,
-  Sparkles,
 } from 'lucide-react';
 import { User, Coordination } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -22,17 +19,13 @@ import { api } from '../services/api';
 interface BlocoDeNotasModalProps {
   isOpen: boolean;
   onClose: () => void;
-  users: User[];
-  coordenacoes: Coordination[];
+  users?: User[];
+  coordenacoes?: Coordination[];
 }
-
-const LOCAL_STORAGE_KEY = 'sismob_admin_notepad_notes';
 
 export const BlocoDeNotasModal: React.FC<BlocoDeNotasModalProps> = ({
   isOpen,
   onClose,
-  users,
-  coordenacoes,
 }) => {
   const { showToast } = useToast();
   const [notes, setNotes] = useState<string>('');
@@ -49,78 +42,21 @@ export const BlocoDeNotasModal: React.FC<BlocoDeNotasModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       api.getNotepad().then((saved) => {
-        if (saved !== null && saved !== '') {
+        if (saved !== null) {
           setNotes(saved);
         } else {
-          // Initial default content with auto-imported supervisors
-          const initialText = generateSupervisorsSummary(users, coordenacoes);
-          setNotes(initialText);
-          api.saveNotepad(initialText);
+          setNotes('');
         }
         setLastSaved(new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }));
       });
     }
-  }, [isOpen, users, coordenacoes]);
+  }, [isOpen]);
 
   // Autosave when notes change
   const handleNotesChange = (text: string) => {
     setNotes(text);
     api.saveNotepad(text);
     setLastSaved(new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }));
-  };
-
-  // Generate clean formatted text with all current supervisors & default credentials
-  function generateSupervisorsSummary(usersList: User[], coordsList: Coordination[]): string {
-    const supervisores = usersList.filter((u) => u.tipo === 'supervisor');
-    const now = new Date().toLocaleDateString('pt-PT');
-    
-    let text = `====================================================\n`;
-    text += `   REGISTO DE UTILIZADORES E SENHAS — SISMOB\n`;
-    text += `   Última Atualização: ${now}\n`;
-    text += `====================================================\n\n`;
-
-    text += `🛡️ ADMINISTRADORES:\n`;
-    const admins = usersList.filter((u) => u.tipo === 'admin');
-    admins.forEach((adm, idx) => {
-      text += ` ${idx + 1}. ${adm.nome} (${adm.email})\n`;
-      text += `    - Acesso: Administração Global\n`;
-      if (adm.senha) text += `    - Senha: ${adm.senha}\n`;
-      text += `\n`;
-    });
-
-    text += `----------------------------------------------------\n`;
-    text += `👤 SUPERVISORES DE CAMPO (${supervisores.length}):\n`;
-    text += `----------------------------------------------------\n`;
-
-    if (supervisores.length === 0) {
-      text += `(Nenhum supervisor registado até ao momento)\n\n`;
-    } else {
-      supervisores.forEach((sup, idx) => {
-        const coord = coordsList.find((c) => c.id === sup.coordId);
-        const coordName = coord ? coord.nome : sup.coordNome || 'Sem Coordenação';
-        const senhaDisplay = sup.senha ? sup.senha : '123456 (padrão)';
-
-        text += `${idx + 1}. ${sup.nome.toUpperCase()}\n`;
-        text += `   • Email / Login : ${sup.email}\n`;
-        text += `   • Senha / Passe : ${senhaDisplay}\n`;
-        text += `   • Coordenação   : ${coordName}\n`;
-        if (coord?.coordenador) text += `   • Resp. Direto  : ${coord.coordenador}\n`;
-        text += `   -------------------------------------------------\n`;
-      });
-    }
-
-    text += `\n📝 ANOTAÇÕES PARTICULARES / NOTAS RÁPIDAS:\n`;
-    text += `- Lembrar de atualizar senhas antes de cada nova ronda.\n`;
-    text += `- Em caso de perda, a senha por defeito é 123456.\n\n`;
-
-    return text;
-  }
-
-  // Action: Append / Regenerate Supervisors List
-  const handleImportSupervisors = () => {
-    const freshSummary = generateSupervisorsSummary(users, coordenacoes);
-    handleNotesChange(freshSummary);
-    showToast('Lista de supervisores e senhas gerada e atualizada com sucesso!', 'success');
   };
 
   // Action: Add quick credential to note
@@ -224,16 +160,6 @@ export const BlocoDeNotasModal: React.FC<BlocoDeNotasModalProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handleImportSupervisors}
-                className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-300 px-3.5 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition shadow-2xs"
-                title="Regerar lista com todos os supervisores registados no sistema"
-                id="btn-import-supervisors-notepad"
-              >
-                <Users className="h-3.5 w-3.5 text-amber-700" />
-                <span>Carregar Lista de Supervisores</span>
-              </button>
-
               <button
                 onClick={handleCopyNotes}
                 className="flex items-center gap-1.5 rounded-xl bg-slate-100 border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"

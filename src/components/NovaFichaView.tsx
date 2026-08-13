@@ -140,6 +140,11 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
     }
   });
 
+  // Auto-fill SIM with total number of persons reached from the location tables
+  useEffect(() => {
+    setSim(grandPessoas);
+  }, [grandPessoas]);
+
   const totalRespostas = sim + nao;
   const acceptancePct =
     totalRespostas > 0 ? Math.round((sim / totalRespostas) * 100) : 0;
@@ -690,6 +695,9 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               className="mt-1.5 w-full h-11 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 text-sm font-bold font-mono text-emerald-800 outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 transition"
               id="input-ficha-sim"
             />
+            <p className="mt-1 text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <span>✓ Preenchido automaticamente com base no total de pessoas alcançadas ({grandPessoas} pessoas)</span>
+            </p>
           </div>
 
           <div>

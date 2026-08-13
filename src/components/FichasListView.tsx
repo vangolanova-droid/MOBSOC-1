@@ -128,7 +128,17 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
       const current = prev[key] || [0, 0];
       const updated: [number, number] = [current[0], current[1]];
       updated[colIndex] = num;
-      return { ...prev, [key]: updated };
+      const nextTable = { ...prev, [key]: updated };
+
+      if (colIndex === 1) {
+        let totalP = 0;
+        LOCATION_CONFIGS.forEach((loc) => {
+          totalP += (nextTable[loc.key]?.[1] || 0);
+        });
+        setEditSim(totalP);
+      }
+
+      return nextTable;
     });
   };
 
@@ -997,6 +1007,9 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                       onChange={(e) => setEditSim(Math.max(0, parseInt(e.target.value) || 0))}
                       className="w-full rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-black text-[#2E7D32] outline-none focus:border-emerald-600"
                     />
+                    <p className="mt-1 text-[10px] text-emerald-700 font-semibold">
+                      ✓ Preenchido com base na tabela ({Object.values(editTableData).reduce((acc, pair) => acc + (pair[1] || 0), 0)} pessoas)
+                    </p>
                   </div>
 
                   <div>
