@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Ficha, User, Coordination, Mobilizador, FichaTableData } from '../types';
@@ -285,6 +286,11 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
 
   const handleConfirmDelete = async () => {
     if (!deletingFicha) return;
+    if (user.tipo !== 'admin' && deletingFicha.status === 'aprovada') {
+      showToast('A ficha foi aprovada e validada pelo Administrador. Supervisores não têm permissão para eliminar fichas aprovadas.', 'error');
+      setDeletingFicha(null);
+      return;
+    }
     setIsDeleting(true);
     try {
       await onDeleteFicha(deletingFicha.id);
@@ -636,21 +642,66 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => handleStartEdit(f)}
-                          className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 transition"
-                          title="Editar Ficha"
-                          id={`btn-edit-ficha-${f.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeletingFicha(f)}
-                          className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 transition"
-                          title="Apagar Ficha"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {(() => {
+                          const isFichaLockedForSupervisor = !isAdmin && isApproved;
+                          return (
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (isFichaLockedForSupervisor) {
+                                    showToast('Ficha aprovada pelo Administrador. Supervisores não podem editar fichas validadas.', 'error');
+                                    return;
+                                  }
+                                  handleStartEdit(f);
+                                }}
+                                disabled={isFichaLockedForSupervisor}
+                                className={`rounded-lg p-1.5 transition ${
+                                  isFichaLockedForSupervisor
+                                    ? 'text-slate-300 dark:text-slate-600 bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed opacity-50'
+                                    : 'text-blue-600 hover:bg-blue-50'
+                                }`}
+                                title={
+                                  isFichaLockedForSupervisor
+                                    ? 'Ficha aprovada pelo Administrador (Edição bloqueada)'
+                                    : 'Editar Ficha'
+                                }
+                                id={`btn-edit-ficha-${f.id}`}
+                              >
+                                {isFichaLockedForSupervisor ? (
+                                  <Lock className="h-4 w-4 text-amber-500" />
+                                ) : (
+                                  <Pencil className="h-4 w-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (isFichaLockedForSupervisor) {
+                                    showToast('Ficha aprovada pelo Administrador. Supervisores não podem eliminar fichas validadas.', 'error');
+                                    return;
+                                  }
+                                  setDeletingFicha(f);
+                                }}
+                                disabled={isFichaLockedForSupervisor}
+                                className={`rounded-lg p-1.5 transition ${
+                                  isFichaLockedForSupervisor
+                                    ? 'text-slate-300 dark:text-slate-600 bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed opacity-50'
+                                    : 'text-slate-500 hover:bg-red-50 hover:text-red-600'
+                                }`}
+                                title={
+                                  isFichaLockedForSupervisor
+                                    ? 'Ficha aprovada pelo Administrador (Eliminação bloqueada)'
+                                    : 'Apagar Ficha'
+                                }
+                              >
+                                {isFichaLockedForSupervisor ? (
+                                  <Lock className="h-4 w-4 text-amber-500" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </td>
                   </tr>

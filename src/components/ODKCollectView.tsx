@@ -22,6 +22,7 @@ import {
   Printer,
   Users,
   Award,
+  Lock,
 } from 'lucide-react';
 
 import { User, Coordination, ODKSubmission } from '../types';
@@ -411,6 +412,20 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
     }
 
     if (deletingId) {
+      return;
+    }
+
+    const targetSub = submissions.find(
+      (s) => String(s.id) === String(id)
+    );
+    const isConfirmedByAdmin =
+      targetSub?.status === 'confirmado' ||
+      targetSub?.confirmadoPorAdmin === true;
+
+    if (!isAdmin && isConfirmedByAdmin) {
+      alert(
+        'Ação Bloqueada: Esta informação/submissão ODK já foi confirmada e validada pelo Administrador. Supervisores não têm permissão para eliminar ou alterar registos validados pelo ADMIN.'
+      );
       return;
     }
 
@@ -1343,7 +1358,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                       (sub) => {
                         const isConf =
                           sub.status ===
-                          'confirmado';
+                          'confirmado' || sub.confirmadoPorAdmin === true;
 
                         const isDiv =
                           sub.status ===
@@ -1352,6 +1367,9 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                         const isDeleting =
                           deletingId ===
                           String(sub.id);
+
+                        const isLockedForSupervisor =
+                          !isAdmin && isConf;
 
                         return (
                           <tr
@@ -1455,30 +1473,40 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                                 ================================================== */}
 
                                 <button
-                                  onClick={() =>
+                                  onClick={() => {
+                                    if (isLockedForSupervisor) {
+                                      alert(
+                                        'Ação Bloqueada: Esta informação ODK já foi confirmada e validada pelo Administrador. Supervisores não têm permissão para eliminar registos validados pelo ADMIN.'
+                                      );
+                                      return;
+                                    }
                                     handleDeleteSubmissionAction(
                                       String(
                                         sub.id
                                       ),
                                       sub.codigoReciboODK
-                                    )
-                                  }
+                                    );
+                                  }}
                                   disabled={
-                                    isDeleting
+                                    isDeleting || isLockedForSupervisor
                                   }
-                                  className={`rounded-lg border border-rose-200 dark:border-rose-900 p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition ${
-                                    isDeleting
-                                      ? 'opacity-50 cursor-not-allowed'
-                                      : ''
+                                  className={`rounded-lg border p-1.5 transition ${
+                                    isLockedForSupervisor
+                                      ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60'
+                                      : 'border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950'
                                   }`}
                                   title={
-                                    isDeleting
+                                    isLockedForSupervisor
+                                      ? 'Validado pelo Administrador (Eliminação e alteração bloqueadas)'
+                                      : isDeleting
                                       ? 'A eliminar...'
                                       : 'Eliminar registo'
                                   }
                                 >
                                   {isDeleting ? (
                                     <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-300 border-t-rose-600" />
+                                  ) : isLockedForSupervisor ? (
+                                    <Lock className="h-3.5 w-3.5 text-amber-500" />
                                   ) : (
                                     <Trash2 className="h-3.5 w-3.5" />
                                   )}
@@ -1768,32 +1796,51 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                                 <Eye className="h-3.5 w-3.5" />
                               </button>
 
-                              <button
-                                onClick={() =>
-                                  handleDeleteSubmissionAction(
-                                    String(
-                                      sub.id
-                                    ),
-                                    sub.codigoReciboODK
-                                  )
-                                }
-                                disabled={
-                                  deletingId ===
-                                  String(
-                                    sub.id
-                                  )
-                                }
-                                className="rounded-lg border border-rose-200 p-1.5 text-rose-600"
-                              >
-                                {deletingId ===
-                                String(
-                                  sub.id
-                                ) ? (
-                                  <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-300 border-t-rose-600" />
-                                ) : (
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                )}
-                              </button>
+                              {(() => {
+                                const isSubConf =
+                                  sub.status === 'confirmado' ||
+                                  sub.confirmadoPorAdmin === true;
+                                const isMobLocked = !isAdmin && isSubConf;
+
+                                return (
+                                  <button
+                                    onClick={() => {
+                                      if (isMobLocked) {
+                                        alert(
+                                          'Ação Bloqueada: Esta informação ODK já foi confirmada e validada pelo Administrador. Supervisores não têm permissão para eliminar registos validados pelo ADMIN.'
+                                        );
+                                        return;
+                                      }
+                                      handleDeleteSubmissionAction(
+                                        String(sub.id),
+                                        sub.codigoReciboODK
+                                      );
+                                    }}
+                                    disabled={
+                                      deletingId === String(sub.id) ||
+                                      isMobLocked
+                                    }
+                                    className={`rounded-lg border p-1.5 transition ${
+                                      isMobLocked
+                                        ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 cursor-not-allowed opacity-60'
+                                        : 'border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50'
+                                    }`}
+                                    title={
+                                      isMobLocked
+                                        ? 'Validado pelo Administrador (Eliminação bloqueada)'
+                                        : 'Eliminar registo'
+                                    }
+                                  >
+                                    {deletingId === String(sub.id) ? (
+                                      <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-300 border-t-rose-600" />
+                                    ) : isMobLocked ? (
+                                      <Lock className="h-3.5 w-3.5 text-amber-500" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>
                         )
@@ -2332,38 +2379,48 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
 
               {/* DELETE NO MODAL */}
 
-              <button
-                onClick={() =>
-                  handleDeleteSubmissionAction(
-                    String(
-                      selectedSub.id
-                    ),
-                    selectedSub.codigoReciboODK
-                  )
+              {(() => {
+                const isSelectedConf =
+                  selectedSub.status === 'confirmado' ||
+                  selectedSub.confirmadoPorAdmin === true;
+                const isSelectedLocked = !isAdmin && isSelectedConf;
+
+                if (isSelectedLocked) {
+                  return (
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/40 p-3.5 text-center text-xs font-semibold text-amber-300 flex items-center justify-center gap-2">
+                      <Lock className="h-4 w-4 text-amber-400 shrink-0" />
+                      <span>Registo ODK validado pelo Administrador. O supervisor não pode alterar nem eliminar esta informação.</span>
+                    </div>
+                  );
                 }
-                disabled={
-                  deletingId ===
-                  String(
-                    selectedSub.id
-                  )
-                }
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950 p-3 text-xs font-bold text-rose-300 disabled:opacity-50"
-              >
-                {deletingId ===
-                String(
-                  selectedSub.id
-                ) ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-300 border-t-transparent" />
-                    A eliminar...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar Registo
-                  </>
-                )}
-              </button>
+
+                return (
+                  <button
+                    onClick={() =>
+                      handleDeleteSubmissionAction(
+                        String(selectedSub.id),
+                        selectedSub.codigoReciboODK
+                      )
+                    }
+                    disabled={
+                      deletingId === String(selectedSub.id)
+                    }
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950 p-3 text-xs font-bold text-rose-300 disabled:opacity-50 hover:bg-rose-900 transition cursor-pointer"
+                  >
+                    {deletingId === String(selectedSub.id) ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-300 border-t-transparent" />
+                        A eliminar...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar Registo
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
 
               <button
                 onClick={() =>
