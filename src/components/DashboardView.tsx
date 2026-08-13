@@ -36,6 +36,11 @@ import {
   X,
   Radio,
   Search,
+  ShieldCheck,
+  BookOpen,
+  HeartHandshake,
+  Award,
+  HelpCircle,
 } from 'lucide-react';
 import {
   BarChart,
@@ -53,10 +58,76 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
-import { MapaFichasView } from './MapaFichasView';
 import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
 import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User, CasoPFA } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
+
+const UNICEF_INSTITUTIONAL_SLIDES = [
+  {
+    id: 'lema',
+    badge: 'Lema & Valores da Vacinação',
+    title: 'Para Cada Criança, Imunização Integral & Proteção contra a Pólio',
+    subtitle: 'Prioridade Absoluta e Compromisso Institucional do UNICEF em Angola',
+    content: 'O UNICEF apoia e coordena a mobilização social para a vacinação casa a casa em todo o município do Sumbe, garantindo que 100% dos bairros e zonas rurais sejam visitados com respeito, dignidade e empatia.',
+    bgGradient: 'from-sky-950 via-slate-900 to-blue-950',
+    borderColor: 'border-sky-400/40',
+    badgeClass: 'bg-sky-500 text-slate-950 font-black',
+    icon: ShieldCheck,
+    highlights: [
+      { label: 'Meta de Cobertura', value: '100% de Crianças' },
+      { label: 'Abordagem de Campo', value: 'Casa a Casa & Brigadas' },
+      { label: 'Visão de Saúde', value: 'Erradicação da Pólio' },
+    ],
+  },
+  {
+    id: 'objetivos',
+    badge: 'Objetivos Estratégicos',
+    title: 'Alcançar Zero Recusas Através da Confiança & Respeito',
+    subtitle: 'Diálogo Aberto, Apoio Tradicional do Sobado e Comités de Mães',
+    content: 'A meta principal dos mobilizadores é gerar empatia e esclarecer dúvidas sobre a segurança da Vacina Oral contra a Pólio (VOP). O trabalho integrado com os Sobas e comités de mães cria um ambiente acolhedor.',
+    bgGradient: 'from-emerald-950 via-slate-900 to-teal-950',
+    borderColor: 'border-emerald-400/40',
+    badgeClass: 'bg-emerald-500 text-slate-950 font-black',
+    icon: Target,
+    highlights: [
+      { label: 'Adesão Comunitária', value: 'Elevada Aceitação' },
+      { label: 'Parceiros de Campo', value: 'Sobas & Mães Líderes' },
+      { label: 'Estratégia Social', value: 'Desmistificação de Rumores' },
+    ],
+  },
+  {
+    id: 'preparacao',
+    badge: 'Guia do Mobilizador',
+    title: 'Orientações de Preparação & Postura Profissional',
+    subtitle: 'Passos Essenciais Antes, Durante e Depois da Visita',
+    content: '1. Antes do Terreno: Verificar crachá UNICEF/DMS, colete institucional e bateria do ODK Collect. 2. Durante a Visita: Saudação cordial, explicar a importância das duas gotas e ouvir com atenção. 3. Após a Visita: Registar no SisMob.',
+    bgGradient: 'from-amber-950 via-slate-900 to-amber-900/60',
+    borderColor: 'border-amber-400/40',
+    badgeClass: 'bg-amber-500 text-slate-950 font-black',
+    icon: BookOpen,
+    highlights: [
+      { label: 'Identificação', value: 'Colete & Crachá Visíveis' },
+      { label: 'Tecnologia', value: 'ODK Collect Atualizado' },
+      { label: 'Conduta', value: 'Respeito & Escuta Ativa' },
+    ],
+  },
+  {
+    id: 'comunicacao',
+    badge: 'Comunicação Interpessoal',
+    title: 'Técnicas Inspiradoras de Mobilização Comunitária',
+    subtitle: 'Comunicação Empática em Português, Kimbundu e Umbundu',
+    content: 'Em cada lar, use palavras encorajadoras sobre a proteção do futuro das crianças. Quando encontrar hesitação, reconheça as preocupações dos pais com empatia e apresente os factos científicos com calma.',
+    bgGradient: 'from-purple-950 via-slate-900 to-indigo-950',
+    borderColor: 'border-purple-400/40',
+    badgeClass: 'bg-purple-500 text-white font-black',
+    icon: HeartHandshake,
+    highlights: [
+      { label: 'Inclusão Linguística', value: 'Línguas Nacionais' },
+      { label: 'Empatia Familiar', value: 'Escuta sem Julgamento' },
+      { label: 'Impacto Social', value: 'Geração de Confiança' },
+    ],
+  },
+];
 
 interface DashboardViewProps {
   user: User;
@@ -112,47 +183,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return loggedIn.length;
   }, [users, user]);
 
-  // Carousel & Portal News States
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isCarouselPlaying, setIsCarouselPlaying] = useState(true);
-  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
-  const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('Todos');
-  const [newsSearchQuery, setNewsSearchQuery] = useState<string>('');
-  const [readerPost, setReaderPost] = useState<PortalPost | null>(null);
+  // UNICEF Institutional Highlights Carousel State
+  const [unicefSlideIndex, setUnicefSlideIndex] = useState(0);
+  const [isUnicefPlaying, setIsUnicefPlaying] = useState(true);
+  const [isUnicefHovered, setIsUnicefHovered] = useState(false);
 
-  // Filter posts for carousel (prefer featured posts, or all posts if no featured)
-  const featuredPosts = portalPosts.filter((p) => p.destaque);
-  const carouselPosts = featuredPosts.length > 0 ? featuredPosts : portalPosts;
-
-  // Auto-advance carousel slide every 5 seconds
   useEffect(() => {
-    if (!isCarouselPlaying || isCarouselHovered || carouselPosts.length <= 1) return;
+    if (!isUnicefPlaying || isUnicefHovered) return;
     const interval = setInterval(() => {
-      setCurrentSlideIndex((prev) => (prev + 1) % carouselPosts.length);
-    }, 5000);
+      setUnicefSlideIndex((prev) => (prev + 1) % UNICEF_INSTITUTIONAL_SLIDES.length);
+    }, 6000);
     return () => clearInterval(interval);
-  }, [isCarouselPlaying, isCarouselHovered, carouselPosts.length]);
+  }, [isUnicefPlaying, isUnicefHovered]);
 
-  const safeSlideIndex = currentSlideIndex >= carouselPosts.length ? 0 : currentSlideIndex;
-  const activeSlide = carouselPosts[safeSlideIndex];
-
-  // Filtered posts for grid below carousel
-  const filteredGridPosts = portalPosts.filter((p) => {
-    const matchesCat =
-      selectedNewsCategory === 'Todos'
-        ? true
-        : selectedNewsCategory === 'Destaques'
-        ? p.destaque
-        : p.categoria === selectedNewsCategory;
-
-    const matchesSearch =
-      !newsSearchQuery.trim() ||
-      p.titulo.toLowerCase().includes(newsSearchQuery.toLowerCase()) ||
-      (p.subtitulo && p.subtitulo.toLowerCase().includes(newsSearchQuery.toLowerCase())) ||
-      p.conteudo.toLowerCase().includes(newsSearchQuery.toLowerCase());
-
-    return matchesCat && matchesSearch;
-  });
+  const activeUnicefSlide = UNICEF_INSTITUTIONAL_SLIDES[unicefSlideIndex % UNICEF_INSTITUTIONAL_SLIDES.length];
 
   // Filter fichas if supervisor
   const visibleFichas = isAdmin
@@ -363,50 +407,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>Nova Ficha</span>
             </button>
           </ActionTooltip>
-        </div>
-      </div>
-
-      {/* Ticker Marquee Contínuo de Destaques em Movimento */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-2.5 shadow-md text-white">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 shrink-0 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-xs animate-pulse">
-            <Radio className="h-3 w-3 text-white" />
-            <span>EM CAMPO</span>
-          </div>
-
-          <div className="flex-1 overflow-hidden relative">
-            <div className="flex items-center gap-8 whitespace-nowrap animate-marquee text-xs font-bold text-slate-200">
-              <span className="flex items-center gap-1.5 text-sky-300">
-                <Megaphone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                <span>Brigadas Móveis ativas no Sumbe: Bairros Chingo, Quissala e 15 de Março em acção intensiva</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="flex items-center gap-1.5 text-emerald-300">
-                <Target className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span>Meta do Dia: Sensibilização de 12.500 Famílias no Cuanza Sul</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="flex items-center gap-1.5 text-amber-300">
-                <CheckCircle2 className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                <span>Sincronização 100% Digital via ODK Collect Central & SisMob</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="flex items-center gap-1.5 text-rose-300">
-                <ShieldAlert className="h-3.5 w-3.5 text-rose-400 shrink-0" />
-                <span>Vigilância Epidemiológica de PFA / Pólio - Notificação em Tempo Real</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="flex items-center gap-1.5 text-sky-300">
-                <Megaphone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                <span>Brigadas Móveis ativas no Sumbe: Bairros Chingo, Quissala e 15 de Março em acção intensiva</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="flex items-center gap-1.5 text-emerald-300">
-                <Target className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span>Meta do Dia: Sensibilização de 12.500 Famílias no Cuanza Sul</span>
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -697,436 +697,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Carrossel Dinâmico & Mural de Publicações */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-5 shadow-2xs space-y-4">
-        {/* Header da Secção */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-bold shadow-md">
-              <Newspaper className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <span>Destaques & Publicações em Carrossel Dinâmico</span>
-                <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:text-blue-300">
-                  {portalPosts.length} {portalPosts.length === 1 ? 'publicação' : 'publicações'}
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Informações em rotação dinâmica, comunicados de saúde, brigadas móveis e avisos operacionais
-              </p>
-            </div>
-          </div>
 
-          {isAdmin && onOpenPortalNews && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onOpenPortalNews}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-[0.98] cursor-pointer"
-                id="dash-btn-criar-noticia"
-              >
-                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                <span>Gerir / Criar Publicação</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 1. CARROSSEL PRINCIPAL (HERO SLIDE) */}
-        {carouselPosts.length > 0 && activeSlide ? (
-          <div className="space-y-3">
-            <div
-              onMouseEnter={() => setIsCarouselHovered(true)}
-              onMouseLeave={() => setIsCarouselHovered(false)}
-              className="relative min-h-[340px] sm:min-h-[400px] md:min-h-[440px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-xl group"
-            >
-              {/* Background Imagem com transição suave */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeSlide.id}
-                  initial={{ opacity: 0, scale: 1.05 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-                  className="absolute inset-0"
-                >
-                  {activeSlide.imagemUrl && sanitizeImageUrl(activeSlide.imagemUrl) ? (
-                    <img
-                      src={sanitizeImageUrl(activeSlide.imagemUrl)}
-                      alt={activeSlide.titulo}
-                      className="w-full h-full object-cover filter brightness-[0.7] contrast-[1.1] transition-transform duration-700 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950" />
-                  )}
-                  {/* Overlay gradiente escuro para legibilidade perfeita */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20" />
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Controles do Carrossel (Overlay Superior) */}
-              <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 px-3 py-1 text-[11px] font-mono font-bold text-white shadow-md">
-                    {safeSlideIndex + 1} / {carouselPosts.length}
-                  </span>
-                  {activeSlide.destaque && (
-                    <span className="rounded-xl bg-amber-500 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-slate-950 shadow-md flex items-center gap-1 uppercase tracking-wider">
-                      <Sparkles className="h-3 w-3" />
-                      Destaque Principal
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/10 p-1">
-                  <button
-                    onClick={() => setIsCarouselPlaying(!isCarouselPlaying)}
-                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                    title={isCarouselPlaying ? 'Pausar Carrossel' : 'Iniciar Carrossel'}
-                  >
-                    {isCarouselPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentSlideIndex((prev) => (prev === 0 ? carouselPosts.length - 1 : prev - 1))
-                    }
-                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                    title="Anterior"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentSlideIndex((prev) => (prev + 1) % carouselPosts.length)}
-                    className="p-1.5 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                    title="Próximo"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Conteúdo do Slide (Overlay Inferior) */}
-              <div className="absolute bottom-0 inset-x-0 p-5 sm:p-7 z-10 space-y-2.5 max-w-4xl">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm text-white ${
-                      activeSlide.categoria === 'Brigada Móvel'
-                        ? 'bg-emerald-600'
-                        : activeSlide.categoria === 'Aviso'
-                        ? 'bg-rose-600'
-                        : activeSlide.categoria === 'Guia'
-                        ? 'bg-amber-600'
-                        : activeSlide.categoria === 'Estatística'
-                        ? 'bg-purple-600'
-                        : 'bg-sky-600'
-                    }`}
-                  >
-                    {activeSlide.categoria}
-                  </span>
-
-                  {activeSlide.subtitulo && (
-                    <span className="text-xs font-bold text-sky-300 drop-shadow-sm flex items-center gap-1">
-                      <span>•</span> {activeSlide.subtitulo}
-                    </span>
-                  )}
-
-                  <span className="text-xs text-slate-300 font-mono flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-slate-400" />
-                    {activeSlide.data}
-                  </span>
-                </div>
-
-                <h3 className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">
-                  {activeSlide.titulo}
-                </h3>
-
-                <p className="text-xs sm:text-sm text-slate-200 line-clamp-2 sm:line-clamp-3 leading-relaxed font-normal max-w-3xl drop-shadow-sm">
-                  {activeSlide.conteudo}
-                </p>
-
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-[11px] font-semibold text-slate-300">
-                    Emissor: <span className="text-white font-bold">{activeSlide.autor}</span>
-                  </div>
-
-                  <button
-                    onClick={() => setReaderPost(activeSlide)}
-                    className="flex items-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-400 px-4 py-2 text-xs font-black text-slate-950 shadow-lg transition active:scale-95 cursor-pointer"
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span>Ler Publicação Completa</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Linha de Progresso do Temporizador */}
-              {isCarouselPlaying && !isCarouselHovered && (
-                <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-20">
-                  <motion.div
-                    key={`${activeSlide.id}-${currentSlideIndex}`}
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 5, ease: 'linear' }}
-                    className="h-full bg-sky-400 shadow-sm"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Faixa de Miniaturas (Mini-Cards para seleção direta) */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
-              {carouselPosts.map((post, idx) => (
-                <button
-                  key={post.id}
-                  onClick={() => setCurrentSlideIndex(idx)}
-                  className={`flex-1 min-w-[170px] max-w-[220px] rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
-                    idx === safeSlideIndex
-                      ? 'border-sky-500 bg-sky-50/90 dark:bg-sky-950/60 ring-2 ring-sky-500/30 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-500 mb-1">
-                    <span className="truncate text-sky-600 dark:text-sky-400 font-extrabold">{post.categoria}</span>
-                    <span className="font-mono text-[9px] text-slate-400">{post.data}</span>
-                  </div>
-                  <h4 className="text-[11px] font-bold text-slate-900 dark:text-white line-clamp-1 leading-tight">
-                    {post.titulo}
-                  </h4>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-slate-500 space-y-2">
-            <Newspaper className="h-8 w-8 mx-auto text-slate-400 opacity-60" />
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Nenhuma publicação registada na página inicial.
-            </p>
-          </div>
-        )}
-
-        {/* 2. MURAL COMPLETO DE PUBLICAÇÕES (FILTROS + PESQUISA + GRELA) */}
-        <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            {/* Abas de Categorias */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {['Todos', 'Destaques', 'Brigada Móvel', 'Notícia', 'Guia', 'Aviso', 'Estatística'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedNewsCategory(cat)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-                    selectedNewsCategory === cat
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Campo de Pesquisa */}
-            <div className="relative w-full sm:w-64 shrink-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                value={newsSearchQuery}
-                onChange={(e) => setNewsSearchQuery(e.target.value)}
-                placeholder="Pesquisar notícias..."
-                className="w-full h-8 pl-8 pr-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600"
-              />
-            </div>
-          </div>
-
-          {/* Grelha de Cartões de Notícias */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filteredGridPosts.map((post) => (
-              <div
-                key={post.id}
-                className="group flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:border-sky-400 dark:hover:border-sky-500 transition-all duration-200 shadow-2xs hover:shadow-md"
-              >
-                {/* Imagem do Cartão */}
-                {post.imagemUrl && sanitizeImageUrl(post.imagemUrl) && (
-                  <div className="relative h-40 w-full overflow-hidden bg-slate-950">
-                    <img
-                      src={sanitizeImageUrl(post.imagemUrl)}
-                      alt={post.titulo}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.target as HTMLElement).parentElement!.style.display = 'none';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                    <span className="absolute top-2.5 left-2.5 rounded-lg bg-slate-950/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-sky-300 border border-white/10">
-                      {post.categoria}
-                    </span>
-                  </div>
-                )}
-
-                <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    {!post.imagemUrl && (
-                      <div className="flex items-center justify-between">
-                        <span className="rounded-md bg-sky-100 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 px-2 py-0.5 text-[10px] font-extrabold text-sky-800 dark:text-sky-300">
-                          {post.categoria}
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">{post.data}</span>
-                      </div>
-                    )}
-
-                    <h3 className="text-xs font-black text-slate-900 dark:text-white leading-tight group-hover:text-sky-600 transition-colors">
-                      {post.titulo}
-                    </h3>
-
-                    {post.subtitulo && (
-                      <p className="text-[11px] font-bold text-sky-600 dark:text-sky-400">
-                        {post.subtitulo}
-                      </p>
-                    )}
-
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
-                      {post.conteudo}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
-                    <span className="font-semibold text-slate-500">{post.autor}</span>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setReaderPost(post)}
-                        className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:text-sky-600 transition cursor-pointer"
-                      >
-                        <Eye className="h-3 w-3" />
-                        <span>Ler</span>
-                      </button>
-
-                      {isAdmin && (
-                        <>
-                          {onOpenPortalNews && (
-                            <button
-                              onClick={onOpenPortalNews}
-                              className="p-1 rounded-lg text-slate-400 hover:text-blue-600 transition cursor-pointer"
-                              title="Editar"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={async () => {
-                              if (window.confirm(`Eliminar a publicação "${post.titulo}"?`)) {
-                                if (onDeletePortalPost) await onDeletePortalPost(post.id);
-                              }
-                            }}
-                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 transition cursor-pointer"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {filteredGridPosts.length === 0 && (
-              <div className="col-span-full p-8 text-center text-xs text-slate-500 italic bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                Nenhuma publicação encontrada para os filtros selecionados.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* MODAL DE LEITURA COMPLETA DE PUBLICAÇÃO */}
-      {readerPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl text-white space-y-5 max-h-[90vh] overflow-y-auto">
-            {/* Header com Imagem */}
-            {readerPost.imagemUrl && (
-              <div className="relative h-52 sm:h-64 -mx-6 -mt-6 overflow-hidden rounded-t-3xl bg-slate-950">
-                <img
-                  src={readerPost.imagemUrl}
-                  alt={readerPost.titulo}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                <button
-                  onClick={() => setReaderPost(null)}
-                  className="absolute top-4 right-4 rounded-full bg-slate-950/80 p-2 text-slate-300 hover:text-white backdrop-blur-md border border-white/10 cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            )}
-
-            {!readerPost.imagemUrl && (
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="rounded-lg bg-sky-500/20 border border-sky-400/30 px-2.5 py-1 text-xs font-bold text-sky-300">
-                  {readerPost.categoria}
-                </span>
-                <button
-                  onClick={() => setReaderPost(null)}
-                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            )}
-
-            {/* Conteúdo Detalhado */}
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                <span className="font-bold text-sky-400">{readerPost.categoria}</span>
-                <span>•</span>
-                <span className="font-mono">{readerPost.data}</span>
-                <span>•</span>
-                <span>Autor: {readerPost.autor}</span>
-              </div>
-
-              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                {readerPost.titulo}
-              </h2>
-
-              {readerPost.subtitulo && (
-                <h3 className="text-sm font-bold text-sky-300">
-                  {readerPost.subtitulo}
-                </h3>
-              )}
-
-              <div className="border-t border-slate-800 pt-4 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line space-y-3">
-                {readerPost.conteudo}
-              </div>
-            </div>
-
-            {/* Botões do Modal */}
-            <div className="border-t border-slate-800 pt-4 flex items-center justify-between">
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700 transition cursor-pointer"
-              >
-                <Printer className="h-4 w-4" />
-                <span>Imprimir Comunicado</span>
-              </button>
-
-              <button
-                onClick={() => setReaderPost(null)}
-                className="rounded-xl bg-sky-500 hover:bg-sky-400 px-5 py-2 text-xs font-bold text-slate-950 transition cursor-pointer"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pessoas Alcançadas - Verde Claro */}
         <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/90 dark:bg-emerald-950/60 p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 ease-out hover:scale-[1.02] cursor-pointer space-y-1">
@@ -1221,12 +792,157 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Mapa de Distribuição Geográfica em Tempo Real */}
-      <MapaFichasView
-        fichas={fichas}
-        coordenacoes={coordenacoes}
-        className="w-full min-h-[420px]"
-      />
+      {/* SEÇÃO DE DESTAQUES INSTITUCIONAIS UNICEF PARA OS MOBILIZADORES */}
+      <div
+        className="rounded-3xl border border-sky-400/40 bg-slate-900 text-white p-5 sm:p-7 shadow-2xl space-y-5 overflow-hidden relative"
+        onMouseEnter={() => setIsUnicefHovered(true)}
+        onMouseLeave={() => setIsUnicefHovered(false)}
+      >
+        {/* Banner Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/15 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/20 border border-sky-400/40 text-sky-300 shadow-inner">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400 bg-sky-950/80 px-2.5 py-0.5 rounded-full border border-sky-500/30">
+                  UNICEF Angola • Direção de Saúde
+                </span>
+                <span className="text-[10px] text-emerald-400 font-extrabold flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Orientação para Mobilizadores
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg md:text-xl font-black text-white tracking-tight mt-0.5">
+                Destaques Institucionais & Guias de Campo UNICEF
+              </h2>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <button
+              onClick={() => setIsUnicefPlaying(!isUnicefPlaying)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
+              title={isUnicefPlaying ? 'Pausar rotação' : 'Iniciar rotação'}
+            >
+              {isUnicefPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() =>
+                setUnicefSlideIndex((prev) =>
+                  prev === 0 ? UNICEF_INSTITUTIONAL_SLIDES.length - 1 : prev - 1
+                )
+              }
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
+              title="Anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() =>
+                setUnicefSlideIndex((prev) => (prev + 1) % UNICEF_INSTITUTIONAL_SLIDES.length)
+              }
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
+              title="Próximo"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Animated Active Slide */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeUnicefSlide.id}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.4 }}
+            className={`rounded-2xl border ${activeUnicefSlide.borderColor} bg-gradient-to-br ${activeUnicefSlide.bgGradient} p-5 sm:p-6 shadow-xl space-y-4`}
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-lg px-3 py-1 text-[11px] uppercase tracking-wider shadow-sm ${activeUnicefSlide.badgeClass}`}>
+                    {activeUnicefSlide.badge}
+                  </span>
+                  <span className="text-xs text-sky-300 font-semibold truncate">
+                    {activeUnicefSlide.subtitle}
+                  </span>
+                </div>
+
+                <h3 className="text-lg sm:text-2xl font-black text-white leading-tight">
+                  {activeUnicefSlide.title}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal max-w-4xl">
+                  {activeUnicefSlide.content}
+                </p>
+              </div>
+
+              <div className="flex-shrink-0 p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md hidden lg:flex flex-col items-center justify-center text-center w-48 space-y-2 shadow-inner">
+                {React.createElement(activeUnicefSlide.icon, { className: "h-8 w-8 text-sky-300" })}
+                <span className="text-xs font-black text-white">{activeUnicefSlide.badge}</span>
+              </div>
+            </div>
+
+            {/* Highlight Badges / Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/15">
+              {activeUnicefSlide.highlights.map((hl, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl bg-slate-950/70 border border-white/10 space-y-0.5"
+                >
+                  <div className="text-[10px] uppercase font-mono font-bold text-slate-400">
+                    {hl.label}
+                  </div>
+                  <div className="text-xs sm:text-sm font-extrabold text-sky-300">
+                    {hl.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Quick Navigation Tabs for the 4 UNICEF Slides */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          {UNICEF_INSTITUTIONAL_SLIDES.map((slide, idx) => {
+            const isActive = idx === (unicefSlideIndex % UNICEF_INSTITUTIONAL_SLIDES.length);
+            const Icon = slide.icon;
+
+            return (
+              <button
+                key={slide.id}
+                onClick={() => setUnicefSlideIndex(idx)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                  isActive
+                    ? 'border-sky-400 bg-sky-500/20 text-white shadow-md ring-2 ring-sky-400/30'
+                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                }`}
+              >
+                <div
+                  className={`p-1.5 rounded-lg border ${
+                    isActive ? 'bg-sky-500 text-slate-950 border-sky-300' : 'bg-slate-800 text-slate-300 border-white/10'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="overflow-hidden">
+                  <div className="text-[10px] uppercase font-bold text-sky-300 truncate">
+                    {slide.badge}
+                  </div>
+                  <div className="text-xs font-extrabold truncate">
+                    {slide.id === 'lema' ? 'Lema UNICEF' : slide.id === 'objetivos' ? 'Meta 0 Recusas' : slide.id === 'preparacao' ? 'Guia de Campo' : 'Comunicação'}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Charts Section Grid */}
       {/* Chart 1: Progresso Diário vs Target da Campanha (Recharts) */}

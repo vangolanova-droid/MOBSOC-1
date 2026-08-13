@@ -567,13 +567,18 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                       </div>
                     </td>
                     <td className="p-2 sm:p-2.5 font-medium">
-                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700">
-                        {f.ronda || '1ª Ronda'}
+                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-bold text-purple-700">
+                        {f.ronda || '3ª Ronda'}
                       </span>
                     </td>
                     <td className="p-2 sm:p-2.5 font-semibold text-slate-900">
                       <div className="flex flex-col">
-                        <span className="text-slate-900 font-bold">{f.mobilizador}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-bold text-[10px] border border-sky-200 shrink-0">
+                            {f.ronda || '3ª Ronda'}
+                          </span>
+                          <span className="text-slate-900 font-bold">{f.mobilizador}</span>
+                        </div>
                         {(() => {
                           const matchedMob = mobilizadores.find(
                             (m) =>

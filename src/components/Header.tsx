@@ -332,11 +332,11 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 text-xs">
-        {/* Indicador de Supervisores a Lançar Dados com Ponto Verde Piscando */}
+        {/* Indicador de Supervisores com Ponto Verde Piscando */}
         <button
           onClick={() => setIsActiveSupervisorsOpen(true)}
           className="flex items-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-950/60 hover:bg-emerald-900/80 px-3 py-1.5 text-xs font-bold text-white transition shadow-sm backdrop-blur-xs cursor-pointer active:scale-95"
-          title="Supervisores e equipas a lançar dados no sistema em tempo real — Clique para ver as pessoas"
+          title="Supervisores e equipas a aceder ao sistema em tempo real — Clique para ver as pessoas"
           id="btn-header-active-supervisors"
         >
           <span className="relative flex h-2.5 w-2.5">
@@ -344,17 +344,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
           </span>
           <span className="text-emerald-300 font-black">{activeSupervisorsCount}</span>
-          <span className="hidden sm:inline text-white font-bold">em Lançamento</span>
         </button>
-
-        {/* Status Indicator */}
-        <div
-          className="hidden items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white sm:flex backdrop-blur-xs"
-          title={isOnline ? 'Servidor Conectado' : 'Modo Offline - Guardando em LocalStorage'}
-        >
-          {isOnline ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}
-          <span>{isOnline ? 'Servidor Online' : 'Modo Local'}</span>
-        </div>
 
         {/* Dark Mode Direct Button */}
         <button
@@ -374,17 +364,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Modo Dark</span>
             </>
           )}
-        </button>
-
-        {/* Quick New Ficha */}
-        <button
-          onClick={onNewFicha}
-          className="flex items-center gap-1.5 rounded-xl bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-[0.98]"
-          style={{ color: primaryColor }}
-          id="btn-header-new-ficha"
-        >
-          <Plus className="h-4 w-4 stroke-[3]" />
-          <span>Nova Ficha</span>
         </button>
 
         {/* Realtime Notification Bell Button */}

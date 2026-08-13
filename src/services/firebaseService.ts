@@ -501,6 +501,7 @@ const DEFAULT_PORTAL_POSTS: PortalPost[] = [
     autor: 'Mobilização Social Sumbe',
     destaque: true,
     imagemUrl: imgJangoSoba,
+    lemaInstitucional: 'Para Cada Criança, Imunização & Vida Saudável',
     createdAt: new Date(Date.now() - 1000).toISOString(),
   },
   {

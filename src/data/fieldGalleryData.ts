@@ -18,6 +18,7 @@ export interface FieldGalleryItem {
   local: string;
   imagemUrl: string;
   destaque?: boolean;
+  lemaInstitucional?: string;
 }
 
 export const FIELD_GALLERY_ITEMS: FieldGalleryItem[] = [

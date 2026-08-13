@@ -9,6 +9,7 @@ export interface User {
   coordId: number | null;
   coordNome?: string;
   coordenadorNome?: string;
+  morada?: string;
   ronda?: string;
   fotoUrl?: string;
   status?: 'ativo' | 'pendente' | 'rejeitado';
@@ -212,6 +213,7 @@ export interface PortalPost {
   autor: string;
   destaque?: boolean;
   imagemUrl?: string;
+  lemaInstitucional?: string;
   createdAt: string;
 }
 

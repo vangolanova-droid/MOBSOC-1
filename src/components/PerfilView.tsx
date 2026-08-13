@@ -60,6 +60,8 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
 
   // Edit profile state
   const [nome, setNome] = useState(user.nome);
+  const [morada, setMorada] = useState(user.morada || '');
+  const [telefone, setTelefone] = useState(user.telefone || '');
 
   // Password state
   const [senhaAtual, setSenhaAtual] = useState('');
@@ -71,6 +73,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   // Admin edit supervisor state
   const [supEditId, setSupEditId] = useState<number | null>(null);
   const [supEditNome, setSupEditNome] = useState('');
+  const [supEditMorada, setSupEditMorada] = useState('');
   const [supEditSenha, setSupEditSenha] = useState('');
   const [supEditConf, setSupEditConf] = useState('');
 
@@ -197,7 +200,11 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   const handleSaveNome = async () => {
     if (!nome.trim()) return;
     try {
-      await onUpdateUser(user.id, { nome: nome.trim() });
+      await onUpdateUser(user.id, {
+        nome: nome.trim(),
+        morada: morada.trim(),
+        telefone: telefone.trim(),
+      });
       setPendingUpdates((prev) => [
         ...prev,
         {
@@ -208,9 +215,9 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
           timestamp: new Date().toISOString(),
         },
       ]);
-      showToast('Nome atualizado com sucesso!', 'success');
+      showToast('Dados do perfil atualizados com sucesso!', 'success');
     } catch (e: any) {
-      showToast(e.message || 'Erro ao atualizar nome.', 'error');
+      showToast(e.message || 'Erro ao atualizar dados do perfil.', 'error');
     }
   };
 
@@ -256,6 +263,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   const handleOpenSupEdit = (s: User) => {
     setSupEditId(s.id);
     setSupEditNome(s.nome);
+    setSupEditMorada(s.morada || '');
     setSupEditSenha('');
     setSupEditConf('');
   };
@@ -271,7 +279,10 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
       return;
     }
 
-    const fields: Partial<User> = { nome: supEditNome.trim() };
+    const fields: Partial<User> = {
+      nome: supEditNome.trim(),
+      morada: supEditMorada.trim(),
+    };
     if (supEditSenha) fields.senha = supEditSenha;
 
     try {
@@ -536,6 +547,34 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
                 onChange={(e) => setNome(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B5CAD]"
                 id="input-perfil-nome"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-[#0B5CAD] uppercase">
+                Morada / Residência
+              </label>
+              <input
+                type="text"
+                value={morada}
+                onChange={(e) => setMorada(e.target.value)}
+                placeholder="Ex: Bairro Mbumba Kupuco, Sumbe"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B5CAD]"
+                id="input-perfil-morada"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-[#0B5CAD] uppercase">
+                Telefone / WhatsApp
+              </label>
+              <input
+                type="text"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                placeholder="+244 9XX XXX XXX"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B5CAD]"
+                id="input-perfil-telefone"
               />
             </div>
 
@@ -864,7 +903,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
               <table className="w-full text-left text-xs text-slate-700">
                 <thead className="bg-white text-[11px] font-bold tracking-wider text-[#0B5CAD] uppercase">
                   <tr>
-                    <th className="p-3">Nome</th>
+                    <th className="p-3">Nome / Morada</th>
                     <th className="p-3">Email</th>
                     <th className="p-3">Coordenação</th>
                     <th className="p-3 text-right">Ação</th>
@@ -875,13 +914,20 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
                     .filter((u) => u.tipo === 'supervisor')
                     .map((sup) => (
                       <tr key={sup.id} className="hover:bg-slate-50 transition">
-                        <td className="p-3 font-bold text-slate-800">{sup.nome}</td>
+                        <td className="p-3 font-bold text-slate-800">
+                          <div>{sup.nome}</div>
+                          {sup.morada && (
+                            <div className="text-[10px] text-sky-700 font-normal mt-0.5">
+                              📍 {sup.morada}
+                            </div>
+                          )}
+                        </td>
                         <td className="p-3 font-mono text-slate-600">{sup.email}</td>
                         <td className="p-3 font-medium text-slate-700">{sup.coordNome || '—'}</td>
                         <td className="p-3 text-right">
                           <button
                             onClick={() => handleOpenSupEdit(sup)}
-                            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-[#0B5CAD] hover:bg-slate-50 ml-auto"
+                            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-[#0B5CAD] hover:bg-slate-50 ml-auto cursor-pointer"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                             <span>Editar</span>
@@ -909,6 +955,19 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
                     type="text"
                     value={supEditNome}
                     onChange={(e) => setSupEditNome(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B5CAD]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-[#0B5CAD] uppercase">
+                    Morada / Residência
+                  </label>
+                  <input
+                    type="text"
+                    value={supEditMorada}
+                    onChange={(e) => setSupEditMorada(e.target.value)}
+                    placeholder="Ex: Bairro Mbumba Kupuco, Sumbe"
                     className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B5CAD]"
                   />
                 </div>

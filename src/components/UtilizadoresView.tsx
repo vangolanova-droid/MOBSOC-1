@@ -29,7 +29,8 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   const [coordId, setCoordId] = useState<number>(
     coordenacoes.length > 0 ? coordenacoes[0].id : 1
   );
-  const [ronda, setRonda] = useState('1ª Ronda');
+  const [ronda, setRonda] = useState('3ª Ronda');
+  const [morada, setMorada] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal State for Password Reset
@@ -103,7 +104,8 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
         email: email.trim(),
         senha: senha.trim(),
         tipo,
-        ronda: tipo === 'supervisor' ? ronda : '1ª Ronda',
+        morada: morada.trim(),
+        ronda: tipo === 'supervisor' ? ronda : '3ª Ronda',
         coordId: tipo === 'admin' ? null : Number(coordId),
         coordNome: tipo === 'admin' ? 'Acesso Global' : selectedCoord?.nome || '—',
         coordenadorNome: tipo === 'admin' ? 'Direção Geral' : selectedCoord?.coordenador || '—',
@@ -112,6 +114,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
       setNome('');
       setEmail('');
       setSenha('');
+      setMorada('');
     } catch (e: any) {
       showToast(e.message || 'Erro ao criar utilizador.', 'error');
     } finally {
@@ -319,6 +322,23 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
           {tipo === 'supervisor' && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
+                Morada / Residência <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required={tipo === 'supervisor'}
+                placeholder="Ex: Bairro Mbumba Kupuco, Sumbe"
+                value={morada}
+                onChange={(e) => setMorada(e.target.value)}
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                id="input-user-morada"
+              />
+            </div>
+          )}
+
+          {tipo === 'supervisor' && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">
                 Coordenação
               </label>
               <select
@@ -389,7 +409,15 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
               {users.map((u, i) => (
                 <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3.5 font-mono text-slate-400">{i + 1}</td>
-                  <td className="p-3.5 font-semibold text-slate-900">{u.nome}</td>
+                  <td className="p-3.5 font-semibold text-slate-900">
+                    <div>{u.nome}</div>
+                    {u.morada && (
+                      <div className="text-[10px] text-sky-700 font-normal flex items-center gap-1 mt-0.5">
+                        <span>📍</span>
+                        <span>{u.morada}</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-3.5 font-mono text-slate-600">
                     <div>{u.email}</div>
                     {u.telefone && <div className="text-[10px] text-slate-500">Tel: {u.telefone}</div>}

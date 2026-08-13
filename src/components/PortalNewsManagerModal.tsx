@@ -31,6 +31,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
   const [autor, setAutor] = useState(initialPostToEdit?.autor || user.nome || 'Administração SisMob');
   const [destaque, setDestaque] = useState(!!initialPostToEdit?.destaque);
   const [imagemUrl, setImagemUrl] = useState(initialPostToEdit?.imagemUrl || '');
+  const [lemaInstitucional, setLemaInstitucional] = useState(initialPostToEdit?.lemaInstitucional || '');
   const [saving, setSaving] = useState(false);
   const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +47,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
       setAutor(initialPostToEdit.autor || user.nome);
       setDestaque(!!initialPostToEdit.destaque);
       setImagemUrl(initialPostToEdit.imagemUrl || '');
+      setLemaInstitucional(initialPostToEdit.lemaInstitucional || '');
       setImageError(false);
     }
   }, [initialPostToEdit, user.nome]);
@@ -60,6 +62,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setAutor(user.nome || 'Administração SisMob');
     setDestaque(false);
     setImagemUrl('');
+    setLemaInstitucional('');
     setImageError(false);
   };
 
@@ -78,6 +81,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setAutor(p.autor || user.nome);
     setDestaque(!!p.destaque);
     setImagemUrl(p.imagemUrl || '');
+    setLemaInstitucional(p.lemaInstitucional || '');
     setImageError(false);
   };
 
@@ -111,6 +115,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
         autor: autor.trim() || user.nome,
         destaque,
         imagemUrl: sanitizedImg || undefined,
+        lemaInstitucional: lemaInstitucional.trim() || undefined,
         createdAt: editingPost ? editingPost.createdAt : now.toISOString(),
       };
 
@@ -231,6 +236,24 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                   <option value="Estatística">Estatística</option>
                   <option value="Guia">Guia / Orientação</option>
                 </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-amber-300 uppercase mb-1 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Lema Institucional / Slogan Central da Campanha</span>
+                </label>
+                <input
+                  type="text"
+                  value={lemaInstitucional}
+                  onChange={(e) => setLemaInstitucional(e.target.value)}
+                  placeholder='Ex: "Para Cada Criança, Imunização & Vida Saudável"'
+                  className="w-full rounded-xl border border-amber-500/40 bg-slate-900 p-3 text-xs text-amber-100 font-bold placeholder-slate-500 outline-none focus:border-amber-400"
+                  id="input-portal-lema"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Este lema é exibido em destaque no carrossel e no cabeçalho de mobilização da página inicial.
+                </p>
               </div>
 
               <div className="md:col-span-2">
@@ -429,6 +452,12 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                     </div>
 
                     <h4 className="text-sm font-bold text-white leading-tight">{p.titulo}</h4>
+                    {p.lemaInstitucional && (
+                      <div className="text-[11px] font-bold text-amber-300 italic flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-400 shrink-0" />
+                        <span>Lema: "{p.lemaInstitucional}"</span>
+                      </div>
+                    )}
                     <p className="text-xs text-slate-300 line-clamp-2">{p.conteudo}</p>
                   </div>
 

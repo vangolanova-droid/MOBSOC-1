@@ -46,6 +46,7 @@ export interface ActiveSupervisorItem {
   mobilizadoresNomes: string[];
   fotoUrl?: string;
   telefone?: string;
+  morada?: string;
 }
 
 export const ActiveSupervisorsModal: React.FC<ActiveSupervisorsModalProps> = ({
@@ -104,6 +105,7 @@ export const ActiveSupervisorsModal: React.FC<ActiveSupervisorsModalProps> = ({
         mobilizadoresNomes: supervisorMobs.map((m) => m.nome),
         fotoUrl: u.fotoUrl,
         telefone: u.telefone,
+        morada: u.morada,
       });
     });
 
@@ -356,6 +358,13 @@ export const ActiveSupervisorsModal: React.FC<ActiveSupervisorsModalProps> = ({
                         <span>•</span>
                         <span className="text-slate-400">{sup.tipo}</span>
                       </div>
+
+                      {sup.morada && (
+                        <div className="text-[11px] font-medium text-sky-300 flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3 text-sky-400" />
+                          <span>Residência: {sup.morada}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

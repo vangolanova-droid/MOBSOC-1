@@ -72,7 +72,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [funcao] = useState('Mobilizador Comunitário');
   const [ronda, setRonda] = useState<string>(() => {
     if (!isAdmin && user.ronda) return user.ronda;
-    return '1ª Ronda';
+    return '3ª Ronda';
   });
   const [coordId, setCoordId] = useState<number>(() => {
     if (!isAdmin && user.coordId) return user.coordId;
@@ -820,14 +820,21 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                       </span>
                     </td>
                     <td className="p-3.5 font-semibold text-slate-900 flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold shrink-0">
                         {mob.nome.charAt(0).toUpperCase()}
                       </div>
-                      <span>{mob.nome}</span>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-bold text-[10px] border border-sky-200">
+                            {mob.ronda || '3ª Ronda'}
+                          </span>
+                          <span>{mob.nome}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="p-3.5 font-medium">
-                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs text-purple-700">
-                        {mob.ronda || '1ª Ronda'}
+                      <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs text-purple-700 font-bold">
+                        {mob.ronda || '3ª Ronda'}
                       </span>
                     </td>
                     <td className="p-3.5 text-slate-600">{mob.morada || '—'}</td>

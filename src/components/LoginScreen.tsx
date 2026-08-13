@@ -76,6 +76,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [regNome, setRegNome] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regTelefone, setRegTelefone] = useState('');
+  const [regMorada, setRegMorada] = useState('');
   const [regCoordId, setRegCoordId] = useState<number>(coordenacoes.length > 0 ? coordenacoes[0].id : 1);
   const [regSenha, setRegSenha] = useState('');
   const [regConfirmSenha, setRegConfirmSenha] = useState('');
@@ -104,19 +105,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     local: post.subtitulo || 'Sumbe, Cuanza Sul',
     imagemUrl: post.imagemUrl || socialMobilizationBgImg,
     destaque: post.destaque,
+    lemaInstitucional: post.lemaInstitucional,
   }));
 
-  const galleryItemsToDisplay: FieldGalleryItem[] = [
-    ...portalGalleryItems,
-    ...FIELD_GALLERY_ITEMS.filter((item) => !portalGalleryItems.some((p) => p.id === item.id)),
-  ];
+  const galleryItemsToDisplay: FieldGalleryItem[] =
+    portalGalleryItems.length > 0 ? portalGalleryItems : FIELD_GALLERY_ITEMS;
 
-  // Auto-advance hero carousel every 5.5 seconds if playing
+  // Auto-advance hero carousel every 10 seconds if playing
   useEffect(() => {
     if (!isPlaying) return;
     const sliderTimer = setInterval(() => {
       setActiveSlideIndex((prev) => (prev + 1) % galleryItemsToDisplay.length);
-    }, 5500);
+    }, 10000);
     return () => clearInterval(sliderTimer);
   }, [isPlaying, galleryItemsToDisplay.length]);
 
@@ -208,8 +208,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     e.preventDefault();
     setRegError('');
 
-    if (!regNome.trim() || !regEmail.trim() || !regSenha.trim() || !regTelefone.trim()) {
-      setRegError('Preencha todos os campos obrigatórios.');
+    if (!regNome.trim() || !regEmail.trim() || !regSenha.trim() || !regTelefone.trim() || !regMorada.trim()) {
+      setRegError('Preencha todos os campos obrigatórios (incluindo a morada/residência).');
       return;
     }
 
@@ -240,6 +240,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           email: cleanRegEmail,
           senha: regSenha.trim(),
           telefone: regTelefone.trim(),
+          morada: regMorada.trim(),
           tipo: 'supervisor',
           status: 'pendente',
           coordId: Number(regCoordId),
@@ -384,105 +385,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </div>
 
-            {/* SECTOR INSTITUCIONAL UNICEF: LEMA, OBJECTIVOS, FOCO & PREPARAÇÃO */}
-            <div className="w-full rounded-3xl border border-sky-400/30 bg-gradient-to-br from-slate-950/95 via-blue-950/85 to-slate-950/95 p-6 md:p-8 text-white shadow-2xl backdrop-blur-xl space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/15 pb-6">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
-                      <ShieldCheck className="h-4 w-4 text-sky-400" />
-                      Liderança Técnica UNICEF em Angola
-                    </span>
-                    <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider shadow-xs">
-                      Campanha de Vacinação contra a Pólio
-                    </span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
-                    Missão UNICEF: Mobilização Social & Proteção Infantil no Sumbe
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-3xl leading-relaxed">
-                    Os mobilizadores comunitários na linha da frente da campanha de vacinação estão sob a responsabilidade e coordenação do <strong className="text-sky-300 font-bold">UNICEF</strong>. Unimos forças com a Direção Municipal de Saúde do Sumbe, Sobas e líderes locais para assegurar que nenhuma criança perca as duas gotas salvadoras.
-                  </p>
-                </div>
 
-                <div className="p-4 sm:p-5 rounded-2xl bg-sky-500/15 border border-sky-400/40 text-sky-100 text-left sm:text-center flex-shrink-0 space-y-1 shadow-inner">
-                  <div className="text-[10px] uppercase font-mono font-bold tracking-widest text-sky-300">Lema Oficial do UNICEF</div>
-                  <div className="text-sm md:text-base font-black text-white italic">"Para Cada Criança, Imunização & Vida Saudável"</div>
-                  <div className="text-[10px] text-slate-300 font-medium">Meta: 100% de Crianças Vacinadas em Cuanza Sul</div>
-                </div>
-              </div>
-
-              {/* 4 Pilar Cards: Foco, Preparação, Engajamento e Monitorização */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-sky-400/40 transition space-y-2 group">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-300 flex items-center justify-center font-black text-sm">
-                      01
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-sky-300 bg-sky-950/80 px-2 py-0.5 rounded-lg border border-sky-500/30">
-                      Preparação
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-sky-300 transition">
-                    Formação & Capacitação Técnica
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Instrução rigorosa dos mobilizadores do UNICEF em comunicação interpessoal, escuta ativa e abordagem empática de casa em casa.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-400/40 transition space-y-2 group">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-black text-sm">
-                      02
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-500/30">
-                      Engajamento
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
-                    Parceria no Jango & Comunitária
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Aliança sólida com Sobas, parteiras e comités de mães para desmistificar rumores, esclarecer dúvidas e gerar confiança absoluta na vacina.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/40 transition space-y-2 group">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center font-black text-sm">
-                      03
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                      Proximidade
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition">
-                    Proximidade & Logística de Campo
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Deslocação de mobilizadores e brigadas de vacinação a bairros periurbanos, zonas rurais e rotas de difícil acesso com apoio logístico.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-400/40 transition space-y-2 group">
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-300 flex items-center justify-center font-black text-sm">
-                      04
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-lg border border-purple-500/30">
-                      Acompanhamento
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition">
-                    Registo Digital ODK & SisMob
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Monitorização georreferenciada e em tempo real para assegurar que cada família visitada seja acompanhada com transparência e precisão.
-                  </p>
-                </div>
-              </div>
-            </div>
 
             {/* FULL-WIDTH INTERACTIVE MOTION HERO CAROUSEL */}
             {(() => {
@@ -589,12 +492,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                           transition={{ duration: 0.5 }}
                           className="space-y-3 max-w-4xl"
                         >
-                          <div className="flex items-center gap-2 text-xs font-bold text-sky-300">
+                          <div className="flex items-center gap-2 text-xs font-bold text-sky-300 flex-wrap">
                             <MapPin className="h-4 w-4 text-sky-400" />
                             <span>{currentItem.subtitulo}</span>
                             <span className="text-slate-400">•</span>
                             <Calendar className="h-4 w-4 text-emerald-400" />
                             <span>{currentItem.data}</span>
+                            {currentItem.lemaInstitucional && (
+                              <>
+                                <span className="text-slate-400">•</span>
+                                <span className="text-amber-300 font-extrabold flex items-center gap-1 bg-amber-400/20 border border-amber-400/30 px-2 py-0.5 rounded-lg">
+                                  <Sparkles className="h-3 w-3 text-amber-400" />
+                                  Lema: "{currentItem.lemaInstitucional}"
+                                </span>
+                              </>
+                            )}
                           </div>
 
                           <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-snug text-white drop-shadow-md">
@@ -738,149 +650,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </div>
 
-            {/* SECTOR DE GALERIA E NOTÍCIAS COM LEGENDAS IMPACTANTES & FILTROS */}
-            <div className="space-y-6 pt-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-sky-300">
-                    <Newspaper className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">
-                      Atividades & Galeria de Impacto da Mobilização
-                    </h2>
-                    <p className="text-xs text-slate-300 font-medium">
-                      Fotografias e registos reais do terreno no Bairro Mbumba Kupuco, Tambo do Soba e Sumbe
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-300 bg-emerald-950/80 px-3.5 py-1.5 rounded-xl border border-emerald-500/40 shadow-inner">
-                    <Activity className="h-4 w-4 animate-pulse text-emerald-400" />
-                    <span>{galleryItemsToDisplay.length} Registos de Terreno</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Category Filter Tabs */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mr-1 flex-shrink-0">
-                  <Filter className="h-3.5 w-3.5 text-sky-400" />
-                  <span>Filtrar:</span>
-                </span>
-
-                {['Todos', 'Liderança Tradicional', 'Logística de Campo', 'Parceria Estratégica', 'Sensibilização Direta', 'Mobilização Social', 'Capacitação Técnica', 'Equipa de Campo', 'Gestão & Controlo', 'Comunicação Interpessoal'].map((cat) => {
-                  const isActive = selectedCategory === cat;
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                        isActive
-                          ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/30'
-                          : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border border-white/10'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Grid of Gallery Cards with Impact Captions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {galleryItemsToDisplay.filter(
-                  (item) => selectedCategory === 'Todos' || item.categoria === selectedCategory
-                ).map((item, index) => {
-                  const cleanImg = sanitizeImageUrl(item.imagemUrl);
-
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.05 }}
-                      whileHover={{ y: -4 }}
-                      className="rounded-2xl border border-white/20 bg-slate-900/90 text-white shadow-2xl backdrop-blur-md flex flex-col justify-between hover:border-sky-400/60 transition group overflow-hidden relative"
-                    >
-                      {/* Image Header with Zoom Hover */}
-                      <div
-                        className="relative h-52 w-full overflow-hidden bg-slate-950 cursor-pointer"
-                        onClick={() => setLightboxItem(item)}
-                      >
-                        <img
-                          src={cleanImg}
-                          alt={item.titulo}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108 filter brightness-[0.9]"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = socialMobilizationBgImg;
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-
-                        {/* Top Badges */}
-                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                          <span className="rounded-lg bg-slate-950/85 backdrop-blur-md px-2.5 py-1 text-[10px] font-black text-sky-300 border border-white/15 shadow-sm uppercase tracking-wide">
-                            {item.categoria}
-                          </span>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLightboxItem(item);
-                            }}
-                            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-sky-500 text-white hover:text-slate-950 transition border border-white/20 cursor-pointer shadow-md"
-                            title="Ampliar Imagem e Ver Legenda"
-                          >
-                            <Maximize2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Location Pill */}
-                        <div className="absolute bottom-2.5 left-3 text-[10px] font-bold text-sky-300 flex items-center gap-1 bg-slate-950/80 px-2.5 py-0.5 rounded-md border border-white/10">
-                          <MapPin className="h-3 w-3 text-sky-400" />
-                          <span>{item.local}</span>
-                        </div>
-                      </div>
-
-                      {/* Content Box */}
-                      <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                        <div className="space-y-2.5">
-                          <h3 className="text-base font-extrabold text-white group-hover:text-sky-300 transition leading-snug">
-                            {item.titulo}
-                          </h3>
-
-                          {/* PROMINENT IMPACT CAPTION BOX */}
-                          <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-400/25 space-y-1">
-                            <div className="text-[9px] font-mono font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1">
-                              <Sparkles className="h-3 w-3 text-amber-400" />
-                              <span>Legenda de Impacto</span>
-                            </div>
-                            <p className="text-xs text-slate-200 font-normal leading-relaxed line-clamp-4">
-                              "{item.legenda}"
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Card Footer */}
-                        <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-slate-300">
-                          <span className="text-sky-400 truncate max-w-[150px]">{item.autor}</span>
-                          <button
-                            onClick={() => setLightboxItem(item)}
-                            className="flex items-center gap-1 text-sky-400 hover:text-sky-300 transition cursor-pointer"
-                          >
-                            <span>Ver Detalhes</span>
-                            <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* SCHEDULE / BRIGADAS MOVIAS SECTION */}
             <div className="rounded-3xl border border-white/20 bg-slate-900/80 p-6 text-white shadow-2xl backdrop-blur-xl space-y-4">
@@ -1161,6 +931,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       placeholder="+244 923 000 000"
                       className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-telefone"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Morada / Residência do Supervisor *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={regMorada}
+                      onChange={(e) => setRegMorada(e.target.value)}
+                      placeholder="Ex: Bairro Mbumba Kupuco, Rua 4, Casa 12, Sumbe"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                      id="reg-input-morada"
                     />
                   </div>
 

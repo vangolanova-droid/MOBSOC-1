@@ -26,7 +26,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
   const [comuna] = useState('SEDE');
   const [bairro, setBairro] = useState('');
   const [data, setData] = useState(() => new Date().toISOString().split('T')[0]);
-  const [ronda, setRonda] = useState('1ª Ronda');
+  const [ronda, setRonda] = useState('3ª Ronda');
   const [mobilizador, setMobilizador] = useState('');
   const [telefone, setTelefone] = useState('');
 
@@ -417,21 +417,25 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
 
           {/* Nome do Mobilizador right after Bairro */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Nome do Mobilizador <span className="text-red-500">*</span>
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <span>Nome do Mobilizador</span>
+              <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 font-mono font-bold text-[11px] border border-sky-200">
+                {ronda}
+              </span>
+              <span className="text-red-500">*</span>
             </label>
             <div className="mt-1.5">
               {activeCoordMobilizadores.length > 0 ? (
                 <select
                   value={mobilizador}
                   onChange={(e) => handleSelectMobilizador(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 font-medium"
                   id="select-ficha-mobilizador"
                 >
                   <option value="">-- Seleccionar Mobilizador Registado --</option>
                   {activeCoordMobilizadores.map((m) => (
                     <option key={m.id} value={m.nome}>
-                      {m.nome} ({m.ronda || '1ª Ronda'})
+                      [{m.ronda || '3ª Ronda'}] — {m.nome}
                     </option>
                   ))}
                 </select>
