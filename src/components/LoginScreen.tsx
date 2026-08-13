@@ -353,34 +353,59 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             
             {/* CONTINUOUS LIVE MARQUEE TICKER BANNER */}
             <div className="w-full rounded-2xl bg-slate-950/90 border border-sky-500/30 overflow-hidden py-2.5 backdrop-blur-md relative shadow-xl flex items-center">
-              <div className="flex items-center gap-2 px-3.5 sm:px-4 z-10 bg-slate-950/95 absolute left-0 top-0 bottom-0 pr-4 font-mono text-[11px] font-black uppercase text-amber-400 tracking-wider border-r border-white/15 shadow-md">
+              <div className="flex items-center gap-2 px-3.5 sm:px-4 z-20 bg-slate-950/95 absolute left-0 top-0 bottom-0 pr-4 font-mono text-[11px] font-black uppercase text-amber-400 tracking-wider border-r border-white/15 shadow-md">
                 <Activity className="h-4 w-4 animate-pulse text-amber-400" />
                 <span className="hidden sm:inline">INFORMAÇÃO AO VIVO</span>
                 <span className="sm:hidden">AO VIVO</span>
               </div>
               
-              <div className="flex whitespace-nowrap animate-marquee space-x-12 pl-36 sm:pl-48">
-                <div className="flex items-center space-x-10 text-xs text-slate-200 font-medium">
-                  <span className="flex items-center gap-2">
+              <div className="flex w-full overflow-hidden relative">
+                <div className="flex whitespace-nowrap animate-marquee shrink-0 items-center space-x-10 pl-36 sm:pl-48 pr-10">
+                  {/* SET 1 */}
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                     👑 <strong className="text-amber-300">A SABEDORIA TRADICIONAL:</strong> Sobas e líderes reunidos no Tambo do Soba em defesa das crianças do Bairro Mbumba Kupuco.
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
                     ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SisMob.
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
                     ★ <strong className="text-emerald-300">CAMPANHA PÓLIO 2026:</strong> "Vamos vacinar todas as crianças menores de 5 anos de idade!"
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
                     🤝 <strong className="text-purple-300">ALIANÇA ESTRATÉGICA:</strong> Saúde Municipal, UNICEF e Sobado unidos no combate à pólio.
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
                     🏍️ <strong className="text-amber-300">LOGÍSTICA DE CAMPO:</strong> Motos Kawaseki em rota pelas zonas periurbanas e rurais do Sumbe.
                   </span>
+                  <span className="text-sky-400 font-bold">•</span>
+
+                  {/* SET 2 (DUPLICATE FOR SEAMLESS INFINITE LOOP) */}
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                    👑 <strong className="text-amber-300">A SABEDORIA TRADICIONAL:</strong> Sobas e líderes reunidos no Tambo do Soba em defesa das crianças do Bairro Mbumba Kupuco.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
+                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SisMob.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
+                    ★ <strong className="text-emerald-300">CAMPANHA PÓLIO 2026:</strong> "Vamos vacinar todas as crianças menores de 5 anos de idade!"
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
+                    🤝 <strong className="text-purple-300">ALIANÇA ESTRATÉGICA:</strong> Saúde Municipal, UNICEF e Sobado unidos no combate à pólio.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
+                  <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
+                    🏍️ <strong className="text-amber-300">LOGÍSTICA DE CAMPO:</strong> Motos Kawaseki em rota pelas zonas periurbanas e rurais do Sumbe.
+                  </span>
+                  <span className="text-sky-400 font-bold">•</span>
                 </div>
               </div>
             </div>
