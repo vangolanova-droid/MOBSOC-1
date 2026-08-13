@@ -291,17 +291,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       {/* Main Container */}
       <div className="relative z-10 flex min-h-screen flex-col">
         {/* Institutional Header Bar */}
-        <header className="sticky top-0 z-30 border-b border-white/20 bg-slate-900/85 px-4 py-3 backdrop-blur-md text-white shadow-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+        <header className="sticky top-0 z-30 border-b border-white/20 bg-slate-900/85 px-2.5 sm:px-4 py-2 sm:py-3 backdrop-blur-md text-white shadow-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4">
             {/* Logo & Institution */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-xl text-white shadow-md shadow-blue-500/30 border border-white/30">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-base sm:text-xl text-white shadow-md shadow-blue-500/30 border border-white/30 shrink-0">
                 SM
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-black tracking-tight text-white">SisMob</span>
-                  <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wide">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-base sm:text-xl font-black tracking-tight text-white">SisMob</span>
+                  <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-300 uppercase tracking-wide whitespace-nowrap">
                     Sumbe • Cuanza Sul
                   </span>
                 </div>
@@ -312,7 +312,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
 
             {/* Quick Actions Header */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <div className="hidden lg:flex items-center gap-2 text-xs text-slate-200 font-extrabold border-r border-white/20 pr-4">
                 <ShieldCheck className="h-4 w-4 text-emerald-400" />
                 <span>Portal Oficial da Mobilização Social | Sumbe</span>
@@ -324,10 +324,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   setRegError('');
                   setShowRegisterModal(true);
                 }}
-                className="flex items-center gap-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 px-3.5 sm:px-4 py-2.5 text-xs font-bold text-sky-300 shadow-md transition active:scale-95 cursor-pointer border border-sky-400/30"
+                className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 px-2.5 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold text-sky-300 shadow-md transition active:scale-95 cursor-pointer border border-sky-400/30 whitespace-nowrap shrink-0"
                 id="btn-open-register-header"
               >
-                <UserPlus className="h-4 w-4 text-sky-400" />
+                <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-400 shrink-0" />
                 <span className="hidden sm:inline">Cadastrar Supervisor</span>
                 <span className="sm:hidden">Cadastrar</span>
               </button>
@@ -337,10 +337,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   setError('');
                   setShowLoginModal(true);
                 }}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 px-4 sm:px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/30 transition active:scale-95 cursor-pointer border border-blue-400/40"
+                className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 px-3 sm:px-5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold text-white shadow-lg shadow-blue-500/30 transition active:scale-95 cursor-pointer border border-blue-400/40 whitespace-nowrap shrink-0"
                 id="btn-open-login-header"
               >
-                <LogIn className="h-4 w-4" />
+                <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                 <span>Fazer Login</span>
               </button>
             </div>
@@ -592,19 +592,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </div>
 
                     {/* Action Call Buttons */}
-                    <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                      <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                         <button
                           onClick={() => {
                             setError('');
                             setShowLoginModal(true);
                           }}
-                          className="flex items-center gap-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-xl shadow-emerald-500/25 transition active:scale-95 cursor-pointer"
+                          className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-4 sm:px-6 py-3 sm:py-3.5 text-xs font-black text-slate-950 shadow-xl shadow-emerald-500/25 transition active:scale-95 cursor-pointer text-center"
                           id="btn-hero-login"
                         >
-                          <LogIn className="h-4 w-4 stroke-[3]" />
+                          <LogIn className="h-4 w-4 stroke-[3] shrink-0" />
                           <span>ENTRAR NO FUNCIONAMENTO DO SISTEMA</span>
-                          <ArrowRight className="h-4 w-4" />
+                          <ArrowRight className="h-4 w-4 shrink-0" />
                         </button>
 
                         <button
@@ -613,16 +613,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             setRegError('');
                             setShowRegisterModal(true);
                           }}
-                          className="flex items-center gap-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 px-5 py-3.5 text-xs font-black text-sky-300 shadow-xl transition active:scale-95 cursor-pointer border border-sky-400/40"
+                          className="flex items-center justify-center gap-2 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 px-4 sm:px-5 py-3 sm:py-3.5 text-xs font-black text-sky-300 shadow-xl transition active:scale-95 cursor-pointer border border-sky-400/40 text-center"
                           id="btn-hero-register"
                         >
-                          <UserPlus className="h-4 w-4 text-sky-400" />
+                          <UserPlus className="h-4 w-4 text-sky-400 shrink-0" />
                           <span>SOLICITAR REGISTO DE SUPERVISOR</span>
                         </button>
                       </div>
 
-                      <div className="text-xs text-slate-300 font-medium flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <div className="text-[11px] sm:text-xs text-slate-300 font-medium flex items-center gap-2 justify-center sm:justify-start">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                         <span>Acesso com Validação pela Direção Municipal de Saúde</span>
                       </div>
                     </div>
@@ -749,16 +749,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       {/* MODAL POPUP DE LOGIN */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-white/30 bg-white p-6 md:p-8 shadow-2xl text-slate-900 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative my-auto w-full max-w-md max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-3xl border border-white/30 bg-white p-5 sm:p-6 md:p-8 shadow-2xl text-slate-900 space-y-4 sm:space-y-5">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-black text-white shadow-md">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-black text-white shadow-md shrink-0">
                   SM
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 uppercase">
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase">
                     Entrar no SisMob
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -776,7 +776,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
 
             {/* Login Modal Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Email do Utilizador
@@ -786,8 +786,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ex: v.angola.nova@gmail.com ou o seu email de supervisor"
-                  className="w-full h-12 rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="ex: v.angola.nova@gmail.com ou o seu email"
+                  className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 px-3.5 sm:px-4 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   id="modal-login-email"
                 />
               </div>
@@ -803,7 +803,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-12 rounded-xl border border-slate-300 bg-slate-50 pl-4 pr-11 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 sm:pl-4 pr-10 sm:pr-11 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                     id="modal-login-senha"
                   />
                   <button
@@ -812,7 +812,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
                     title={showPassword ? 'Ocultar senha' : 'Ver senha'}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                   </button>
                 </div>
               </div>
@@ -825,11 +825,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
               <button
                 type="submit"
-                className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+                className="flex w-full h-11 sm:h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 cursor-pointer"
                 id="modal-btn-login-submit"
               >
                 <span>Aceder ao Funcionamento do Sistema</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </button>
 
               <div className="pt-2 text-center border-t border-slate-100">
@@ -853,8 +853,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
       {/* MODAL POPUP DE REGISTO DE SUPERVISOR */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/30 bg-white p-6 md:p-8 shadow-2xl text-slate-900 space-y-5 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative my-auto w-full max-w-lg max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-3xl border border-white/30 bg-white p-5 sm:p-6 md:p-8 shadow-2xl text-slate-900 space-y-4 sm:space-y-5">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div className="flex items-center gap-3">
