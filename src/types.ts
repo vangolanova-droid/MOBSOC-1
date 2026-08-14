@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'supervisor';
+export type UserRole = 'admin' | 'coordenador' | 'supervisor' | 'mobilizador';
 
 export interface User {
   id: number;
@@ -7,6 +7,7 @@ export interface User {
   senha: string;
   tipo: UserRole;
   coordId: number | null;
+  coordIds?: number[];
   coordNome?: string;
   coordenadorNome?: string;
   morada?: string;
@@ -50,6 +51,7 @@ export interface Mobilizador {
   nome: string;
   morada: string;
   telefone: string;
+  numeroEquipa?: string;
   funcao: string;
   ronda?: string;
   coordId: number | null;
@@ -124,6 +126,7 @@ export interface Ficha {
   mobilizadorId?: number | null;
   mobilizadorCodigoId?: string;
   telefone?: string;
+  numeroEquipa?: string;
   coordId: number | null;
   coordNome: string;
   coordenadorNome?: string;

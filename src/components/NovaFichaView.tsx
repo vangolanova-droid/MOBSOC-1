@@ -29,6 +29,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
   const [ronda, setRonda] = useState('3ª Ronda');
   const [mobilizador, setMobilizador] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [numeroEquipa, setNumeroEquipa] = useState('');
 
   // Coordination selection
   const [coordId, setCoordId] = useState<number>(() => {
@@ -52,8 +53,12 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
     );
     if (found) {
       if (found.telefone) setTelefone(found.telefone);
+      if (found.numeroEquipa) setNumeroEquipa(found.numeroEquipa);
+      else setNumeroEquipa('');
       if (found.coordId) setCoordId(found.coordId);
       if (found.ronda) setRonda(found.ronda);
+    } else {
+      setNumeroEquipa('');
     }
   };
 
@@ -153,6 +158,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
     setBairro('');
     setMobilizador('');
     setTelefone('');
+    setNumeroEquipa('');
     setData(new Date().toISOString().split('T')[0]);
     setRonda('1ª Ronda');
     const clean: FichaTableData = {};
@@ -276,6 +282,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
         mobilizadorId: selectedMob ? selectedMob.id : null,
         mobilizadorCodigoId: selectedMob?.codigoId || undefined,
         telefone: telefone.trim(),
+        numeroEquipa: numeroEquipa.trim() || selectedMob?.numeroEquipa || undefined,
         coordId: Number(coordId),
         coordNome,
         coordenadorNome,
@@ -470,6 +477,28 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
               id="input-ficha-telefone"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <span>Número da Equipa</span>
+              <span className="text-[10px] font-normal text-slate-400">(Fixo / Cadastro RH)</span>
+            </label>
+            <div className="relative mt-1.5">
+              <input
+                type="text"
+                readOnly
+                placeholder="—"
+                value={numeroEquipa || (mobilizador ? 'Sem equipa atribuída' : 'Selecione o mobilizador')}
+                className="w-full h-11 rounded-xl border border-slate-200 bg-slate-100 pl-3.5 pr-3 text-xs font-bold text-indigo-900 cursor-not-allowed outline-none"
+                id="input-ficha-equipa"
+              />
+              {numeroEquipa && (
+                <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-mono font-black text-[11px] border border-indigo-200">
+                  {numeroEquipa}
+                </span>
+              )}
+            </div>
           </div>
 
           <div>

@@ -260,6 +260,7 @@ export const api = {
       nome: mob.nome || '',
       morada: mob.morada || '',
       telefone: mob.telefone || '',
+      numeroEquipa: mob.numeroEquipa || '',
       funcao: mob.funcao || 'Mobilizador Comunitário',
       ronda: mob.ronda || '1ª Ronda',
       coordId: mob.coordId || null,

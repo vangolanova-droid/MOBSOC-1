@@ -69,6 +69,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [nome, setNome] = useState('');
   const [morada, setMorada] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [numeroEquipa, setNumeroEquipa] = useState('');
   const [funcao] = useState('Mobilizador Comunitário');
   const [ronda, setRonda] = useState<string>(() => {
     if (!isAdmin && user.ronda) return user.ronda;
@@ -286,6 +287,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [editNome, setEditNome] = useState('');
   const [editMorada, setEditMorada] = useState('');
   const [editTelefone, setEditTelefone] = useState('');
+  const [editNumeroEquipa, setEditNumeroEquipa] = useState('');
   const [editFuncao, setEditFuncao] = useState('Mobilizador Comunitário');
   const [editRonda, setEditRonda] = useState('1ª Ronda');
   const [editCoordId, setEditCoordId] = useState<number>(1);
@@ -317,6 +319,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
     setEditNome(mob.nome);
     setEditMorada(mob.morada || '');
     setEditTelefone(mob.telefone || '');
+    setEditNumeroEquipa(mob.numeroEquipa || '');
     setEditFuncao(mob.funcao || 'Mobilizador Comunitário');
     setEditRonda(mob.ronda || '1ª Ronda');
     setEditCoordId(mob.coordId || (coordenacoes.length > 0 ? coordenacoes[0].id : 1));
@@ -336,6 +339,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
         nome: editNome.trim(),
         morada: editMorada.trim(),
         telefone: editTelefone.trim(),
+        numeroEquipa: editNumeroEquipa.trim(),
         funcao: editFuncao.trim() || 'Mobilizador Comunitário',
         ronda: editRonda,
         coordId: Number(editCoordId),
@@ -444,6 +448,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
         nome: nome.trim(),
         morada: morada.trim(),
         telefone: telefone.trim(),
+        numeroEquipa: numeroEquipa.trim(),
         funcao: 'Mobilizador Comunitário',
         ronda: ronda || '1ª Ronda',
         coordId: Number(coordId),
@@ -458,6 +463,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
       setNome('');
       setMorada('');
       setTelefone('');
+      setNumeroEquipa('');
       setRonda(!isAdmin && user.ronda ? user.ronda : '1ª Ronda');
       setSelectedSupervisorId(null);
     } catch (err: any) {
@@ -571,6 +577,24 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                   id="input-mob-telefone"
                 />
                 <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700">
+                Número da Equipa <span className="text-red-500">*</span>
+              </label>
+              <div className="relative mt-1.5">
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Equipa 01 (Atribuído pela Direção)"
+                  value={numeroEquipa}
+                  onChange={(e) => setNumeroEquipa(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-xs font-bold text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                  id="input-mob-equipa"
+                />
+                <Users className="absolute left-3.5 top-3.5 h-4 w-4 text-indigo-500" />
               </div>
             </div>
 
@@ -802,6 +826,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                   <th className="p-3.5">Ronda</th>
                   <th className="p-3.5">Morada</th>
                   <th className="p-3.5">Telefone</th>
+                  <th className="p-3.5">Equipa</th>
                   <th className="p-3.5">Função</th>
                   <th className="p-3.5">Coordenação</th>
                   <th className="p-3.5">Supervisor Responsável</th>
@@ -839,6 +864,15 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                     </td>
                     <td className="p-3.5 text-slate-600">{mob.morada || '—'}</td>
                     <td className="p-3.5 font-mono text-emerald-700 font-semibold">{mob.telefone || '—'}</td>
+                    <td className="p-3.5 font-semibold">
+                      {mob.numeroEquipa ? (
+                        <span className="inline-block rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
+                          {mob.numeroEquipa}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-normal text-xs">—</span>
+                      )}
+                    </td>
                     <td className="p-3.5">
                       <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                         {mob.funcao}
@@ -925,6 +959,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                         <th className="p-2.5">Ronda</th>
                         <th className="p-2.5">Morada</th>
                         <th className="p-2.5">Telefone</th>
+                        <th className="p-2.5">Equipa</th>
                         <th className="p-2.5">Função</th>
                         <th className="p-2.5">Coordenação</th>
                         <th className="p-2.5 text-right">Ação</th>
@@ -949,6 +984,15 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                           </td>
                           <td className="p-2.5 text-slate-600">{mob.morada || '—'}</td>
                           <td className="p-2.5 font-mono text-[#2E7D32] font-bold">{mob.telefone || '—'}</td>
+                          <td className="p-2.5 font-bold">
+                            {mob.numeroEquipa ? (
+                              <span className="inline-block rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                                {mob.numeroEquipa}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal text-xs">—</span>
+                            )}
+                          </td>
                           <td className="p-2.5 text-slate-600">{mob.funcao}</td>
                           <td className="p-2.5 text-slate-600">{mob.coordNome || '—'}</td>
                           <td className="p-2.5 text-right">
@@ -1023,6 +1067,7 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                         <th className="p-2.5">Ronda</th>
                         <th className="p-2.5">Morada</th>
                         <th className="p-2.5">Telefone</th>
+                        <th className="p-2.5">Equipa</th>
                         <th className="p-2.5">Função</th>
                         <th className="p-2.5">Supervisor Responsável</th>
                         <th className="p-2.5 text-right">Ação</th>
@@ -1047,6 +1092,15 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                           </td>
                           <td className="p-2.5 text-slate-600">{mob.morada || '—'}</td>
                           <td className="p-2.5 font-mono text-[#2E7D32] font-bold">{mob.telefone || '—'}</td>
+                          <td className="p-2.5 font-bold">
+                            {mob.numeroEquipa ? (
+                              <span className="inline-block rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                                {mob.numeroEquipa}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal text-xs">—</span>
+                            )}
+                          </td>
                           <td className="p-2.5 text-slate-600">{mob.funcao}</td>
                           <td className="p-2.5 text-slate-700 font-medium">
                             {mob.supervisorNome ? `👤 ${mob.supervisorNome}` : '—'}
@@ -1559,6 +1613,20 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                   onChange={(e) => setEditTelefone(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-[#0B5CAD]"
                   id="input-edit-mob-telefone"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#0B5CAD] uppercase">
+                  Número da Equipa
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Equipa 01"
+                  value={editNumeroEquipa}
+                  onChange={(e) => setEditNumeroEquipa(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-indigo-900 placeholder-slate-400 outline-none transition focus:border-[#0B5CAD]"
+                  id="input-edit-mob-equipa"
                 />
               </div>
 

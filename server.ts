@@ -78,30 +78,39 @@ let users: any[] = [
 let mobilizadores: any[] = [
   {
     id: 1,
+    codigoId: 'MT002201',
     nome: 'Afonso Neto',
     morada: 'Bairro 15 de Março, Sumbe',
     telefone: '923456789',
+    numeroEquipa: 'Equipa 01',
     funcao: 'Mobilizador Comunitário',
+    ronda: '3ª Ronda',
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
     createdAt: new Date().toISOString(),
   },
   {
     id: 2,
+    codigoId: 'MT002202',
     nome: 'Teresa Amélia',
     morada: 'Bairro Chingo, Sumbe',
     telefone: '912345678',
+    numeroEquipa: 'Equipa 02',
     funcao: 'Mobilizador Comunitário',
+    ronda: '3ª Ronda',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
     createdAt: new Date().toISOString(),
   },
   {
     id: 3,
+    codigoId: 'MT002203',
     nome: 'Domingos Vunge',
     morada: 'Bairro Quissala, Sumbe',
     telefone: '934567890',
+    numeroEquipa: 'Equipa 02',
     funcao: 'Mobilizador Comunitário',
+    ronda: '3ª Ronda',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
     createdAt: new Date().toISOString(),
@@ -116,8 +125,10 @@ let fichas: any[] = [
     comuna: 'SEDE',
     bairro: '15 de Março',
     data: '2026-08-01',
+    ronda: '1ª Ronda',
     mobilizador: 'Afonso Neto',
     telefone: '923456789',
+    numeroEquipa: 'Equipa 01',
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
     userId: 2,
@@ -405,17 +416,20 @@ async function startServer() {
   });
 
   app.post('/api/mobilizadores', (req: AuthenticatedRequest, res: Response) => {
-    const { nome, morada, telefone, funcao, coordId, supervisorId, supervisorNome } = req.body;
+    const { codigoId, nome, morada, telefone, numeroEquipa, funcao, ronda, coordId, supervisorId, supervisorNome } = req.body;
     if (!nome) {
       return res.status(400).json({ error: 'Nome do mobilizador é obrigatório' });
     }
     const c = coordenacoes.find((x) => x.id === Number(coordId));
     const newMob = {
       id: Date.now(),
+      codigoId: codigoId || `MT0022${String(mobilizadores.length + 1).padStart(2, '0')}`,
       nome,
       morada: morada || '',
       telefone: telefone || '',
+      numeroEquipa: numeroEquipa || '',
       funcao: funcao || 'Mobilizador Comunitário',
+      ronda: ronda || '1ª Ronda',
       coordId: coordId ? Number(coordId) : null,
       coordNome: c ? c.nome : 'Geral',
       supervisorId: supervisorId ? Number(supervisorId) : req.user?.id || null,
@@ -424,6 +438,31 @@ async function startServer() {
     };
     mobilizadores.push(newMob);
     res.status(201).json(newMob);
+  });
+
+  app.patch('/api/mobilizadores/:id', (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id);
+    const index = mobilizadores.findIndex((m) => m.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Mobilizador não encontrado' });
+    }
+    const { codigoId, nome, morada, telefone, numeroEquipa, funcao, ronda, coordId, supervisorId, supervisorNome } = req.body;
+    if (codigoId !== undefined) mobilizadores[index].codigoId = codigoId;
+    if (nome !== undefined) mobilizadores[index].nome = nome;
+    if (morada !== undefined) mobilizadores[index].morada = morada;
+    if (telefone !== undefined) mobilizadores[index].telefone = telefone;
+    if (numeroEquipa !== undefined) mobilizadores[index].numeroEquipa = numeroEquipa;
+    if (funcao !== undefined) mobilizadores[index].funcao = funcao;
+    if (ronda !== undefined) mobilizadores[index].ronda = ronda;
+    if (coordId !== undefined) {
+      mobilizadores[index].coordId = Number(coordId);
+      const c = coordenacoes.find((x) => x.id === Number(coordId));
+      mobilizadores[index].coordNome = c ? c.nome : 'Geral';
+    }
+    if (supervisorId !== undefined) mobilizadores[index].supervisorId = supervisorId;
+    if (supervisorNome !== undefined) mobilizadores[index].supervisorNome = supervisorNome;
+
+    res.json(mobilizadores[index]);
   });
 
   app.delete('/api/mobilizadores/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {

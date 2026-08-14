@@ -33,6 +33,13 @@ import { ConfirmModal } from './ConfirmModal';
 import { RestrictionModal } from './RestrictionModal';
 import { ValidacaoSupervisorModal } from './ValidacaoSupervisorModal';
 import { isFichaPendingOver48h } from '../utils/fichaUtils';
+import {
+  hasElevatedAccess,
+  scopeByCoord,
+  canDeleteFicha,
+  canApproveFicha,
+  isAdmin as checkIsAdmin,
+} from '../utils/permissions';
 
 interface FichasListViewProps {
   user: User;
@@ -98,7 +105,7 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
 
   // Open Edit Modal and prefill form
   const handleStartEdit = (f: Ficha) => {
-    if (user.tipo !== 'admin') {
+    if (!hasElevatedAccess(user)) {
       setShowEditRestrictionModal(true);
       return;
     }
@@ -212,9 +219,7 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
   };
 
   // Base list for user scope
-  const scopedFichas = user.tipo === 'admin'
-    ? fichas
-    : fichas.filter((f) => f.coordId === user.coordId);
+  const scopedFichas = scopeByCoord<Ficha>(user, fichas);
 
   // Status counts for quick filters
   const countOver48h = scopedFichas.filter((f) => isFichaPendingOver48h(f)).length;
@@ -296,8 +301,8 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
 
   const handleConfirmDelete = async () => {
     if (!deletingFicha) return;
-    if (user.tipo !== 'admin' && deletingFicha.status === 'aprovada') {
-      showToast('A ficha foi aprovada e validada pelo Administrador. Supervisores não têm permissão para eliminar fichas aprovadas.', 'error');
+    if (!canDeleteFicha(user, deletingFicha)) {
+      showToast('Não tem permissão para eliminar esta ficha (fichas aprovadas só podem ser eliminadas por Administradores).', 'error');
       setDeletingFicha(null);
       return;
     }
@@ -602,14 +607,22 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                               (f.mobilizador && m.nome.trim().toLowerCase() === f.mobilizador.trim().toLowerCase())
                           );
                           const mobCod = matchedMob?.codigoId || f.mobilizadorCodigoId;
-                          if (mobCod) {
-                            return (
-                              <span className="inline-block w-fit font-mono text-[9px] bg-blue-50 border border-blue-200 text-blue-800 font-bold px-1 py-0.2 rounded mt-0.5">
-                                ID: {mobCod}
-                              </span>
-                            );
-                          }
-                          return null;
+                          const mobEquipa = f.numeroEquipa || matchedMob?.numeroEquipa;
+                          if (!mobCod && !mobEquipa) return null;
+                          return (
+                            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                              {mobCod && (
+                                <span className="inline-block font-mono text-[9px] bg-blue-50 border border-blue-200 text-blue-800 font-bold px-1 py-0.2 rounded">
+                                  ID: {mobCod}
+                                </span>
+                              )}
+                              {mobEquipa && (
+                                <span className="inline-block font-mono text-[9px] bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold px-1 py-0.2 rounded">
+                                  {mobEquipa}
+                                </span>
+                              )}
+                            </div>
+                          );
                         })()}
                       </div>
                     </td>
@@ -629,7 +642,7 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                     </td>
                     <td className="p-2 sm:p-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {isAdmin && onUpdateFicha && !isApproved && (
+                        {canApproveFicha(user, f.coordId) && onUpdateFicha && !isApproved && (
                           <button
                             onClick={() => handleUpdateStatus(f.id, 'aprovada')}
                             className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition"

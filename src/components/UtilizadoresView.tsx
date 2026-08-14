@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { UserPlus, Trash2, ShieldCheck, UserCheck, Lock, Notebook, Clock, Check, X, Phone, UserX } from 'lucide-react';
+import { UserPlus, Trash2, ShieldCheck, UserCheck, Lock, Notebook, Clock, Check, X, Phone, UserX, CheckSquare, Square } from 'lucide-react';
 import { Coordination, User, UserRole } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal } from './ConfirmModal';
+import { roleLabel, isAdmin as checkIsAdmin } from '../utils/permissions';
 
 interface UtilizadoresViewProps {
   users: User[];
@@ -29,6 +30,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   const [coordId, setCoordId] = useState<number>(
     coordenacoes.length > 0 ? coordenacoes[0].id : 1
   );
+  const [selectedCoordIds, setSelectedCoordIds] = useState<number[]>([]);
   const [ronda, setRonda] = useState('3ª Ronda');
   const [morada, setMorada] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +43,13 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   // Modal State for Delete Confirmation
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toggle selection for multi-coordination selection (Coordenador role)
+  const toggleCoordId = (id: number) => {
+    setSelectedCoordIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   // Filter pending users
   const pendingUsers = users.filter((u) => u.status === 'pendente');
@@ -92,29 +101,52 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim() || !email.trim() || !senha.trim()) {
-      showToast('Preencha todos os campos obrigatórios.', 'error');
+      showToast('Preencha todos os campos obrigatórios (Nome, Email e Senha).', 'error');
+      return;
+    }
+
+    // Role-based validation for coordinations
+    if (tipo === 'coordenador' && selectedCoordIds.length === 0) {
+      showToast('Selecione pelo menos uma coordenação para o perfil Coordenador.', 'error');
+      return;
+    }
+
+    if ((tipo === 'supervisor' || tipo === 'mobilizador') && !coordId) {
+      showToast('Selecione uma coordenação para este utilizador.', 'error');
       return;
     }
 
     const selectedCoord = coordenacoes.find((c) => c.id === Number(coordId));
     setIsSubmitting(true);
     try {
+      const coordNamesList =
+        tipo === 'coordenador'
+          ? coordenacoes
+              .filter((c) => selectedCoordIds.includes(c.id))
+              .map((c) => c.nome)
+              .join(', ')
+          : tipo === 'admin'
+          ? 'Acesso Global'
+          : selectedCoord?.nome || '—';
+
       await onCreateUser({
         nome: nome.trim(),
         email: email.trim(),
         senha: senha.trim(),
         tipo,
         morada: morada.trim(),
-        ronda: tipo === 'supervisor' ? ronda : '3ª Ronda',
-        coordId: tipo === 'admin' ? null : Number(coordId),
-        coordNome: tipo === 'admin' ? 'Acesso Global' : selectedCoord?.nome || '—',
+        ronda: tipo === 'admin' ? undefined : ronda,
+        coordId: tipo === 'supervisor' || tipo === 'mobilizador' ? Number(coordId) : null,
+        coordIds: tipo === 'coordenador' ? selectedCoordIds : undefined,
+        coordNome: coordNamesList,
         coordenadorNome: tipo === 'admin' ? 'Direção Geral' : selectedCoord?.coordenador || '—',
       });
-      showToast('Utilizador criado com sucesso!', 'success');
+      showToast(`Utilizador (${roleLabel(tipo)}) criado com sucesso!`, 'success');
       setNome('');
       setEmail('');
       setSenha('');
       setMorada('');
+      setSelectedCoordIds([]);
     } catch (e: any) {
       showToast(e.message || 'Erro ao criar utilizador.', 'error');
     } finally {
@@ -311,22 +343,23 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value as UserRole)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 font-semibold"
               id="select-user-tipo"
             >
-              <option value="supervisor">Supervisor de Equipa</option>
-              <option value="admin">Administrador Global</option>
+              <option value="supervisor">{roleLabel('supervisor')}</option>
+              <option value="coordenador">{roleLabel('coordenador')}</option>
+              <option value="mobilizador">{roleLabel('mobilizador')}</option>
+              <option value="admin">{roleLabel('admin')}</option>
             </select>
           </div>
 
-          {tipo === 'supervisor' && (
+          {tipo !== 'admin' && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                Morada / Residência <span className="text-red-500">*</span>
+                Morada / Residência
               </label>
               <input
                 type="text"
-                required={tipo === 'supervisor'}
                 placeholder="Ex: Bairro Mbumba Kupuco, Sumbe"
                 value={morada}
                 onChange={(e) => setMorada(e.target.value)}
@@ -336,10 +369,44 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
             </div>
           )}
 
-          {tipo === 'supervisor' && (
+          {/* Multi-select for Coordenador */}
+          {tipo === 'coordenador' && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Coordenações Sob Responsabilidade <span className="text-red-500">* (Selecione pelo menos 1)</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 max-h-36 overflow-y-auto">
+                {coordenacoes.map((c) => {
+                  const isChecked = selectedCoordIds.includes(c.id);
+                  return (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => toggleCoordId(c.id)}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition ${
+                        isChecked
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-900 font-bold'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {isChecked ? (
+                        <CheckSquare className="h-4 w-4 text-indigo-600 shrink-0" />
+                      ) : (
+                        <Square className="h-4 w-4 text-slate-400 shrink-0" />
+                      )}
+                      <span className="truncate">{c.nome}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Single select for Supervisor & Mobilizador */}
+          {(tipo === 'supervisor' || tipo === 'mobilizador') && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
-                Coordenação
+                Coordenação <span className="text-red-500">*</span>
               </label>
               <select
                 value={coordId}
@@ -356,7 +423,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
             </div>
           )}
 
-          {tipo === 'supervisor' && (
+          {tipo !== 'admin' && (
             <div>
               <label className="block text-xs font-semibold text-slate-700">
                 Ronda Atribuída
@@ -382,7 +449,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
               className="h-11 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-6 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
               id="btn-add-user"
             >
-              + {tipo === 'supervisor' ? 'Adicionar Supervisor' : 'Adicionar Administrador'}
+              + Adicionar {roleLabel(tipo)}
             </button>
           </div>
         </form>
@@ -424,13 +491,23 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                   </td>
                   <td className="p-3.5">
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
                         u.tipo === 'admin'
                           ? 'border-purple-200 bg-purple-50 text-purple-800'
+                          : u.tipo === 'coordenador'
+                          ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
+                          : u.tipo === 'mobilizador'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                           : 'border-blue-200 bg-blue-50 text-blue-700'
                       }`}
                     >
-                      {u.tipo === 'admin' ? '🛡️ Admin' : '👤 Supervisor'}
+                      {u.tipo === 'admin'
+                        ? '🛡️ ' + roleLabel('admin')
+                        : u.tipo === 'coordenador'
+                        ? '🏛️ ' + roleLabel('coordenador')
+                        : u.tipo === 'mobilizador'
+                        ? '📢 ' + roleLabel('mobilizador')
+                        : '👤 ' + roleLabel('supervisor')}
                     </span>
                   </td>
                   <td className="p-3.5">
