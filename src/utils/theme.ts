@@ -53,7 +53,7 @@ export const SIDEBAR_COLORS: SidebarColorOption[] = [
 export const THEMES: Theme[] = [
   {
     id: 'cyan_sismob',
-    name: 'Azul Cyan SisMob (#00B2FF)',
+    name: 'Azul Cyan SirDm (#00B2FF)',
     colors: {
       primary: '#00B2FF',
       secondary: '#0080FF',

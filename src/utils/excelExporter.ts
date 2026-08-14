@@ -133,7 +133,7 @@ export function exportRelatorioSupervisoresExcel(
   // SHEET 1: Resumo por Supervisor
   const headerData = [
     ['REPÚBLICA DE ANGOLA — MINISTÉRIO DA SAÚDE'],
-    ['SISMOB — RELATÓRIO DE MOBILIZAÇÃO POR SUPERVISORES'],
+    ['SIRDM — RELATÓRIO DE MOBILIZAÇÃO POR SUPERVISORES'],
     [
       `MODO: ${reportMode === 'diario' ? 'RELATÓRIO DIÁRIO (' + dateStr + ')' : 'RELATÓRIO GERAL (CUMULATIVO)'}`,
       '',
@@ -282,7 +282,7 @@ export function exportRelatorioSupervisoresExcel(
 
   XLSX.utils.book_append_sheet(workbook, ws2, 'Fichas Detalhadas');
 
-  const fileName = `SISMOB_Relatorio_${reportMode.toUpperCase()}_Supervisores_${dateStr}.xlsx`;
+  const fileName = `SIRDM_Relatorio_${reportMode.toUpperCase()}_Supervisores_${dateStr}.xlsx`;
   XLSX.writeFile(workbook, fileName);
 }
 
@@ -309,7 +309,7 @@ export function exportFinancasExcel(
       '',
     ],
     [
-      'SIS-MOBSOC — CONTROLO FINANCEIRO E SUBSÍDIOS DOS MOBILIZADORES (RH-MC)',
+      'SIRDM — CONTROLO FINANCEIRO E SUBSÍDIOS DOS MOBILIZADORES (RH-MC)',
       '',
       '',
       '',
@@ -390,5 +390,5 @@ export function exportFinancasExcel(
   ];
 
   XLSX.utils.book_append_sheet(workbook, ws, 'Controlo Financeiro RH');
-  XLSX.writeFile(workbook, `SISMOB_Financas_Mobilizadores_${dateStr}.xlsx`);
+  XLSX.writeFile(workbook, `SIRDM_Financas_Mobilizadores_${dateStr}.xlsx`);
 }

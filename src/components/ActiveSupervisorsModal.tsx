@@ -211,7 +211,7 @@ export const ActiveSupervisorsModal: React.FC<ActiveSupervisorsModalProps> = ({
                 </h2>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                Monitorização em tempo real das pessoas com <strong className="text-emerald-400 font-bold">sessão iniciada (logadas)</strong> no sistema SisMob
+                Monitorização em tempo real das pessoas com <strong className="text-emerald-400 font-bold">sessão iniciada (logadas)</strong> no sistema SirDm
               </p>
             </div>
           </div>

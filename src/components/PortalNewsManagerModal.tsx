@@ -28,7 +28,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
   const [subtitulo, setSubtitulo] = useState(initialPostToEdit?.subtitulo || '');
   const [conteudo, setConteudo] = useState(initialPostToEdit?.conteudo || '');
   const [categoria, setCategoria] = useState<any>(initialPostToEdit?.categoria || 'Notícia');
-  const [autor, setAutor] = useState(initialPostToEdit?.autor || user.nome || 'Administração SisMob');
+  const [autor, setAutor] = useState(initialPostToEdit?.autor || user.nome || 'Administração SirDm');
   const [destaque, setDestaque] = useState(!!initialPostToEdit?.destaque);
   const [imagemUrl, setImagemUrl] = useState(initialPostToEdit?.imagemUrl || '');
   const [lemaInstitucional, setLemaInstitucional] = useState(initialPostToEdit?.lemaInstitucional || '');
@@ -59,7 +59,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
     setSubtitulo('');
     setConteudo('');
     setCategoria('Notícia');
-    setAutor(user.nome || 'Administração SisMob');
+    setAutor(user.nome || 'Administração SirDm');
     setDestaque(false);
     setImagemUrl('');
     setLemaInstitucional('');
@@ -163,7 +163,7 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                 Total de Publicações Ativas: {posts.length}
               </span>
               <span className="text-[11px] text-slate-400">
-                As publicações aparecem automaticamente em formato de cartões na página de login do SisMob.
+                As publicações aparecem automaticamente em formato de cartões na página de login do SirDm.
               </span>
             </div>
 

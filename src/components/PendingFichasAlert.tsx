@@ -37,7 +37,7 @@ export const PendingFichasAlert: React.FC<PendingFichasAlertProps> = ({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-1.5 py-0.2 rounded-md">
                   Atenção
                 </span>
-                <span className="text-[11px] font-semibold text-slate-400">SisMob System</span>
+                <span className="text-[11px] font-semibold text-slate-400">SirDm System</span>
               </div>
               <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight mt-0.5">
                 Fichas Pendentes (+48 horas)

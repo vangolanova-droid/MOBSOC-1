@@ -101,7 +101,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     legenda: post.conteudo,
     categoria: post.categoria || 'Mobilização Social',
     data: post.data,
-    autor: post.autor || 'Administração SisMob',
+    autor: post.autor || 'Administração SirDm',
     local: post.subtitulo || 'Sumbe, Cuanza Sul',
     imagemUrl: post.imagemUrl || socialMobilizationBgImg,
     destaque: post.destaque,
@@ -156,6 +156,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     const isAdminEmailMatch =
       cleanEmail === 'v.angola.nova@gmail.com' ||
       cleanEmail === 'v.angola.nova' ||
+      cleanEmail === 'admin@sirdm.ao' ||
       cleanEmail === 'admin@sismob.ao' ||
       cleanEmail === 'admin' ||
       cleanEmail === '923591571';
@@ -191,11 +192,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     if (found) {
       if (found.status === 'pendente') {
-        setError('A sua conta de supervisor encontra-se PENDENTE DE APROVAÇÃO pelo Administrador Geral do SisMob. Aguarde a validação da Direção Municipal de Saúde.');
+        setError('A sua conta de supervisor encontra-se PENDENTE DE APROVAÇÃO pelo Administrador Geral do SirDm. Aguarde a validação da Direção Municipal de Saúde.');
         return;
       }
       if (found.status === 'rejeitado') {
-        setError('O seu pedido de registo de conta foi recusado pela Administração do SisMob.');
+        setError('O seu pedido de registo de conta foi recusado pela Administração do SirDm.');
         return;
       }
       onLogin(found);
@@ -295,18 +296,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-1 sm:gap-4">
             {/* Logo & Institution */}
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-              <div className="flex h-8 w-8 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-xs sm:text-xl text-white shadow-md shadow-blue-500/30 border border-white/30 shrink-0">
-                SM
+              <div className="flex h-8 px-2.5 sm:h-10 sm:px-3 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-xs sm:text-sm text-white shadow-md shadow-blue-500/30 border border-white/30 shrink-0 tracking-tight">
+                SirDm
               </div>
               <div>
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-sm sm:text-xl font-black tracking-tight text-white">SisMob</span>
+                  <span className="text-sm sm:text-xl font-black tracking-tight text-white">Sistema de Registo de Dados da Mobilização </span>
                   <span className="hidden sm:inline-flex rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wide whitespace-nowrap">
                     Sumbe • Cuanza Sul
                   </span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-300 hidden md:block">
-                  Programa de Mobilização Social UNICEF & Direção Municipal de Saúde • Sumbe
+                  Inovação e Transformação •
                 </p>
               </div>
             </div>
@@ -317,20 +318,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <ShieldCheck className="h-4 w-4 text-emerald-400" />
                 <span>Portal Oficial da Mobilização Social | Sumbe</span>
               </div>
-
-              <button
-                onClick={() => {
-                  setRegSuccess(false);
-                  setRegError('');
-                  setShowRegisterModal(true);
-                }}
-                className="flex items-center gap-1 sm:gap-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 px-2 sm:px-4 py-1.5 sm:py-2.5 text-[11px] sm:text-xs font-bold text-sky-300 shadow-md transition active:scale-95 cursor-pointer border border-sky-400/30 whitespace-nowrap shrink-0"
-                id="btn-open-register-header"
-              >
-                <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-400 shrink-0" />
-                <span className="hidden sm:inline">Cadastrar Supervisor</span>
-                <span className="sm:hidden">Registar</span>
-              </button>
 
               <button
                 onClick={() => {
@@ -369,7 +356,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
                   <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
-                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SisMob.
+                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SirDm.
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
                   <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
@@ -392,7 +379,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
                   <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
-                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SisMob.
+                    ⚡ <strong className="text-sky-300">ODK COLLECT:</strong> Mais de 1.250 formulários de campo sincronizados em tempo real com o SirDm.
                   </span>
                   <span className="text-sky-400 font-bold">•</span>
                   <span className="flex items-center gap-2 text-xs text-slate-200 font-medium">
@@ -735,15 +722,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-black text-white shadow-md shrink-0">
-                  SM
+                <div className="flex h-9 px-3 items-center justify-center rounded-xl bg-blue-600 font-black text-white text-xs shadow-md shrink-0 tracking-tight">
+                  SirDm
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase">
-                    Entrar no SisMob
+                    Entrar no Sistema de Registo de Dados de Mobilização 
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Autenticação de Utilizadores
+                    Inovação Tecnológica
                   </p>
                 </div>
               </div>
@@ -871,7 +858,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     Solicitação Submetida com Sucesso!
                   </h4>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed max-w-md mx-auto">
-                    O seu pedido de registo foi enviado para o Administrador Geral do SisMob. A sua conta permanecerá <span className="font-bold text-amber-700">PENDENTE</span> até aprovação pela Direção Municipal de Saúde do Sumbe.
+                    O seu pedido de registo foi enviado para o Administrador Geral do SirDm. A sua conta permanecerá <span className="font-bold text-amber-700">PENDENTE</span> até aprovação pela Direção Municipal de Saúde do Sumbe.
                   </p>
                 </div>
 
@@ -919,7 +906,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       required
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="joao.norte@sismob.gov.ao"
+                      placeholder="joao.norte@sirdm.gov.ao"
                       className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-email"
                     />

@@ -100,7 +100,7 @@ const UNICEF_INSTITUTIONAL_SLIDES = [
     badge: 'Guia do Mobilizador',
     title: 'Orientações de Preparação & Postura Profissional',
     subtitle: 'Passos Essenciais Antes, Durante e Depois da Visita',
-    content: '1. Antes do Terreno: Verificar crachá UNICEF/DMS, colete institucional e bateria do ODK Collect. 2. Durante a Visita: Saudação cordial, explicar a importância das duas gotas e ouvir com atenção. 3. Após a Visita: Registar no SisMob.',
+    content: '1. Antes do Terreno: Verificar crachá UNICEF/DMS, colete institucional e bateria do ODK Collect. 2. Durante a Visita: Saudação cordial, explicar a importância das duas gotas e ouvir com atenção. 3. Após a Visita: Registar no SirDm.',
     bgGradient: 'from-amber-950 via-slate-900 to-amber-900/60',
     borderColor: 'border-amber-400/40',
     badgeClass: 'bg-amber-500 text-slate-950 font-black',

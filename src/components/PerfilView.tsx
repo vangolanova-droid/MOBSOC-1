@@ -311,7 +311,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   const generateSql = () => {
     const now = new Date().toLocaleString('pt-PT');
     let sql = `-- ═══════════════════════════════════════════════════════════\n`;
-    sql += `-- SisMob — Script de Atualização de Utilizadores (PostgreSQL / Supabase)\n`;
+    sql += `-- SirDm — Script de Atualização de Utilizadores (PostgreSQL / Supabase)\n`;
     sql += `-- Gerado em : ${now}\n`;
     sql += `-- Emitido por: ${user.nome} (${user.email})\n`;
     sql += `-- Status     : ${isOnline ? 'SERVIDORES SINCRONIZADOS' : 'MODO OFFLINE — EXECUTAR NO SUPABASE DASHBOARD'}\n`;
@@ -348,7 +348,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SisMob_Update_Users_${new Date().toISOString().slice(0, 10)}.sql`;
+    a.download = `SirDm_Update_Users_${new Date().toISOString().slice(0, 10)}.sql`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -644,7 +644,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
               <div className="flex items-center gap-2">
                 <Type className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Fontes da Interface SisMob ({AVAILABLE_FONTS.length} Opções Disponíveis)
+                  Fontes da Interface SirDm ({AVAILABLE_FONTS.length} Opções Disponíveis)
                 </h3>
               </div>
               <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900">
@@ -678,7 +678,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
                       {font.category}
                     </span>
                     <div className="mt-2 text-xs opacity-75 font-normal tracking-tight line-clamp-1 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
-                      Sistema de Mobilização SisMob 2026
+                      Sistema de Mobilização SirDm 2026
                     </div>
                   </button>
                 );
@@ -734,7 +734,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-              Escolha a cor de fundo do menu lateral do SisMob. É aplicado instantaneamente.
+              Escolha a cor de fundo do menu lateral do SirDm. É aplicado instantaneamente.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">

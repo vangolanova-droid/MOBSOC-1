@@ -140,7 +140,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório');
     XLSX.writeFile(
       workbook,
-      `SisMob_Relatorio_${reportTab}_${new Date().toISOString().split('T')[0]}.xlsx`
+      `SirDm_Relatorio_${reportTab}_${new Date().toISOString().split('T')[0]}.xlsx`
     );
   };
 
@@ -583,7 +583,7 @@ export const RelatoriosView: React.FC<RelatoriosViewProps> = ({
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 print:border-none print:bg-white print:text-black">
           <div className="border-b border-slate-200 pb-4 text-center">
             <h2 className="text-xl font-bold tracking-tight text-slate-900 print:text-black">
-              SisMob — Sistema de Mobilização de Saúde
+              SirDm — Sistema de Registo de Dados de Mobilização
             </h2>
             <p className="text-xs font-medium text-slate-500 print:text-slate-600 mt-0.5">
               Relatório de Atividades Comunitárias de Saúde

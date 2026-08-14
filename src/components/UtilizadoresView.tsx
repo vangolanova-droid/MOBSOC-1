@@ -222,7 +222,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
                   Solicitações Pendentes de Registo de Supervisor ({pendingUsers.length})
                 </h2>
                 <p className="text-xs text-amber-800 font-medium">
-                  Os seguintes utilizadores registaram-se no portal e aguardam validação do Administrador para aceder ao SisMob.
+                  Os seguintes utilizadores registaram-se no portal e aguardam validação do Administrador para aceder ao SirDm.
                 </p>
               </div>
             </div>

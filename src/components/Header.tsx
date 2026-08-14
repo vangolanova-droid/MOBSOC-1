@@ -318,14 +318,17 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="flex items-center gap-2.5">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white font-black shadow-sm text-sm"
+            className="flex h-8 px-2.5 items-center justify-center rounded-lg bg-white font-black shadow-sm text-xs tracking-tight select-none"
             style={{ color: primaryColor }}
           >
-            SM
+            SirDm
           </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight text-white">
-              SisMob
+          <div className="leading-tight">
+            <span className="text-base sm:text-lg font-bold tracking-tight text-white block">
+              SirDm
+            </span>
+            <span className="text-[10px] font-medium text-white/85 hidden xl:inline-block">
+              Sistema de Registo de Dados de Mobilização
             </span>
           </div>
         </div>

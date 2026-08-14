@@ -99,7 +99,7 @@ export const BlocoDeNotasModal: React.FC<BlocoDeNotasModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Bloco_de_Notas_Supervisores_SisMob_${new Date().toISOString().split('T')[0]}.txt`;
+    link.download = `Bloco_de_Notas_Supervisores_SirDm_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

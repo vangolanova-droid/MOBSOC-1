@@ -295,7 +295,7 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Mobilizações');
     XLSX.writeFile(
       workbook,
-      `SisMob_Fichas_${new Date().toISOString().split('T')[0]}.xlsx`
+      `SirDm_Fichas_${new Date().toISOString().split('T')[0]}.xlsx`
     );
   };
 
