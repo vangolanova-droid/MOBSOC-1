@@ -357,7 +357,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-2.5">
       {/* Page Header */}
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-black tracking-tight text-slate-950">Dashboard Geral</h1>
           <p className="mt-0.5 text-xs font-bold text-slate-700">
@@ -365,83 +365,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ? `Acompanhamento operacional da ${user.coordNome}`
               : 'Visão geral consolidada das mobilizações de saúde no terreno'}
           </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Botão de Ponto Verde Piscante: Supervisores a Lançar Dados */}
-          <button
-            onClick={() => setIsActiveSupervisorsOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 px-3.5 py-1.5 text-xs font-black text-emerald-800 dark:text-emerald-300 shadow-2xs transition active:scale-95 cursor-pointer"
-            id="dash-btn-supervisores-ativos"
-            title="Clique para ver a lista de pessoas que estão a lançar os dados no sistema agora"
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span>{activeSupervisorsCount} Supervisores em Lançamento</span>
-          </button>
-
-          {/* BADGE DE MODO AVALIAÇÃO UNICEF SE ADMIN JÚNIOR */}
-          {isReadOnlyEvaluator(user) && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-950 shadow-2xs">
-              <Eye className="h-3.5 w-3.5 text-amber-600" />
-              <span>Modo Avaliação UNICEF (Leitura)</span>
-            </div>
-          )}
-
-          {onViewPFACases && (
-            <ActionTooltip content="Abre o painel de vigilância de Paralisia Flácida Aguda (PFA) para controlo epidemiológico da Pólio (UNICEF/OMS).">
-              <button
-                onClick={onViewPFACases}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 px-3 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer animate-pulse"
-                id="dash-btn-pfa"
-              >
-                <ShieldAlert className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                <span>Casos PFA ({casosPFA.length})</span>
-              </button>
-            </ActionTooltip>
-          )}
-
-          <ActionTooltip content="Abre a inteligência artificial para resumir dados, gerar relatórios operacionais e identificar tendências no terreno.">
-            <button
-              onClick={onOpenAiModal}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs cursor-pointer"
-              id="dash-btn-ai"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              <span>Gerar Relatório IA</span>
-            </button>
-          </ActionTooltip>
-
-          {!isReadOnlyEvaluator(user) && (
-            <ActionTooltip content="Abre o formulário digital para registar uma nova ficha de mobilização de campo.">
-              <button
-                onClick={onNewFicha}
-                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
-                id="dash-btn-nova-ficha"
-              >
-                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                <span>Nova Ficha</span>
-              </button>
-            </ActionTooltip>
-          )}
-
-          <ActionTooltip content="6 - Ficha de Gestão de Rumores (Identificação, classificação e resposta a boatos na vacinação - Acesso para Supervisores e Administradores).">
-            <button
-              onClick={onOpenRumores}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/80 text-amber-900 dark:text-amber-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition active:scale-[0.98] cursor-pointer"
-              id="dash-btn-gestao-rumores"
-            >
-              <MessageSquareWarning className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>Gestão de Rumores</span>
-              {rumores.filter((r) => r.estado === 'Ativo' || r.estado === 'Em Investigação' || r.estado === 'Crítico').length > 0 && (
-                <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-white text-[9px] font-black">
-                  {rumores.filter((r) => r.estado === 'Ativo' || r.estado === 'Em Investigação' || r.estado === 'Crítico').length}
-                </span>
-              )}
-            </button>
-          </ActionTooltip>
         </div>
       </div>
 
@@ -540,17 +463,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              {isAdmin && onOpenGoalModal && (
-                <button
-                  onClick={onOpenGoalModal}
-                  className="flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition cursor-pointer"
-                  id="dash-btn-config-metas"
-                >
-                  <Sliders className="h-3.5 w-3.5" />
-                  <span>Configurar Metas</span>
-                </button>
-              )}
-
               {totalPessoas >= 5000 && (
                 <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
                   Meta Geral Cumprida 🎉
@@ -696,14 +608,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                   <AlertCircle className="h-3 w-3 text-red-600" />
                   <span>{m.nome}</span>
-                  <button
-                    onClick={() => sendWhatsAppReminder(m.nome, 'mobilizador', m.telefone, m.coordNome)}
-                    className="ml-0.5 inline-flex items-center gap-0.5 rounded bg-emerald-600 px-1.5 py-0.2 text-[9px] font-bold text-white hover:bg-emerald-700 transition"
-                    title="Cobrar via WhatsApp"
-                  >
-                    <MessageSquare className="h-2.5 w-2.5" />
-                    <span>WhatsApp</span>
-                  </button>
+                  <span className="text-[10px] font-semibold text-red-700">({m.coordNome || 'Sem Coord.'})</span>
                 </div>
               ))}
               {pendingMobilizadores.length === 0 && (
@@ -715,22 +620,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Notification Toast Alert if Reminder Triggered */}
-      {reminderNotice && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 shadow-xs">
-          <div className="flex items-center gap-3">
-            <Bell className="h-4 w-4 text-amber-600 animate-bounce" />
-            <span className="font-medium">{reminderNotice}</span>
-          </div>
-          <button
-            onClick={() => setReminderNotice(null)}
-            className="rounded-lg bg-white border border-amber-200 px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
-          >
-            Fechar
-          </button>
-        </div>
-      )}
 
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -855,35 +744,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Controls */}
+          {/* Status Indicator */}
           <div className="flex items-center gap-2 self-start sm:self-center">
-            <button
-              onClick={() => setIsUnicefPlaying(!isUnicefPlaying)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title={isUnicefPlaying ? 'Pausar rotação' : 'Iniciar rotação'}
-            >
-              {isUnicefPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-            <button
-              onClick={() =>
-                setUnicefSlideIndex((prev) =>
-                  prev === 0 ? UNICEF_INSTITUTIONAL_SLIDES.length - 1 : prev - 1
-                )
-              }
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title="Anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() =>
-                setUnicefSlideIndex((prev) => (prev + 1) % UNICEF_INSTITUTIONAL_SLIDES.length)
-              }
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title="Próximo"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <span className="text-xs font-bold text-sky-300 bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+              Guia Institucional UNICEF
+            </span>
           </div>
         </div>
 
@@ -942,20 +807,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </motion.div>
         </AnimatePresence>
 
-        {/* Quick Navigation Tabs for the 4 UNICEF Slides */}
+        {/* Status Indicators for the 4 UNICEF Pillars */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           {UNICEF_INSTITUTIONAL_SLIDES.map((slide, idx) => {
             const isActive = idx === (unicefSlideIndex % UNICEF_INSTITUTIONAL_SLIDES.length);
             const Icon = slide.icon;
 
             return (
-              <button
+              <div
                 key={slide.id}
-                onClick={() => setUnicefSlideIndex(idx)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
                   isActive
                     ? 'border-sky-400 bg-sky-500/20 text-white shadow-md ring-2 ring-sky-400/30'
-                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                    : 'border-white/10 bg-white/5 text-slate-300'
                 }`}
               >
                 <div
@@ -973,7 +837,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     {slide.id === 'lema' ? 'Lema UNICEF' : slide.id === 'objetivos' ? 'Meta 0 Recusas' : slide.id === 'preparacao' ? 'Guia de Campo' : 'Comunicação'}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -1165,14 +1029,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Acompanhamento do envio de relatórios em tempo real
             </p>
           </div>
-          <button
-            onClick={onViewAllFichas}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
-            id="dash-btn-ver-todas"
-          >
-            <span>Ver Todas</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <span className="text-[11px] font-semibold text-slate-500">
+            5 registos mais recentes
+          </span>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1215,18 +1074,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
       </div>
-
-      {/* Modal de Supervisores a Lançar Dados */}
-      <ActiveSupervisorsModal
-        isOpen={isActiveSupervisorsOpen}
-        onClose={() => setIsActiveSupervisorsOpen(false)}
-        users={users}
-        currentUser={user}
-        fichas={fichas}
-        coordenacoes={coordenacoes}
-        mobilizadores={mobilizadores}
-        onSelectSupervisorFichas={() => onViewAllFichas()}
-      />
     </div>
   );
 };

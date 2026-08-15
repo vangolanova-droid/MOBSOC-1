@@ -1,107 +1,181 @@
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission } from '../types';
+import {
+  AuditLog,
+  Coordination,
+  CoordinationGoal,
+  Ficha,
+  Mobilizador,
+  User,
+  ODKSubmission,
+  CasoPFA,
+  FichaRumor,
+  PortalPost,
+} from '../types';
+import { enqueueFicha } from './offlineQueue';
+import { isNetworkError } from './syncService';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
   INITIAL_MOBILIZADORES,
   INITIAL_USERS,
   INITIAL_ODK_SUBMISSIONS,
+  INITIAL_CASOS_PFA,
+  INITIAL_RUMORES,
 } from '../data/initialData';
-import {
-  fsGetCoordenacoes,
-  fsSaveCoordination,
-  fsDeleteCoordination,
-  fsGetUsers,
-  fsSaveUser,
-  fsUpdateUser,
-  fsDeleteUser,
-  fsGetMobilizadores,
-  fsSaveMobilizador,
-  fsDeleteMobilizador,
-  fsGetFichas,
-  fsSaveFicha,
-  fsDeleteFicha,
-  fsGetAuditLogs,
-  fsAddAuditLog,
-  fsGetGoals,
-  fsSaveGoal,
-  fsGetNotepad,
-  fsSaveNotepad,
-  fsGetAdminAlerts,
-  fsSaveAdminAlerts,
-  fsGetAdminMessages,
-  fsAddAdminMessage,
-  fsGetPaymentStatuses,
-  fsSavePaymentStatuses,
-  fsClearAllTestData,
-  getNextMobilizadorCodigoId,
-  fsGetOdkSubmissions,
-  fsSaveOdkSubmission,
-  fsUpdateOdkSubmission,
-  fsDeleteOdkSubmission,
-} from './firebaseService';
 
-// In-memory session store (no localStorage persistence of application data)
-let sessionUserId: number | null = null;
-try {
-  const sid = sessionStorage.getItem('sismob_session');
-  if (sid) sessionUserId = JSON.parse(sid);
-} catch {
-  // fallback
+// Token e Sessão Segura
+const TOKEN_KEY = 'sismob_jwt_token';
+const USER_KEY = 'sismob_current_user';
+
+export function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredToken(token: string | null, persist = true) {
+  try {
+    if (token) {
+      if (persist) {
+        localStorage.setItem(TOKEN_KEY, token);
+      } else {
+        sessionStorage.setItem(TOKEN_KEY, token);
+      }
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // fallback
+  }
+}
+
+export function getStoredUser(): User | null {
+  try {
+    const data = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: User | null, persist = true) {
+  try {
+    if (user) {
+      if (persist) {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+      } else {
+        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+      }
+    } else {
+      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(USER_KEY);
+    }
+  } catch {
+    // fallback
+  }
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(endpoint, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Erro na requisição (${response.status})`;
+    try {
+      const errorData = await response.json();
+      if (errorData && errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      // json parse error
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json() as Promise<T>;
 }
 
 export const api = {
-  // Initial fallback seeds if Firestore is still loading
-  getCachedCoordenacoes(): Coordination[] {
-    return INITIAL_COORDINATIONS;
-  },
-  getCachedUsers(): User[] {
-    return INITIAL_USERS;
-  },
-  getCachedMobilizadores(): Mobilizador[] {
-    return INITIAL_MOBILIZADORES;
-  },
-  getCachedFichas(): Ficha[] {
-    return INITIAL_FICHAS;
-  },
-
-  // Test server connectivity with fast timeout
+  // Verificação de Conectividade com o Servidor Express
   async checkServerHealth(): Promise<boolean> {
     try {
-      const res = await fetch('/api/health', { signal: AbortSignal.timeout(1000) });
+      const res = await fetch('/api/health', { signal: AbortSignal.timeout(1500) });
       return res.ok;
     } catch {
       return false;
     }
   },
 
-  // COORDENAÇÕES
-  async getCoordenacoes(): Promise<Coordination[]> {
-    return await fsGetCoordenacoes();
+  // AUTENTICAÇÃO
+  async login(email: string, senha: string): Promise<{ token: string; user: User }> {
+    const data = await request<{ token: string; user: User }>('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, senha }),
+    });
+
+    setStoredToken(data.token);
+    setStoredUser(data.user);
+    return data;
   },
 
-  async createCoordination(nome: string, coordenador?: string, bairros?: string[], currentUser?: User | null): Promise<Coordination> {
-    const list = await this.getCoordenacoes();
-    const cleanName = nome.trim();
-    const existing = list.find((c) => c.nome.toLowerCase().trim() === cleanName.toLowerCase());
+  async registerPublicSupervisor(userData: Partial<User>): Promise<User> {
+    return await request<User>('/api/users/public-register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
 
-    if (existing) {
-      const mergedBairros = bairros && bairros.length > 0
-        ? Array.from(new Set([...(existing.bairros || []), ...bairros]))
-        : existing.bairros;
+  logout() {
+    setStoredToken(null);
+    setStoredUser(null);
+  },
 
-      return await this.updateCoordination(
-        existing.id,
-        {
-          nome: cleanName,
-          coordenador: coordenador?.trim() || existing.coordenador,
-          bairros: mergedBairros,
-        },
-        currentUser
-      );
+  // SESSÃO
+  getSessionUser(): number | null {
+    const u = getStoredUser();
+    return u ? u.id : null;
+  },
+
+  setSessionUser(id: number | null) {
+    if (id === null) {
+      this.logout();
     }
+  },
 
-    const newCoord: Coordination = { id: Date.now(), nome: cleanName, coordenador: coordenador?.trim() || '', bairros: bairros || [] };
-    await fsSaveCoordination(newCoord);
+  // COORDENAÇÕES
+  async getCoordenacoes(): Promise<Coordination[]> {
+    try {
+      return await request<Coordination[]>('/api/coordenacoes');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para coordenações cached:', e);
+      return INITIAL_COORDINATIONS;
+    }
+  },
+
+  async createCoordination(
+    nome: string,
+    coordenador?: string,
+    bairros?: string[],
+    currentUser?: User | null
+  ): Promise<Coordination> {
+    const newCoord = await request<Coordination>('/api/coordenacoes', {
+      method: 'POST',
+      body: JSON.stringify({ nome, coordenador, bairros }),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -111,18 +185,21 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Criação',
       entidade: 'Coordenação',
-      detalhes: `Coordenação "${cleanName}" criada com coordenador "${coordenador || 'N/A'}".`,
-    });
+      detalhes: `Coordenação "${nome}" criada com coordenador "${coordenador || 'N/A'}".`,
+    }).catch(console.warn);
 
     return newCoord;
   },
 
-  async updateCoordination(id: number, fields: Partial<Coordination>, currentUser?: User | null): Promise<Coordination> {
-    const list = await this.getCoordenacoes();
-    const existing = list.find((c) => c.id === id) || { id, nome: fields.nome || '' };
-    const updatedCoord: Coordination = { ...existing, ...fields };
-
-    await fsSaveCoordination(updatedCoord);
+  async updateCoordination(
+    id: number,
+    fields: Partial<Coordination>,
+    currentUser?: User | null
+  ): Promise<Coordination> {
+    const updated = await request<Coordination>(`/api/coordenacoes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -132,61 +209,46 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Edição',
       entidade: 'Coordenação',
-      detalhes: `Coordenação "${updatedCoord.nome}" (ID #${id}) foi atualizada.`,
-    });
+      detalhes: `Coordenação "${updated.nome}" (ID #${id}) foi atualizada.`,
+    }).catch(console.warn);
 
-    return updatedCoord;
+    return updated;
   },
 
   async deleteCoordination(id: number, currentUser?: User | null): Promise<boolean> {
-    const list = await this.getCoordenacoes();
-    const target = list.find((c) => c.id === id);
-    const result = await fsDeleteCoordination(id);
+    await request<{ success: boolean }>(`/api/coordenacoes/${id}`, {
+      method: 'DELETE',
+    });
 
-    if (target) {
-      await this.addAuditLog({
-        id: 'log-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        usuarioId: currentUser?.id || 0,
-        usuarioNome: currentUser?.nome || 'Sistema',
-        usuarioTipo: currentUser?.tipo || 'admin',
-        acao: 'Eliminação',
-        entidade: 'Coordenação',
-        detalhes: `Coordenação "${target.nome}" (ID #${id}) foi eliminada.`,
-      });
-    }
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Sistema',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Coordenação',
+      detalhes: `Coordenação ID #${id} foi eliminada do sistema.`,
+    }).catch(console.warn);
 
-    return result;
+    return true;
   },
 
-  // USERS
+  // UTILIZADORES
   async getUsers(): Promise<User[]> {
-    return await fsGetUsers();
+    try {
+      return await request<User[]>('/api/users');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para utilizadores cached:', e);
+      return INITIAL_USERS;
+    }
   },
 
   async createUser(user: Partial<User>, currentUser?: User | null): Promise<User> {
-    const list = await this.getUsers();
-    if (list.some((u) => u.email.toLowerCase() === (user.email || '').toLowerCase())) {
-      throw new Error('Email já registado no sistema');
-    }
-
-    const newUser: User = {
-      id: Date.now(),
-      nome: user.nome || '',
-      email: user.email || '',
-      senha: user.senha || '',
-      tipo: user.tipo || 'supervisor',
-      coordId: user.coordId || null,
-      coordNome: user.coordNome || '—',
-      coordenadorNome: user.coordenadorNome || '—',
-      fotoUrl: user.fotoUrl || '',
-      status: user.status || 'ativo',
-      telefone: user.telefone || '',
-      ronda: user.ronda || '1ª Ronda',
-      createdAt: new Date().toISOString(),
-    };
-
-    await fsSaveUser(newUser);
+    const newUser = await request<User>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(user),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -197,18 +259,16 @@ export const api = {
       acao: 'Criação',
       entidade: 'Utilizador',
       detalhes: `Utilizador "${newUser.nome}" (${newUser.email}, ${newUser.tipo}) criado.`,
-    });
+    }).catch(console.warn);
 
     return newUser;
   },
 
   async updateUser(id: number, fields: Partial<User>, currentUser?: User | null): Promise<User> {
-    const list = await this.getUsers();
-    const index = list.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error('Utilizador não encontrado');
-
-    const updatedUser = { ...list[index], ...fields };
-    await fsUpdateUser(id, fields);
+    const updated = await request<User>(`/api/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -218,59 +278,46 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Edição',
       entidade: 'Utilizador',
-      detalhes: `Utilizador "${updatedUser.nome}" (${updatedUser.email}) atualizado.`,
-    });
+      detalhes: `Utilizador "${updated.nome}" (${updated.email}) atualizado.`,
+    }).catch(console.warn);
 
-    return updatedUser;
+    return updated;
   },
 
   async deleteUser(id: number, currentUser?: User | null): Promise<boolean> {
-    const list = await this.getUsers();
-    const target = list.find((u) => u.id === id);
-    const result = await fsDeleteUser(id);
+    await request<{ success: boolean }>(`/api/users/${id}`, {
+      method: 'DELETE',
+    });
 
-    if (target) {
-      await this.addAuditLog({
-        id: 'log-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        usuarioId: currentUser?.id || 0,
-        usuarioNome: currentUser?.nome || 'Sistema',
-        usuarioTipo: currentUser?.tipo || 'admin',
-        acao: 'Eliminação',
-        entidade: 'Utilizador',
-        detalhes: `Utilizador "${target.nome}" (${target.email}) eliminado.`,
-      });
-    }
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Sistema',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Utilizador',
+      detalhes: `Utilizador ID #${id} eliminado.`,
+    }).catch(console.warn);
 
-    return result;
+    return true;
   },
 
   // MOBILIZADORES
   async getMobilizadores(): Promise<Mobilizador[]> {
-    return await fsGetMobilizadores();
+    try {
+      return await request<Mobilizador[]>('/api/mobilizadores');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para mobilizadores cached:', e);
+      return INITIAL_MOBILIZADORES;
+    }
   },
 
   async createMobilizador(mob: Partial<Mobilizador>, currentUser?: User | null): Promise<Mobilizador> {
-    const list = await this.getMobilizadores();
-    const codigoId = mob.codigoId || getNextMobilizadorCodigoId(list);
-
-    const newMob: Mobilizador = {
-      id: Date.now(),
-      codigoId,
-      nome: mob.nome || '',
-      morada: mob.morada || '',
-      telefone: mob.telefone || '',
-      numeroEquipa: mob.numeroEquipa || '',
-      funcao: mob.funcao || 'Mobilizador Comunitário',
-      ronda: mob.ronda || '1ª Ronda',
-      coordId: mob.coordId || null,
-      coordNome: mob.coordNome || 'Geral',
-      supervisorId: mob.supervisorId || null,
-      supervisorNome: mob.supervisorNome || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    await fsSaveMobilizador(newMob);
+    const newMob = await request<Mobilizador>('/api/mobilizadores', {
+      method: 'POST',
+      body: JSON.stringify(mob),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -281,27 +328,20 @@ export const api = {
       acao: 'Criação',
       entidade: 'Mobilizador',
       detalhes: `Mobilizador "${newMob.nome}" (ID: ${newMob.codigoId}, ${newMob.coordNome}) criado.`,
-    });
+    }).catch(console.warn);
 
     return newMob;
   },
 
-  async updateMobilizador(id: number, fields: Partial<Mobilizador>, currentUser?: User | null): Promise<Mobilizador> {
-    const list = await this.getMobilizadores();
-    const existing = list.find((m) => m.id === id) || {
-      id,
-      nome: fields.nome || '',
-      morada: fields.morada || '',
-      telefone: fields.telefone || '',
-      funcao: fields.funcao || 'Mobilizador Comunitário',
-      ronda: fields.ronda || '1ª Ronda',
-      coordId: fields.coordId || null,
-      coordNome: fields.coordNome || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedMob: Mobilizador = { ...existing, ...fields };
-    await fsSaveMobilizador(updatedMob);
+  async updateMobilizador(
+    id: number,
+    fields: Partial<Mobilizador>,
+    currentUser?: User | null
+  ): Promise<Mobilizador> {
+    const updated = await request<Mobilizador>(`/api/mobilizadores/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -311,92 +351,159 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Edição',
       entidade: 'Mobilizador',
-      detalhes: `Mobilizador "${updatedMob.nome}" (ID #${id}) atualizado.`,
-    });
+      detalhes: `Mobilizador "${updated.nome}" (ID #${id}) atualizado.`,
+    }).catch(console.warn);
 
-    return updatedMob;
+    return updated;
   },
 
   async deleteMobilizador(id: number, currentUser?: User | null): Promise<boolean> {
-    const list = await this.getMobilizadores();
-    const target = list.find((m) => m.id === id);
-    const result = await fsDeleteMobilizador(id);
+    await request<{ success: boolean }>(`/api/mobilizadores/${id}`, {
+      method: 'DELETE',
+    });
 
-    if (target) {
-      await this.addAuditLog({
-        id: 'log-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        usuarioId: currentUser?.id || 0,
-        usuarioNome: currentUser?.nome || 'Sistema',
-        usuarioTipo: currentUser?.tipo || 'admin',
-        acao: 'Eliminação',
-        entidade: 'Mobilizador',
-        detalhes: `Mobilizador "${target.nome}" (ID #${id}) eliminado.`,
-      });
-    }
-
-    return result;
-  },
-
-  // FICHAS
-  async getFichas(): Promise<Ficha[]> {
-    return await fsGetFichas();
-  },
-
-  async createFicha(ficha: Partial<Ficha>, currentUser?: User | null): Promise<Ficha> {
-    const newFicha: Ficha = {
-      ...(ficha as Ficha),
-      id: ficha.id || Date.now(),
-      createdAt: new Date().toISOString(),
-    };
-
-    await fsSaveFicha(newFicha);
-
-    // Auto log audit in Firebase
     await this.addAuditLog({
       id: 'log-' + Date.now(),
       timestamp: new Date().toISOString(),
-      usuarioId: currentUser?.id || ficha.userId || 0,
-      usuarioNome: currentUser?.nome || ficha.supervisorNome || ficha.mobilizador || 'Sistema',
-      usuarioTipo: currentUser?.tipo || 'supervisor',
-      acao: 'Criação',
-      entidade: 'Ficha',
-      detalhes: `Ficha criada para "${newFicha.bairro}" (${newFicha.totalPessoas} pessoas, ${newFicha.ronda || '1ª Ronda'})`,
-      fichaId: newFicha.id,
-    });
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Sistema',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Mobilizador',
+      detalhes: `Mobilizador ID #${id} eliminado.`,
+    }).catch(console.warn);
 
-    return newFicha;
+    return true;
   },
 
-  async deleteFicha(id: number, currentUser?: User | null): Promise<boolean> {
-    const list = await this.getFichas();
-    const target = list.find((f) => f.id === id);
-    await fsDeleteFicha(id);
+  // FICHAS DE CAMPO
+  async getFichas(): Promise<Ficha[]> {
+    try {
+      return await request<Ficha[]>('/api/fichas');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para fichas cached:', e);
+      return INITIAL_FICHAS;
+    }
+  },
 
-    if (target) {
+  async createFicha(ficha: Partial<Ficha>, currentUser?: User | null): Promise<Ficha> {
+    const fullFicha: Ficha = {
+      id: ficha.id || Date.now(),
+      provincia: ficha.provincia || 'Cuanza Sul',
+      municipio: ficha.municipio || 'Sumbe',
+      comuna: ficha.comuna || 'Sumbe',
+      bairro: ficha.bairro || '',
+      data: ficha.data || new Date().toISOString().split('T')[0],
+      ronda: ficha.ronda || '1ª Ronda',
+      mobilizador: ficha.mobilizador || '',
+      mobilizadorId: ficha.mobilizadorId || null,
+      mobilizadorCodigoId: ficha.mobilizadorCodigoId || '',
+      telefone: ficha.telefone || '',
+      numeroEquipa: ficha.numeroEquipa || '',
+      coordId: ficha.coordId ?? null,
+      coordNome: ficha.coordNome || '',
+      coordenadorNome: ficha.coordenadorNome || '',
+      userId: ficha.userId || currentUser?.id || 0,
+      supervisorNome: ficha.supervisorNome || currentUser?.nome || '',
+      tableData: ficha.tableData || {},
+      totalLocais: ficha.totalLocais || 0,
+      totalPessoas: ficha.totalPessoas || 0,
+      sim: ficha.sim || 0,
+      nao: ficha.nao || 0,
+      motivo: ficha.motivo || '',
+      pfaDetetado: ficha.pfaDetetado || false,
+      pfaCasos: ficha.pfaCasos || [],
+      createdAt: ficha.createdAt || new Date().toISOString(),
+      status: ficha.status || 'aprovada',
+      syncStatus: 'synced',
+    };
+
+    // 1. Se estiver completamente sem ligação à internet, vai diretamente para a fila offline (evita travar a UI)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const queued = await enqueueFicha(fullFicha, currentUser);
+      console.log('[SisMob Offline] Ficha guardada localmente em IndexedDB (sem internet):', queued.localId);
+      return queued.ficha;
+    }
+
+    // 2. Se reporta online, tenta o envio com timeout de segurança (6s) para conexões de campo lentas
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch('/api/fichas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
+        },
+        body: JSON.stringify(fullFicha),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Erro na API do servidor (${res.status})`);
+      }
+
+      const created: Ficha = await res.json();
+      const resultFicha: Ficha = {
+        ...created,
+        syncStatus: 'synced',
+      };
+
       await this.addAuditLog({
         id: 'log-' + Date.now(),
         timestamp: new Date().toISOString(),
-        usuarioId: currentUser?.id || 0,
-        usuarioNome: currentUser?.nome || 'Administrador',
-        usuarioTipo: currentUser?.tipo || 'admin',
-        acao: 'Eliminação',
+        usuarioId: currentUser?.id || resultFicha.userId || 0,
+        usuarioNome: currentUser?.nome || resultFicha.supervisorNome || resultFicha.mobilizador || 'Sistema',
+        usuarioTipo: currentUser?.tipo || 'supervisor',
+        acao: 'Criação',
         entidade: 'Ficha',
-        detalhes: `Ficha ID #${id} de "${target.mobilizador}" (${target.bairro}) foi eliminada.`,
-        fichaId: id,
-      });
+        detalhes: `Ficha criada para "${resultFicha.bairro}" (${resultFicha.totalPessoas} pessoas, ${resultFicha.ronda || '1ª Ronda'})`,
+        fichaId: resultFicha.id,
+      }).catch(console.warn);
+
+      return resultFicha;
+    } catch (err) {
+      // 3. Em caso de falha de rede/timeout/servidor inacessível, cai em segurança para o IndexedDB
+      if (isNetworkError(err)) {
+        console.warn('[SisMob Offline] Falha de rede/timeout ao enviar ficha. A enfileirar no IndexedDB...');
+        const queued = await enqueueFicha(fullFicha, currentUser);
+        return queued.ficha;
+      }
+      // Se for outro erro, ainda assim protege os dados da criança/família guardando localmente
+      console.warn('[SisMob Offline] Erro inesperado. A assegurar integridade dos dados no dispositivo...');
+      const queued = await enqueueFicha(fullFicha, currentUser);
+      return queued.ficha;
     }
+  },
+
+  async deleteFicha(id: number, currentUser?: User | null): Promise<boolean> {
+    await request<{ success: boolean }>(`/api/fichas/${id}`, {
+      method: 'DELETE',
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Ficha',
+      detalhes: `Ficha ID #${id} foi eliminada do sistema.`,
+      fichaId: id,
+    }).catch(console.warn);
 
     return true;
   },
 
   async updateFicha(id: number, fields: Partial<Ficha>, currentUser?: User | null): Promise<Ficha> {
-    const list = await this.getFichas();
-    const existing = list.find((f) => f.id === id);
-    if (!existing) throw new Error('Ficha não encontrada');
-
-    const updatedFicha: Ficha = { ...existing, ...fields };
-    await fsSaveFicha(updatedFicha);
+    const updatedFicha = await request<Ficha>(`/api/fichas/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -406,107 +513,186 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Edição',
       entidade: 'Ficha',
-      detalhes: `Ficha ID #${id} editada. Bairro: ${updatedFicha.bairro}, Pessoas: ${updatedFicha.totalPessoas}, Mobilizador: ${updatedFicha.mobilizador}`,
+      detalhes: `Ficha ID #${id} editada no bairro "${updatedFicha.bairro}".`,
       fichaId: id,
-    });
+    }).catch(console.warn);
 
     return updatedFicha;
   },
 
-  // Audit Logs
-  async getAuditLogs(): Promise<AuditLog[]> {
-    return await fsGetAuditLogs();
+  // CASOS DE VIGILÂNCIA EPIDEMIOLÓGICA (PFA)
+  async getCasosPFA(): Promise<CasoPFA[]> {
+    try {
+      return await request<CasoPFA[]>('/api/casos-pfa');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para Casos PFA cached:', e);
+      return INITIAL_CASOS_PFA;
+    }
   },
 
-  async addAuditLog(log: AuditLog): Promise<void> {
-    await fsAddAuditLog(log);
+  async createCasoPFA(caso: Partial<CasoPFA>, currentUser?: User | null): Promise<CasoPFA> {
+    const newCaso = await request<CasoPFA>('/api/casos-pfa', {
+      method: 'POST',
+      body: JSON.stringify(caso),
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Supervisor',
+      usuarioTipo: currentUser?.tipo || 'supervisor',
+      acao: 'Criação',
+      entidade: 'Caso PFA',
+      detalhes: `Caso suspeito de PFA notificado: "${newCaso.nomeCrianca}" (ID: ${newCaso.id}, Bairro: ${newCaso.bairro})`,
+    }).catch(console.warn);
+
+    return newCaso;
   },
 
-  // Coordination Goals
-  async getGoals(): Promise<CoordinationGoal[]> {
-    return await fsGetGoals();
+  async updateCasoPFA(id: string, fields: Partial<CasoPFA>, currentUser?: User | null): Promise<CasoPFA> {
+    const updated = await request<CasoPFA>(`/api/casos-pfa/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Supervisor',
+      usuarioTipo: currentUser?.tipo || 'supervisor',
+      acao: 'Edição',
+      entidade: 'Caso PFA',
+      detalhes: `Caso de PFA "${updated.nomeCrianca}" (ID: ${updated.id}) atualizado para status "${updated.statusNotificacao}".`,
+    }).catch(console.warn);
+
+    return updated;
   },
 
-  async saveGoal(goal: CoordinationGoal): Promise<void> {
-    await fsSaveGoal(goal);
+  async deleteCasoPFA(id: string, currentUser?: User | null): Promise<boolean> {
+    await request<{ success: boolean }>(`/api/casos-pfa/${id}`, {
+      method: 'DELETE',
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Caso PFA',
+      detalhes: `Caso de PFA ID "${id}" foi eliminado.`,
+    }).catch(console.warn);
+
+    return true;
   },
 
-  // Notepad
-  async getNotepad(): Promise<string | null> {
-    return await fsGetNotepad();
+  // GESTÃO DE RUMORES & HESITAÇÃO VACINAL
+  async getRumores(): Promise<FichaRumor[]> {
+    try {
+      return await request<FichaRumor[]>('/api/rumores');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para Rumores cached:', e);
+      return INITIAL_RUMORES;
+    }
   },
 
-  async saveNotepad(text: string): Promise<void> {
-    await fsSaveNotepad(text);
+  async createRumor(rumor: Partial<FichaRumor>, currentUser?: User | null): Promise<FichaRumor> {
+    const newRumor = await request<FichaRumor>('/api/rumores', {
+      method: 'POST',
+      body: JSON.stringify(rumor),
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Supervisor',
+      usuarioTipo: currentUser?.tipo || 'supervisor',
+      acao: 'Criação',
+      entidade: 'Rumor',
+      detalhes: `Novo rumor registado (${newRumor.categoriaRumor || 'Geral'}): "${(newRumor.rumor || '').slice(0, 50)}..."`,
+    }).catch(console.warn);
+
+    return newRumor;
   },
 
-  // Admin Alerts & Messages
-  async getAdminAlerts(): Promise<Record<string, boolean>> {
-    return await fsGetAdminAlerts();
+  async updateRumor(id: string, fields: Partial<FichaRumor>, currentUser?: User | null): Promise<FichaRumor> {
+    const updated = await request<FichaRumor>(`/api/rumores/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Supervisor',
+      usuarioTipo: currentUser?.tipo || 'supervisor',
+      acao: 'Edição',
+      entidade: 'Rumor',
+      detalhes: `Rumor ID "${id}" atualizado para status "${updated.estado}".`,
+    }).catch(console.warn);
+
+    return updated;
   },
 
-  async saveAdminAlerts(alerts: Record<string, boolean>): Promise<void> {
-    await fsSaveAdminAlerts(alerts);
+  async deleteRumor(id: string, currentUser?: User | null): Promise<boolean> {
+    await request<{ success: boolean }>(`/api/rumores/${id}`, {
+      method: 'DELETE',
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Rumor',
+      detalhes: `Rumor ID "${id}" eliminado.`,
+    }).catch(console.warn);
+
+    return true;
   },
 
-  async getAdminMessages(): Promise<any[]> {
-    return await fsGetAdminMessages();
-  },
-
-  async addAdminMessage(msg: any): Promise<void> {
-    await fsAddAdminMessage(msg);
-  },
-
-  // Payment Statuses
-  async getPaymentStatuses(): Promise<Record<number, 'pendente' | 'pago'>> {
-    return await fsGetPaymentStatuses();
-  },
-
-  async savePaymentStatuses(statuses: Record<number, 'pendente' | 'pago'>): Promise<void> {
-    await fsSavePaymentStatuses(statuses);
-  },
-
-  // ODK SUBMISSIONS
+  // SUBMISSÕES DO ODK COLLECT
   async getOdkSubmissions(): Promise<ODKSubmission[]> {
-    return await fsGetOdkSubmissions();
+    try {
+      return await request<ODKSubmission[]>('/api/odk-submissions');
+    } catch (e) {
+      console.warn('[SisMob API] Fallback para ODK Submissions cached:', e);
+      return INITIAL_ODK_SUBMISSIONS;
+    }
   },
 
   async createOdkSubmission(
     subData: Partial<ODKSubmission>,
     currentUser?: User | null
   ): Promise<ODKSubmission> {
-    const newSub: ODKSubmission = {
-      id: 'odk_' + Date.now(),
-      supervisorId: currentUser?.id || subData.supervisorId || 0,
-      supervisorNome: currentUser?.nome || subData.supervisorNome || 'Supervisor',
-      coordId: subData.coordId ?? currentUser?.coordId ?? null,
-      coordNome: subData.coordNome || currentUser?.coordNome || 'Sem Coordenação',
-      formId: subData.formId || 'form_odk_general',
-      formNome: subData.formNome || 'Formulário ODK Collect',
-      dataEnvio: subData.dataEnvio || new Date().toISOString().split('T')[0],
-      horaEnvio: subData.horaEnvio || new Date().toTimeString().slice(0, 5),
-      totalFormularios: subData.totalFormularios || 1,
-      dispositivoAndroid: subData.dispositivoAndroid || 'Android Mobile (ODK Collect)',
-      codigoReciboODK: subData.codigoReciboODK || `ODK-${Date.now().toString().slice(-6)}`,
-      status: subData.status || 'pendente',
-      confirmadoPorAdmin: false,
-      observacoes: subData.observacoes || '',
-      imagemComprovativo: subData.imagemComprovativo || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    await fsSaveOdkSubmission(newSub);
+    const newSub = await request<ODKSubmission>('/api/odk-submissions', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...subData,
+        supervisorId: currentUser?.id || subData.supervisorId || 0,
+        supervisorNome: currentUser?.nome || subData.supervisorNome || 'Supervisor',
+        coordId: subData.coordId ?? currentUser?.coordId ?? null,
+        coordNome: subData.coordNome || currentUser?.coordNome || 'Sem Coordenação',
+      }),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
       timestamp: new Date().toISOString(),
       usuarioId: currentUser?.id || 0,
-      usuarioNome: currentUser?.nome || 'Utilizador',
+      usuarioNome: currentUser?.nome || 'Supervisor',
       usuarioTipo: currentUser?.tipo || 'supervisor',
       acao: 'Criação',
       entidade: 'Submissão ODK',
-      detalhes: `Confirmado envio de ${newSub.totalFormularios} formulários do ODK Collect (${newSub.formNome}) com recibo ${newSub.codigoReciboODK}.`,
-    });
+      detalhes: `Submissão do ODK Collect enviada (${newSub.totalFormularios} formulários, recibo: ${newSub.codigoReciboODK}).`,
+    }).catch(console.warn);
 
     return newSub;
   },
@@ -522,12 +708,13 @@ export const api = {
       confirmadoPorAdmin: status === 'confirmado',
       adminConfirmadorNome: currentUser?.nome || 'Administrador',
       dataConfirmacaoAdmin: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      ...(adminNotes !== undefined ? { observacoes: adminNotes } : {}),
     };
-    if (adminNotes !== undefined) {
-      updateObj.observacoes = adminNotes;
-    }
 
-    await fsUpdateOdkSubmission(id, updateObj);
+    await request(`/api/odk-submissions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updateObj),
+    });
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -537,36 +724,156 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Edição',
       entidade: 'Submissão ODK',
-      detalhes: `Status da submissão ODK ${id} alterado para "${status.toUpperCase()}" por ${currentUser?.nome || 'Administrador'}.`,
-    });
+      detalhes: `Status da submissão ODK "${id}" alterado para "${status.toUpperCase()}".`,
+    }).catch(console.warn);
   },
 
   async deleteOdkSubmission(id: string, currentUser?: User | null): Promise<void> {
+    await request<{ success: boolean }>(`/api/odk-submissions/${id}`, {
+      method: 'DELETE',
+    });
+
+    await this.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id || 0,
+      usuarioNome: currentUser?.nome || 'Administrador',
+      usuarioTipo: currentUser?.tipo || 'admin',
+      acao: 'Eliminação',
+      entidade: 'Submissão ODK',
+      detalhes: `Submissão ODK "${id}" eliminada.`,
+    }).catch(console.warn);
+  },
+
+  // AUDIT LOGS
+  async getAuditLogs(): Promise<AuditLog[]> {
     try {
-      await fsDeleteOdkSubmission(id);
-    } catch (e) {
-      console.warn('Erro ao eliminar no Firestore fsDeleteOdkSubmission:', e);
-    }
-    try {
-      await this.addAuditLog({
-        id: 'log-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        usuarioId: currentUser?.id || 0,
-        usuarioNome: currentUser?.nome || 'Utilizador',
-        usuarioTipo: currentUser?.tipo || 'admin',
-        acao: 'Eliminação',
-        entidade: 'Submissão ODK',
-        detalhes: `Submissão ODK ${id} eliminada por ${currentUser?.nome || 'Utilizador'}.`,
-      });
-    } catch (e) {
-      console.warn('Erro ao guardar log de auditoria de eliminação ODK:', e);
+      return await request<AuditLog[]>('/api/audit-logs');
+    } catch {
+      return [];
     }
   },
 
-  // Clear Test Data
+  async addAuditLog(log: AuditLog): Promise<void> {
+    try {
+      await request('/api/audit-logs', {
+        method: 'POST',
+        body: JSON.stringify(log),
+      });
+    } catch (e) {
+      console.warn('[SisMob API] Erro ao gravar audit log:', e);
+    }
+  },
 
+  // METAS (COORDINATION GOALS)
+  async getGoals(): Promise<CoordinationGoal[]> {
+    try {
+      return await request<CoordinationGoal[]>('/api/goals');
+    } catch {
+      return [];
+    }
+  },
+
+  async saveGoal(goal: CoordinationGoal): Promise<void> {
+    await request('/api/goals', {
+      method: 'POST',
+      body: JSON.stringify(goal),
+    });
+  },
+
+  // BLOCO DE NOTAS
+  async getNotepad(): Promise<string | null> {
+    try {
+      const data = await request<{ text: string }>('/api/notepad');
+      return data.text;
+    } catch {
+      return '';
+    }
+  },
+
+  async saveNotepad(text: string): Promise<void> {
+    await request('/api/notepad', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  },
+
+  // ALERTAS ADMINISTRATIVOS
+  async getAdminAlerts(): Promise<Record<string, boolean>> {
+    try {
+      return await request<Record<string, boolean>>('/api/alerts');
+    } catch {
+      return {};
+    }
+  },
+
+  async saveAdminAlerts(alerts: Record<string, boolean>): Promise<void> {
+    await request('/api/alerts', {
+      method: 'POST',
+      body: JSON.stringify({ alerts }),
+    });
+  },
+
+  // MENSAGENS INTERNAS DO SISTEMA
+  async getAdminMessages(): Promise<any[]> {
+    try {
+      return await request<any[]>('/api/admin-messages');
+    } catch {
+      return [];
+    }
+  },
+
+  async addAdminMessage(msg: any): Promise<void> {
+    await request('/api/admin-messages', {
+      method: 'POST',
+      body: JSON.stringify(msg),
+    });
+  },
+
+  // PAGAMENTOS
+  async getPaymentStatuses(): Promise<Record<number, 'pendente' | 'pago'>> {
+    try {
+      return await request<Record<number, 'pendente' | 'pago'>>('/api/payment-statuses');
+    } catch {
+      return {};
+    }
+  },
+
+  async savePaymentStatuses(statuses: Record<number, 'pendente' | 'pago'>): Promise<void> {
+    await request('/api/payment-statuses', {
+      method: 'POST',
+      body: JSON.stringify({ statuses }),
+    });
+  },
+
+  // NOTÍCIAS DO PORTAL
+  async getPortalPosts(): Promise<PortalPost[]> {
+    try {
+      return await request<PortalPost[]>('/api/portal-posts');
+    } catch {
+      return [];
+    }
+  },
+
+  async savePortalPost(post: PortalPost): Promise<void> {
+    await request('/api/portal-posts', {
+      method: 'POST',
+      body: JSON.stringify(post),
+    });
+  },
+
+  async deletePortalPost(id: string): Promise<void> {
+    await request(`/api/portal-posts/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // LIMPEZA DE DADOS DE TESTE
   async clearAllTestData(currentUser?: User | null): Promise<void> {
-    await fsClearAllTestData();
+    await request('/api/clear-test-data', {
+      method: 'POST',
+    });
+
     await this.addAuditLog({
       id: 'log-' + Date.now(),
       timestamp: new Date().toISOString(),
@@ -575,35 +882,41 @@ export const api = {
       usuarioTipo: currentUser?.tipo || 'admin',
       acao: 'Eliminação',
       entidade: 'Base de Dados de Teste',
-      detalhes: `Os dados de teste foram eliminados com sucesso da base de dados Firebase por ${currentUser?.nome || 'Administrador'}.`,
-    });
+      detalhes: `Os dados de teste foram eliminados com sucesso do backend seguro por ${currentUser?.nome || 'Administrador'}.`,
+    }).catch(console.warn);
   },
 
-  // AI Insights
+  // AI INSIGHTS
   async getAiInsights(fichas: Ficha[]) {
-    const res = await fetch('/api/ai-insights', {
+    return await request('/api/ai-insights', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fichas }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Erro ao gerar análise');
-    }
-    return await res.json();
   },
 
-  // Session
-  getSessionUser(): number | null {
-    return sessionUserId;
-  },
-  setSessionUser(id: number | null) {
-    sessionUserId = id;
-    if (id !== null) {
-      sessionStorage.setItem('sismob_session', JSON.stringify(id));
-    } else {
-      sessionStorage.removeItem('sismob_session');
-    }
+  // REAL-TIME SSE SUBSCRIPTION
+  subscribeToEvents(onEvent: (event: { entity: string; action: string; data?: any }) => void): () => void {
+    const token = getStoredToken();
+    const url = token ? `/api/events?token=${encodeURIComponent(token)}` : '/api/events';
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload && payload.entity) {
+          onEvent(payload);
+        }
+      } catch (err) {
+        // ignora mensagens não json (heartbeat, connected)
+      }
+    };
+
+    eventSource.onerror = () => {
+      // EventSource tentará reconectar automaticamente
+    };
+
+    return () => {
+      eventSource.close();
+    };
   },
 };
-

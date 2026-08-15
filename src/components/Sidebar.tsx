@@ -22,10 +22,12 @@ import {
   Newspaper,
   MessageSquareWarning,
   UserPlus,
+  Settings,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { hasElevatedAccess, isAdmin as checkIsAdmin, isReadOnlyEvaluator } from '../utils/permissions';
+import { SettingsModal } from './SettingsModal';
 import {
   Theme,
   UserThemeConfig,
@@ -44,9 +46,13 @@ interface SidebarProps {
   isOpen: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  theme?: 'light' | 'dark';
   currentPalette?: Theme;
   themeConfig?: UserThemeConfig;
+  onSelectPalette?: (palette: Theme) => void;
   onUpdateThemeConfig?: (config: UserThemeConfig) => void;
+  onToggleTheme?: () => void;
+  onOpenAiModal?: () => void;
   onSelectTab: (tab: string) => void;
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
@@ -65,9 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   isCollapsed: propIsCollapsed,
   onToggleCollapse,
+  theme = 'light',
   currentPalette,
   themeConfig,
+  onSelectPalette,
   onUpdateThemeConfig,
+  onToggleTheme,
+  onOpenAiModal,
   onSelectTab,
   onOpenNotepad,
   onOpenAuditLogs,
@@ -80,6 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isElevated = hasElevatedAccess(user);
   const todayStr = new Date().toISOString().split('T')[0];
   const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [internalCollapsed, setInternalCollapsed] = React.useState(false);
 
   // Synchronize internal collapsed state with prop if provided
@@ -826,6 +837,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
+          {/* Botão de Configurações do Sistema - Debaixo da Cor do Sidebar */}
+          {!isCollapsed ? (
+            <ActionTooltip content="Configurações do Sistema: temas, fontes, cantos arredondados e modo escuro.">
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition shadow-2xs cursor-pointer ${
+                  currentSidebarPreset.isDark
+                    ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                    : 'bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200'
+                }`}
+                title="Clique para abrir as Configurações do Sistema"
+                id="btn-sidebar-configuracoes"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Settings className="h-4 w-4 shrink-0 text-blue-500 animate-spin-slow" />
+                  <span className="truncate">Configurações</span>
+                </div>
+                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                  Sistema
+                </span>
+              </button>
+            </ActionTooltip>
+          ) : (
+            <ActionTooltip content="Configurações do Sistema">
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className={`flex h-10 w-10 items-center justify-center mx-auto rounded-xl border transition cursor-pointer ${
+                  currentSidebarPreset.isDark
+                    ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                    : 'bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200'
+                }`}
+                title="Configurações do Sistema"
+                id="btn-sidebar-configuracoes-recolhido"
+              >
+                <Settings className="h-5 w-5 text-blue-500" />
+              </button>
+            </ActionTooltip>
+          )}
+
           {/* Logout Button */}
           {renderNavItem({
             id: 'btn-logout',
@@ -839,6 +889,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
       </aside>
+
+      {/* Modal de Configurações do Sistema */}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        user={user}
+        theme={theme}
+        currentPalette={currentPalette}
+        themeConfig={themeConfig}
+        onSelectPalette={onSelectPalette}
+        onUpdateThemeConfig={onUpdateThemeConfig}
+        onToggleTheme={onToggleTheme}
+        onOpenAiModal={onOpenAiModal}
+        onOpenNotepad={onOpenNotepad}
+        onOpenPortalNews={onOpenPortalNews}
+        onOpenAuditLogs={onOpenAuditLogs}
+      />
     </>
   );
 };
