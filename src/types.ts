@@ -206,6 +206,27 @@ export interface ODKSubmission {
   createdAt: string;
 }
 
+export interface FichaRumor {
+  id: string;
+  rumor: string;
+  local: string;
+  data: string;
+  fonte: string;
+  resposta: string;
+  responsavel: string;
+  responsavelId?: number;
+  responsavelCargo?: string;
+  estado: 'Ativo' | 'Em Investigação' | 'Em Resposta' | 'Mitigado' | 'Crítico';
+  nivelRisco?: 'Alto' | 'Médio' | 'Baixo';
+  categoriaRumor?: string;
+  coordId?: number | null;
+  coordNome?: string;
+  populacaoAfetada?: string;
+  observacoes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface PortalPost {
   id: string;
   titulo: string;

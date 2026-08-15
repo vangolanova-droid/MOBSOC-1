@@ -41,6 +41,7 @@ import {
   HeartHandshake,
   Award,
   HelpCircle,
+  MessageSquareWarning,
 } from 'lucide-react';
 import {
   BarChart,
@@ -59,7 +60,7 @@ import {
 } from 'recharts';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
-import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User, CasoPFA } from '../types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, PortalPost, User, CasoPFA, FichaRumor } from '../types';
 import { LOCATION_CONFIGS } from '../data/initialData';
 
 const UNICEF_INSTITUTIONAL_SLIDES = [
@@ -138,7 +139,9 @@ interface DashboardViewProps {
   users: User[];
   goals?: CoordinationGoal[];
   portalPosts?: PortalPost[];
+  rumores?: FichaRumor[];
   onNewFicha: () => void;
+  onOpenRumores?: () => void;
   onViewAllFichas: () => void;
   onViewPFACases?: () => void;
   onOpenAiModal: () => void;
@@ -157,7 +160,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   users,
   goals = [],
   portalPosts = [],
+  rumores = [],
   onNewFicha,
+  onOpenRumores,
   onViewAllFichas,
   onViewPFACases,
   onOpenAiModal,
@@ -405,6 +410,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
               <span>Nova Ficha</span>
+            </button>
+          </ActionTooltip>
+
+          <ActionTooltip content="6 - Ficha de Gestão de Rumores (Identificação, classificação e resposta a boatos na vacinação - Acesso para Supervisores e Administradores).">
+            <button
+              onClick={onOpenRumores}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/80 text-amber-900 dark:text-amber-200 px-3 py-1.5 text-xs font-semibold shadow-2xs transition active:scale-[0.98] cursor-pointer"
+              id="dash-btn-gestao-rumores"
+            >
+              <MessageSquareWarning className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Gestão de Rumores</span>
+              {rumores.filter((r) => r.estado === 'Ativo' || r.estado === 'Em Investigação' || r.estado === 'Crítico').length > 0 && (
+                <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-white text-[9px] font-black">
+                  {rumores.filter((r) => r.estado === 'Ativo' || r.estado === 'Em Investigação' || r.estado === 'Crítico').length}
+                </span>
+              )}
             </button>
           </ActionTooltip>
         </div>

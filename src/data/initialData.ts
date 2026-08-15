@@ -1,4 +1,4 @@
-import { Coordination, Ficha, LocationConfig, Mobilizador, User } from '../types';
+import { Coordination, Ficha, LocationConfig, Mobilizador, User, FichaRumor } from '../types';
 
 export const LOCATION_CONFIGS: LocationConfig[] = [
   { key: 'casa', label: 'Casa a Casa', group: 'casa' },
@@ -374,4 +374,65 @@ export const INITIAL_CASOS_PFA: import('../types').CasoPFA[] = [
     createdAt: '2026-08-08T16:00:00Z',
   },
 ];
+
+export const INITIAL_RUMORES: FichaRumor[] = [
+  {
+    id: 'rumor_2026_001',
+    rumor: 'Boato a circular de que a vacina da Pólio causa infertilidade futura nas crianças do sexo feminino.',
+    local: 'Bairro 15 de Março (Setor da Praça Velha)',
+    data: '2026-08-03',
+    fonte: 'Conversas no Mercado Informal e Praças Comunitárias',
+    resposta: 'Realizada palestra de esclarecimento com o Soba Local e equipa de saúde. Distribuição de panfletos informativos e testemunho de mães vacinadas.',
+    responsavel: 'Supervisor Municipal de Mobilização Social',
+    responsavelId: 2,
+    responsavelCargo: 'Supervisor de Mobilização Social',
+    estado: 'Mitigado',
+    nivelRisco: 'Alto',
+    categoriaRumor: 'Segurança / Mitos de Efeitos Secundários',
+    coordId: 1,
+    coordNome: 'Coordenação Norte (Sumbe Urbano)',
+    populacaoAfetada: 'Mães e vendedoras do mercado',
+    observacoes: 'Situação controlada após intervenção direta do Soba e brigada de diálogo interpessoal.',
+    createdAt: '2026-08-03T09:00:00Z',
+  },
+  {
+    id: 'rumor_2026_002',
+    rumor: 'Informação errónea de que crianças vacinadas na ronda anterior não podem receber as duas gotas nesta campanha.',
+    local: 'Bairro Chingo (Zona 2)',
+    data: '2026-08-05',
+    fonte: 'Boca a Boca entre vizinhos e grupos de WhatsApp',
+    resposta: 'Divulgação via megafone comunitário e orientação intensiva porta-a-porta explicando a necessidade de doses repetidas para reforço imunitário.',
+    responsavel: 'Promotor Municipal de Saúde',
+    responsavelId: 3,
+    responsavelCargo: 'Promotor de Saúde',
+    estado: 'Em Resposta',
+    nivelRisco: 'Médio',
+    categoriaRumor: 'Eficácia da Vacina & Múltiplas Doses',
+    coordId: 2,
+    coordNome: 'Coordenação Sul (Chingo / Quissala)',
+    populacaoAfetada: 'Encarregados de educação com crianças menores de 5 anos',
+    observacoes: 'Equipa de mobilização focada nas ruas B e C do Chingo.',
+    createdAt: '2026-08-05T11:20:00Z',
+  },
+  {
+    id: 'rumor_2026_003',
+    rumor: 'Líder de seita religiosa local a desaconselhar fiéis a abrirem as portas aos vacinadores por motivos doutrinários.',
+    local: 'Bairro Quissala (Subida da Colina)',
+    data: '2026-08-07',
+    fonte: 'Cultos Religiosos e Líderes Espirituais',
+    resposta: 'Encontro de alto nível com o Conselho de Igrejas Cristãs e Autoridades Tradicionais do Sumbe para sensibilização dos pastores e líderes comunitários.',
+    responsavel: 'Ponto Focal de Comunicação de Risco e Engajamento Comunitário (RCCE)',
+    responsavelId: 1,
+    responsavelCargo: 'Ponto Focal RCCE / Coordenação Geral',
+    estado: 'Em Investigação',
+    nivelRisco: 'Alto',
+    categoriaRumor: 'Crenças Religiosas / Culturais',
+    coordId: 2,
+    coordNome: 'Coordenação Sul (Chingo / Quissala)',
+    populacaoAfetada: 'Comunidade religiosa local',
+    observacoes: 'Agendada reunião de mediação com a Direção Municipal de Saúde.',
+    createdAt: '2026-08-07T14:45:00Z',
+  },
+];
+
 

@@ -20,6 +20,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Newspaper,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -412,6 +413,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 icon: FilePlus,
                 iconColor: 'text-emerald-400',
                 tooltip: 'Abre o formulário para registar uma nova ficha.',
+              })}
+              {renderNavItem({
+                id: 'nav-rumores',
+                tab: 'rumores',
+                label: 'Gestão de Rumores (6-Ficha)',
+                icon: MessageSquareWarning,
+                iconColor: 'text-amber-400',
+                tooltip: '6 - Ficha de Gestão de Rumores e Comunicação de Risco (Supervisores e Coordenação).',
+                badge: (
+                  <span className="rounded-full bg-amber-500 text-white px-1.5 py-0.2 text-[9px] font-extrabold">
+                    RCCE
+                  </span>
+                ),
               })}
               {renderNavItem({
                 id: 'nav-listFichas',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost, CasoPFA } from './types';
+import { Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, AuditLog, PortalPost, CasoPFA, FichaRumor } from './types';
 import {
   INITIAL_USERS,
   INITIAL_COORDINATIONS,
@@ -7,10 +7,11 @@ import {
   INITIAL_FICHAS,
   INITIAL_CASOS_PFA,
   INITIAL_ODK_SUBMISSIONS,
+  INITIAL_RUMORES,
 } from './data/initialData';
 import { FIELD_GALLERY_ITEMS } from './data/fieldGalleryData';
 import { api } from './services/api';
-import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts, fsSaveCasoPFA, fsUpdateCasoPFA } from './services/firebaseService';
+import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts, fsSaveCasoPFA, fsUpdateCasoPFA, fsSaveRumor, fsUpdateRumor, fsDeleteRumor } from './services/firebaseService';
 import {
   Theme,
   UserThemeConfig,
@@ -34,6 +35,7 @@ import { MobilizadoresView } from './components/MobilizadoresView';
 import { AtrasosView } from './components/AtrasosView';
 import { ODKCollectView } from './components/ODKCollectView';
 import { PFACasesView } from './components/PFACasesView';
+import { GestaoRumoresView } from './components/GestaoRumoresView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
@@ -60,6 +62,7 @@ export default function App() {
   const [mobilizadores, setMobilizadores] = useState<Mobilizador[]>(INITIAL_MOBILIZADORES);
   const [fichas, setFichas] = useState<Ficha[]>(INITIAL_FICHAS);
   const [casosPFA, setCasosPFA] = useState<CasoPFA[]>(INITIAL_CASOS_PFA);
+  const [rumores, setRumores] = useState<FichaRumor[]>(INITIAL_RUMORES);
   const [odkSubmissions, setOdkSubmissions] = useState<ODKSubmission[]>(INITIAL_ODK_SUBMISSIONS);
   const [goals, setGoals] = useState<CoordinationGoal[]>([]);
   const [portalPosts, setPortalPosts] = useState<PortalPost[]>([]);
@@ -169,6 +172,12 @@ export default function App() {
         'casos_pfa',
         (items) => setCasosPFA(deduplicateById(items)),
         (a, b) => b.createdAt.localeCompare(a.createdAt)
+      );
+
+      fsSubscribeCollection<FichaRumor>(
+        'rumores',
+        (items) => setRumores(deduplicateById(items)),
+        (a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')
       );
 
       fsSubscribeCollection<ODKSubmission>(
@@ -395,6 +404,41 @@ export default function App() {
     setCasosPFA((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c)));
   }, []);
 
+  const handleSaveRumor = useCallback(async (rumor: FichaRumor) => {
+    await fsSaveRumor(rumor);
+    setRumores((prev) => deduplicateById([rumor, ...prev]));
+    api.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id ?? 0,
+      usuarioNome: currentUser?.nome ?? 'Sistema',
+      usuarioTipo: currentUser?.tipo ?? 'supervisor',
+      acao: 'Registo de Rumor',
+      entidade: 'Gestão de Rumores',
+      detalhes: `Novo rumor registado em ${rumor.local}: "${rumor.rumor.substring(0, 50)}..."`,
+    });
+  }, [currentUser]);
+
+  const handleUpdateRumor = useCallback(async (id: string, fields: Partial<FichaRumor>) => {
+    await fsUpdateRumor(id, fields);
+    setRumores((prev) => prev.map((r) => (r.id === id ? { ...r, ...fields } : r)));
+    api.addAuditLog({
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usuarioId: currentUser?.id ?? 0,
+      usuarioNome: currentUser?.nome ?? 'Sistema',
+      usuarioTipo: currentUser?.tipo ?? 'supervisor',
+      acao: 'Atualização de Rumor',
+      entidade: 'Gestão de Rumores',
+      detalhes: `Rumor ${id} atualizado. Estado: ${fields.estado || 'Modificado'}`,
+    });
+  }, [currentUser]);
+
+  const handleDeleteRumor = useCallback(async (id: string) => {
+    await fsDeleteRumor(id);
+    setRumores((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
   const handleDeleteFicha = useCallback(async (id: number) => {
     if (!currentUser) {
       throw new Error('Sessão expirada. Por favor inicie sessão novamente.');
@@ -552,7 +596,9 @@ export default function App() {
               users={users}
               goals={goals}
               portalPosts={portalPosts}
+              rumores={rumores}
               onNewFicha={() => setActiveTab('ficha')}
+              onOpenRumores={() => setActiveTab('rumores')}
               onViewAllFichas={() => setActiveTab('listFichas')}
               onViewPFACases={() => setActiveTab('casosPFA')}
               onOpenAiModal={() => setAiModalOpen(true)}
@@ -560,6 +606,18 @@ export default function App() {
               onOpenPortalNews={() => setPortalNewsOpen(true)}
               onSavePortalPost={handleSavePortalPost}
               onDeletePortalPost={handleDeletePortalPost}
+            />
+          )}
+
+          {activeTab === 'rumores' && (
+            <GestaoRumoresView
+              user={currentUser}
+              rumores={rumores}
+              coordenacoes={coordenacoes}
+              users={users}
+              onSaveRumor={handleSaveRumor}
+              onUpdateRumor={handleUpdateRumor}
+              onDeleteRumor={handleDeleteRumor}
             />
           )}
 

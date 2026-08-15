@@ -10,7 +10,7 @@ import {
   getDocFromServer,
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, PortalPost, CasoPFA } from '../types';
+import { AuditLog, Coordination, CoordinationGoal, Ficha, Mobilizador, User, ODKSubmission, PortalPost, CasoPFA, FichaRumor } from '../types';
 import {
   INITIAL_COORDINATIONS,
   INITIAL_FICHAS,
@@ -18,6 +18,7 @@ import {
   INITIAL_USERS,
   INITIAL_ODK_SUBMISSIONS,
   INITIAL_CASOS_PFA,
+  INITIAL_RUMORES,
 } from '../data/initialData';
 
 import imgJangoSoba from '../assets/images/jango_soba_leader_1786566209375.jpg';
@@ -42,6 +43,7 @@ const COLS = {
   ODK_SUBMISSIONS: 'odk_submissions',
   PORTAL_POSTS: 'portal_posts',
   CASOS_PFA: 'casos_pfa',
+  RUMORES: 'rumores',
 };
 
 const META_DOC = doc(db, 'system_metadata', 'initial_seed');
@@ -177,6 +179,13 @@ export async function initFirestoreDatabase(): Promise<void> {
       if (pfaSnap.empty) {
         for (const pfa of INITIAL_CASOS_PFA) {
           await setDoc(doc(db, COLS.CASOS_PFA, pfa.id), cleanData(pfa));
+        }
+      }
+
+      const rumoresSnap = await getDocs(collection(db, COLS.RUMORES));
+      if (rumoresSnap.empty) {
+        for (const rum of INITIAL_RUMORES) {
+          await setDoc(doc(db, COLS.RUMORES, rum.id), cleanData(rum));
         }
       }
 
@@ -650,6 +659,35 @@ export async function fsUpdateCasoPFA(id: string, fields: Partial<CasoPFA>): Pro
 
 export async function fsDeleteCasoPFA(id: string): Promise<void> {
   await deleteDoc(doc(db, COLS.CASOS_PFA, id));
+}
+
+// --- FICHA DE GESTÃO DE RUMORES & COMUNICAÇÃO DE RISCO ---
+export async function fsGetRumores(): Promise<FichaRumor[]> {
+  try {
+    await initFirestoreDatabase();
+    const snap = await getDocs(collection(db, COLS.RUMORES));
+    const items: FichaRumor[] = [];
+    snap.forEach((d) => items.push(d.data() as FichaRumor));
+    return items.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  } catch (err) {
+    console.warn('fsGetRumores error:', err);
+    return [];
+  }
+}
+
+export async function fsSaveRumor(rumor: FichaRumor): Promise<FichaRumor> {
+  const cleaned = cleanData(rumor);
+  await setDoc(doc(db, COLS.RUMORES, rumor.id), cleaned);
+  return rumor;
+}
+
+export async function fsUpdateRumor(id: string, fields: Partial<FichaRumor>): Promise<void> {
+  const cleaned = cleanData(fields);
+  await updateDoc(doc(db, COLS.RUMORES, id), cleaned);
+}
+
+export async function fsDeleteRumor(id: string): Promise<void> {
+  await deleteDoc(doc(db, COLS.RUMORES, id));
 }
 
 // --- CLEAR ALL TEST DATA FROM FIREBASE DATABASE ---
