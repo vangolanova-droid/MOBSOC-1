@@ -142,25 +142,6 @@ export interface Ficha {
   pfaCasos?: CasoPFA[];
   createdAt?: string;
   status?: 'pendente' | 'aprovada' | 'rejeitada';
-  syncStatus?: 'synced' | 'pending' | 'error';
-  localId?: string;
-}
-
-export interface QueuedFicha {
-  localId: string;
-  ficha: Ficha;
-  currentUser?: User | null;
-  queuedAt: string;
-  attempts: number;
-  lastError?: string;
-}
-
-export interface SyncState {
-  pendingCount: number;
-  isSyncing: boolean;
-  isOnline: boolean;
-  lastSyncAt: string | null;
-  lastError: string | null;
 }
 
 export interface AuditLog {
