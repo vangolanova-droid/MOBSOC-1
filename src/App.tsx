@@ -41,9 +41,11 @@ import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
 import { GoalManagerModal } from './components/GoalManagerModal';
 import { PortalNewsManagerModal } from './components/PortalNewsManagerModal';
+import { CadastroHubModal } from './components/CadastroHubModal';
 import { Footer } from './components/Footer';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
+import { hasElevatedAccess, isReadOnlyEvaluator } from './utils/permissions';
 
 function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
   const map = new Map<string, T>();
@@ -76,6 +78,17 @@ export default function App() {
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [auditLogsOpen, setAuditLogsOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [cadastroHubOpen, setCadastroHubOpen] = useState(false);
+  const [cadastroHubDefaultType, setCadastroHubDefaultType] = useState<
+    'mobilizador' | 'supervisor' | 'admin_junior' | 'admin' | undefined
+  >(undefined);
+
+  const handleOpenCadastroHub = (
+    type?: 'mobilizador' | 'supervisor' | 'admin_junior' | 'admin'
+  ) => {
+    setCadastroHubDefaultType(type);
+    setCadastroHubOpen(true);
+  };
 
   // Alert for Fichas Pendentes (+48h)
   const [pendingAlertDismissed, setPendingAlertDismissed] = useState(false);
@@ -555,12 +568,30 @@ export default function App() {
         onOpenNotepad={() => setNotepadOpen(true)}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenPortalNews={() => setPortalNewsOpen(true)}
+        onOpenCadastroHub={handleOpenCadastroHub}
         onLogout={handleLogout}
         onCloseMobile={() => setSidebarOpen(false)}
       />
 
       {/* Main Column: Header, Main View, Footer */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* UNICEF Evaluation Mode Banner */}
+        {currentUser?.tipo === 'admin_junior' && (
+          <div className="bg-amber-400 text-slate-950 px-4 py-2.5 text-xs font-black flex flex-wrap items-center justify-between gap-2 shadow-xs border-b border-amber-500">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-slate-950 text-amber-300 text-[10px] font-black uppercase tracking-wider">
+                Modo Avaliação UNICEF
+              </span>
+              <span className="text-slate-950 font-bold text-xs">
+                Perfil de Visualização Institucional Completa — Modo de leitura ativo para avaliação do sistema e decisão de expansão para outros municípios.
+              </span>
+            </div>
+            <span className="text-[10px] uppercase font-black bg-slate-950/10 px-2.5 py-1 rounded-full text-slate-900 border border-slate-950/20">
+              Acesso de Consulta / Não Mutável
+            </span>
+          </div>
+        )}
+
         <Header
           user={currentUser}
           coordenacoes={coordenacoes}
@@ -599,6 +630,7 @@ export default function App() {
               rumores={rumores}
               onNewFicha={() => setActiveTab('ficha')}
               onOpenRumores={() => setActiveTab('rumores')}
+              onOpenCadastroHub={handleOpenCadastroHub}
               onViewAllFichas={() => setActiveTab('listFichas')}
               onViewPFACases={() => setActiveTab('casosPFA')}
               onOpenAiModal={() => setAiModalOpen(true)}
@@ -648,7 +680,7 @@ export default function App() {
           )}
 
           {activeTab === 'financas' &&
-            (currentUser.tipo === 'admin' ? (
+            (hasElevatedAccess(currentUser) ? (
               <MobilizadoresView
                 user={currentUser}
                 users={users}
@@ -662,7 +694,7 @@ export default function App() {
               />
             ) : (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center font-bold text-xs text-red-700 shadow-sm">
-                ⚠️ Acesso Restrito: Apenas o Administrador possui permissão para visualizar Finanças & Subsídios.
+                ⚠️ Acesso Restrito: Apenas a Administração possui permissão para visualizar Finanças & Subsídios.
               </div>
             ))}
 
@@ -719,7 +751,7 @@ export default function App() {
           )}
 
           {activeTab === 'relatorios' &&
-            (currentUser.tipo === 'admin' ? (
+            (hasElevatedAccess(currentUser) ? (
               <RelatoriosView
                 user={currentUser}
                 fichas={fichas}
@@ -730,12 +762,12 @@ export default function App() {
               />
             ) : (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center font-bold text-xs text-red-700 shadow-sm">
-                ⚠️ Acesso Restrito: Apenas o Administrador possui permissão para visualizar Relatórios Oficiais.
+                ⚠️ Acesso Restrito: Apenas Administradores e Avaliadores possuem permissão para visualizar Relatórios Oficiais.
               </div>
             ))}
 
           {activeTab === 'graficos' &&
-            (currentUser.tipo === 'admin' ? (
+            (hasElevatedAccess(currentUser) ? (
               <GraficosView
                 user={currentUser}
                 fichas={fichas}
@@ -745,11 +777,11 @@ export default function App() {
               />
             ) : (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center font-bold text-xs text-red-700 shadow-sm">
-                ⚠️ Acesso Restrito: Apenas o Administrador possui permissão para visualizar Gráficos Analíticos.
+                ⚠️ Acesso Restrito: Apenas Administradores e Avaliadores possuem permissão para visualizar Gráficos Analíticos.
               </div>
             ))}
 
-          {activeTab === 'utilizadores' && currentUser.tipo === 'admin' && (
+          {activeTab === 'utilizadores' && hasElevatedAccess(currentUser) && (
             <UtilizadoresView
               users={users}
               coordenacoes={coordenacoes}
@@ -760,7 +792,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'coordenacoes' && currentUser.tipo === 'admin' && (
+          {activeTab === 'coordenacoes' && hasElevatedAccess(currentUser) && (
             <CoordenacoesView
               coordenacoes={coordenacoes}
               users={users}
@@ -829,6 +861,18 @@ export default function App() {
           onClose={() => setPortalNewsOpen(false)}
         />
       )}
+
+      {/* Central Única de Cadastro Modal (Hub de Cadastro Organizado) */}
+      <CadastroHubModal
+        isOpen={cadastroHubOpen}
+        onClose={() => setCadastroHubOpen(false)}
+        user={currentUser}
+        users={users}
+        coordenacoes={coordenacoes}
+        onCreateMobilizador={handleCreateMobilizador}
+        onCreateUser={handleCreateUser}
+        initialType={cadastroHubDefaultType}
+      />
     </div>
   );
 }

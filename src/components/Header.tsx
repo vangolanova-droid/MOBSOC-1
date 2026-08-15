@@ -123,6 +123,8 @@ export const Header: React.FC<HeaderProps> = ({
   const coordenadorNomeDisplay =
     user.tipo === 'admin'
       ? 'Gestor do Sistema'
+      : user.tipo === 'admin_junior'
+      ? 'Gabinete de Avaliação UNICEF'
       : userCoordination?.coordenador
       ? `Coordenador: ${userCoordination.coordenador}`
       : user.coordenadorNome && user.coordenadorNome !== 'Direção Geral de Saúde'
@@ -610,7 +612,11 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{user.nome}</span>
             </div>
             <div className="text-[10px] font-medium tracking-wider uppercase text-white/80">
-              {user.tipo === 'admin' ? 'Administrador' : 'Supervisor'}
+              {user.tipo === 'admin'
+                ? 'Administrador'
+                : user.tipo === 'admin_junior'
+                ? 'Avaliador UNICEF'
+                : 'Supervisor'}
             </div>
           </div>
         </button>

@@ -30,6 +30,10 @@ import {
   Eye,
   Send,
   Building,
+  Building2,
+  Activity,
+  ShieldAlert,
+  Users,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FichaRumor, Coordination, User } from '../types';
@@ -692,200 +696,239 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
 
       {/* Modal: Registar / Editar Rumor */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-3xl rounded-3xl border-2 border-blue-200 dark:border-blue-700 bg-white p-5 sm:p-6 shadow-2xl space-y-5 text-slate-900 max-h-[94vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
-                  <MessageSquareWarning className="h-5 w-5" />
+            <div className="flex items-center justify-between border-b-2 border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
+                  <MessageSquareWarning className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    {editingRumor ? 'Editar Ficha de Gestão de Rumores' : 'Registar Ficha de Gestão de Rumores'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Comunicação de Risco e Engajamento Comunitário (RCCE)
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-950 uppercase tracking-tight">
+                      {editingRumor ? 'Editar Ficha de Gestão de Rumores' : 'Registar Ficha de Gestão de Rumores'}
+                    </h3>
+                    <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200">
+                      RCCE Oficial
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-600">
+                    Comunicação de Risco, Mitigação de Boatos e Engajamento Comunitário
                   </p>
                 </div>
               </div>
 
               <button
+                type="button"
                 onClick={() => setIsNewModalOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="rounded-xl p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                title="Fechar formulário"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-              {/* Rumor Description */}
-              <div className="space-y-1">
-                <label className="block font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider text-[11px]">
-                  1. Descrição do Rumor / Boato / Desinformação <span className="text-red-500">*</span>
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              {/* 1. Rumor Description - Highlighted with Amber/Orange Border Card */}
+              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/40 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 uppercase tracking-wider text-[11.5px]">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white text-[11px] font-black">1</span>
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <span>Descrição do Rumor / Boato / Desinformação</span>
+                    <span className="text-red-600 font-black text-sm">*</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-200/70 text-amber-900">
+                    O que a comunidade diz?
+                  </span>
+                </div>
                 <textarea
                   rows={3}
                   required
-                  placeholder="Ex: Informação a circular de que a vacina oral da Pólio causa esterilidade ou efeitos adversos graves nas crianças..."
+                  placeholder="Ex: Informação a circular de que a vacina oral da Pólio causa esterilidade, doenças graves ou foi fabricada para diminuir a população..."
                   value={formData.rumor || ''}
                   onChange={(e) => setFormData({ ...formData, rumor: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-medium"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 placeholder:text-slate-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold leading-relaxed shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 2 & 3. Localização e Data - Highlighted with Rose & Blue */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Local */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    2. Local / Bairro / Ponto de Referência <span className="text-red-500">*</span>
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase tracking-wide">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">2</span>
+                    <MapPin className="h-4 w-4 text-rose-600" />
+                    <span>Local / Bairro / Ponto de Referência</span>
+                    <span className="text-red-600 font-black">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Bairro 15 de Março, Praça Velha"
+                    placeholder="Ex: Bairro 15 de Março, Praça Nova, Mercado do Peixe"
                     value={formData.local || ''}
                     onChange={(e) => setFormData({ ...formData, local: e.target.value })}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-blue-600 font-medium"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-200 shadow-2xs placeholder:text-slate-400"
                   />
                 </div>
 
                 {/* Data */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    3. Data de Identificação <span className="text-red-500">*</span>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase tracking-wide">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-500 text-white text-[10px] font-black">3</span>
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <span>Data de Identificação</span>
+                    <span className="text-red-600 font-black">*</span>
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.data || ''}
                     onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-blue-600 font-medium"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-2xs cursor-pointer"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 4 & 5. Fonte e Categoria - Highlighted with Purple & Indigo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Fonte */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    4. Fonte do Rumor / Canal de Propagação
+                <div className="rounded-2xl border border-purple-200 bg-purple-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase tracking-wide">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-purple-600 text-white text-[10px] font-black">4</span>
+                    <Radio className="h-4 w-4 text-purple-600" />
+                    <span>Fonte / Canal de Propagação</span>
                   </label>
                   <select
                     value={formData.fonte || 'Conversas na Comunidade (Boca a Boca)'}
                     onChange={(e) => setFormData({ ...formData, fonte: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:border-blue-600"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-200 shadow-2xs cursor-pointer"
                   >
-                    <option value="Conversas na Comunidade (Boca a Boca)">Conversas na Comunidade (Boca a Boca)</option>
-                    <option value="Mercados Informais e Praças Comunitárias">Mercados Informais e Praças Comunitárias</option>
-                    <option value="Redes Sociais & Grupos de WhatsApp">Redes Sociais & Grupos de WhatsApp</option>
-                    <option value="Igrejas, Cultos e Líderes Religiosos">Igrejas, Cultos e Líderes Religiosos</option>
-                    <option value="Lideranças Tradicionais / Sobas">Lideranças Tradicionais / Sobas</option>
-                    <option value="Escolas, Creches e Centros Educativos">Escolas, Creches e Centros Educativos</option>
-                    <option value="Paragens de Táxi / Candongueiros">Paragens de Táxi / Candongueiros</option>
-                    <option value="Outro Canal Comunitário">Outro Canal Comunitário</option>
+                    <option value="Conversas na Comunidade (Boca a Boca)">🗣️ Conversas na Comunidade (Boca a Boca)</option>
+                    <option value="Mercados Informais e Praças Comunitárias">🛒 Mercados Informais e Praças Comunitárias</option>
+                    <option value="Redes Sociais & Grupos de WhatsApp">📱 Redes Sociais & Grupos de WhatsApp</option>
+                    <option value="Igrejas, Cultos e Líderes Religiosos">⛪ Igrejas, Cultos e Líderes Religiosos</option>
+                    <option value="Lideranças Tradicionais / Sobas">👑 Lideranças Tradicionais / Sobas</option>
+                    <option value="Escolas, Creches e Centros Educativos">🏫 Escolas, Creches e Centros Educativos</option>
+                    <option value="Paragens de Táxi / Candongueiros">🚐 Paragens de Táxi / Candongueiros</option>
+                    <option value="Outro Canal Comunitário">📢 Outro Canal Comunitário</option>
                   </select>
                 </div>
 
                 {/* Categoria */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    5. Categoria do Rumor
+                <div className="rounded-2xl border border-indigo-200 bg-indigo-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase tracking-wide">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] font-black">5</span>
+                    <Filter className="h-4 w-4 text-indigo-600" />
+                    <span>Categoria do Rumor</span>
                   </label>
                   <select
                     value={formData.categoriaRumor || 'Segurança / Medo de Efeitos Secundários'}
                     onChange={(e) => setFormData({ ...formData, categoriaRumor: e.target.value })}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:border-blue-600"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 shadow-2xs cursor-pointer"
                   >
-                    <option value="Segurança / Medo de Efeitos Secundários">Segurança / Medo de Efeitos Secundários</option>
-                    <option value="Eficácia da Vacina & Múltiplas Doses">Eficácia da Vacina & Múltiplas Doses</option>
-                    <option value="Crenças Religiosas / Culturais">Crenças Religiosas / Culturais</option>
-                    <option value="Origem da Vacina / Desconfiança Institucional">Origem da Vacina / Desconfiança Institucional</option>
-                    <option value="Boato de Óbito ou Doença Falsa">Boato de Óbito ou Doença Falsa</option>
-                    <option value="Outra Percepção Negativa">Outra Percepção Negativa</option>
+                    <option value="Segurança / Medo de Efeitos Secundários">🛡️ Segurança / Medo de Efeitos Secundários</option>
+                    <option value="Eficácia da Vacina & Múltiplas Doses">💉 Eficácia da Vacina & Múltiplas Doses</option>
+                    <option value="Crenças Religiosas / Culturais">🕊️ Crenças Religiosas / Culturais</option>
+                    <option value="Origem da Vacina / Desconfiança Institucional">🏛️ Origem da Vacina / Desconfiança Institucional</option>
+                    <option value="Boato de Óbito ou Doença Falsa">⚠️ Boato de Óbito ou Doença Falsa</option>
+                    <option value="Outra Percepção Negativa">📌 Outra Percepção Negativa</option>
                   </select>
                 </div>
               </div>
 
-              {/* Resposta / Estratégia de Mitigação */}
-              <div className="space-y-1">
+              {/* 6. Resposta / Estratégia de Mitigação - Highlighted with Emerald/Green */}
+              <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider text-[11px]">
-                    6. Resposta / Estratégia de Comunicação de Risco
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 uppercase tracking-wider text-[11.5px]">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-black">6</span>
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <span>Resposta / Estratégia de Comunicação de Risco (RCCE)</span>
                   </label>
-                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
-                    Intervenção de mitigação
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900">
+                    Ação Prática no Terreno
                   </span>
                 </div>
                 <textarea
                   rows={3}
-                  placeholder="Ex: Realização de diálogo com o Soba do bairro, transmissão de mensagens por megafone e distribuição de materiais com factos comprovados..."
+                  placeholder="Ex: Realização de diálogo de esclarecimento com o Soba e líderes religiosos locais, passagem de mensagens por megafone e distribuição de materiais com factos comprovados..."
                   value={formData.resposta || ''}
                   onChange={(e) => setFormData({ ...formData, resposta: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-medium"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-950 placeholder:text-slate-400 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 font-bold leading-relaxed shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* 7, 8 & 9. Responsável, Estado e Nível de Risco */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 {/* Responsável */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    7. Responsável
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-slate-700 text-white text-[10px] font-black">7</span>
+                    <UserIcon className="h-4 w-4 text-slate-700" />
+                    <span>Responsável</span>
+                    <span className="text-red-600 font-black">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.responsavel || ''}
                     onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-blue-600 font-bold"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-black shadow-2xs"
                   />
                 </div>
 
                 {/* Estado */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    8. Estado do Rumor
+                <div className="rounded-2xl border border-sky-200 bg-sky-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-sky-600 text-white text-[10px] font-black">8</span>
+                    <Activity className="h-4 w-4 text-sky-600" />
+                    <span>Estado do Rumor</span>
                   </label>
                   <select
                     value={formData.estado || 'Em Investigação'}
                     onChange={(e) =>
                       setFormData({ ...formData, estado: e.target.value as FichaRumor['estado'] })
                     }
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-bold outline-none focus:border-blue-600"
+                    className="w-full h-9.5 px-2.5 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-black outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 shadow-2xs cursor-pointer"
                   >
-                    <option value="Em Investigação">Em Investigação</option>
-                    <option value="Em Resposta">Em Resposta / Ação</option>
-                    <option value="Mitigado">Mitigado / Resolvido</option>
-                    <option value="Ativo">Ativo</option>
-                    <option value="Crítico">Crítico / Urgente</option>
+                    <option value="Em Investigação">🔍 Em Investigação</option>
+                    <option value="Em Resposta">⚡ Em Resposta / Ação</option>
+                    <option value="Mitigado">✅ Mitigado / Resolvido</option>
+                    <option value="Ativo">📢 Ativo</option>
+                    <option value="Crítico">🚨 Crítico / Urgente</option>
                   </select>
                 </div>
 
                 {/* Nível de Risco */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    9. Nível de Risco
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/30 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-white text-[10px] font-black">9</span>
+                    <ShieldAlert className="h-4 w-4 text-rose-600" />
+                    <span>Nível de Risco</span>
                   </label>
                   <select
                     value={formData.nivelRisco || 'Alto'}
                     onChange={(e) =>
                       setFormData({ ...formData, nivelRisco: e.target.value as FichaRumor['nivelRisco'] })
                     }
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-bold outline-none focus:border-blue-600"
+                    className="w-full h-9.5 px-2.5 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-black outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-100 shadow-2xs cursor-pointer"
                   >
-                    <option value="Alto">Alto Risco</option>
-                    <option value="Médio">Médio Risco</option>
-                    <option value="Baixo">Baixo Risco</option>
+                    <option value="Alto">🔴 Alto Risco</option>
+                    <option value="Médio">🟡 Médio Risco</option>
+                    <option value="Baixo">🟢 Baixo Risco</option>
                   </select>
                 </div>
               </div>
 
-              {/* Coordenação & População Afetada */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    10. Coordenação Associada
+              {/* 10 & 11. Coordenação & População Afetada */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-slate-700 text-white text-[10px] font-black">10</span>
+                    <Building2 className="h-4 w-4 text-slate-700" />
+                    <span>Coordenação Associada</span>
                   </label>
                   <select
                     value={formData.coordId || 1}
@@ -898,7 +941,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                         coordNome: found?.nome || 'Coordenação Geral',
                       });
                     }}
-                    className="w-full h-9 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium outline-none focus:border-blue-600"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-blue-600 shadow-2xs cursor-pointer"
                   >
                     {coordenacoes.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -908,43 +951,46 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                    11. População / Grupo Mais Afetado (Opcional)
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3 space-y-1.5">
+                  <label className="flex items-center gap-1.5 font-black text-slate-950 text-[11px] uppercase">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-slate-700 text-white text-[10px] font-black">11</span>
+                    <Users className="h-4 w-4 text-slate-700" />
+                    <span>População / Grupo Mais Afetado</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: Mães jovens, fiéis da seita X, vendedoras"
+                    placeholder="Ex: Mães jovens, fiéis da congregação X, vendedoras do mercado"
                     value={formData.populacaoAfetada || ''}
                     onChange={(e) => setFormData({ ...formData, populacaoAfetada: e.target.value })}
-                    className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-blue-600 font-medium"
+                    className="w-full h-9.5 px-3 rounded-xl border border-slate-300 bg-white text-slate-950 text-xs font-bold outline-none focus:border-blue-600 shadow-2xs placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              {/* Action Buttons with Vibrant Colors */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t-2 border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border-2 border-slate-300 bg-slate-100 hover:bg-slate-200 font-extrabold text-xs text-slate-800 transition active:scale-95 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 font-bold text-white shadow-md shadow-blue-500/25 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 font-black text-xs text-white shadow-lg shadow-blue-500/30 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                  id="btn-submit-rumor-form"
                 >
                   {isSaving ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>A guardar...</span>
+                      <span>A guardar registo...</span>
                     </>
                   ) : (
                     <>
                       <Check className="h-4 w-4 stroke-[3]" />
-                      <span>{editingRumor ? 'Guardar Alterações' : 'Registar Rumor'}</span>
+                      <span>{editingRumor ? 'Guardar Alterações do Rumor' : 'Concluir & Registar Rumor'}</span>
                     </>
                   )}
                 </button>
@@ -956,108 +1002,121 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
 
       {/* Modal: Ver Detalhes do Rumor */}
       {selectedRumor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-xl rounded-3xl border-2 border-blue-200 bg-white p-6 shadow-2xl space-y-4.5 text-slate-900 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b-2 border-slate-100 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md">
                   <MessageSquareWarning className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">
                     Detalhes do Rumor Registado
                   </h3>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    ID: {selectedRumor.id} • Data: {selectedRumor.data}
+                  <span className="text-[11px] font-bold text-slate-500">
+                    ID: #{selectedRumor.id} • Identificado em: {selectedRumor.data}
                   </span>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedRumor(null)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="rounded-xl p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              {/* Rumor */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                  Rumor / Boato Identificado:
+            <div className="space-y-3.5 text-xs">
+              {/* Rumor Description */}
+              <div className="p-3.5 rounded-2xl bg-amber-50/60 border-2 border-amber-200 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                  Rumor / Boato Identificado na Comunidade:
                 </span>
-                <p className="text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
+                <p className="text-sm font-black text-slate-950 leading-relaxed">
                   {selectedRumor.rumor}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Local / Bairro</span>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{selectedRumor.local}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-2xl border border-rose-200 bg-rose-50/40 space-y-1">
+                  <span className="text-[10px] text-rose-800 uppercase font-black flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-rose-600" /> Local / Bairro
+                  </span>
+                  <p className="font-black text-slate-950 text-xs">{selectedRumor.local}</p>
                 </div>
 
-                <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Fonte / Canal</span>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{selectedRumor.fonte}</p>
+                <div className="p-3 rounded-2xl border border-purple-200 bg-purple-50/40 space-y-1">
+                  <span className="text-[10px] text-purple-800 uppercase font-black flex items-center gap-1">
+                    <Radio className="h-3 w-3 text-purple-600" /> Fonte / Canal
+                  </span>
+                  <p className="font-black text-slate-950 text-xs">{selectedRumor.fonte}</p>
                 </div>
 
-                <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Estado Atual</span>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{selectedRumor.estado}</p>
+                <div className="p-3 rounded-2xl border border-sky-200 bg-sky-50/40 space-y-1">
+                  <span className="text-[10px] text-sky-800 uppercase font-black flex items-center gap-1">
+                    <Activity className="h-3 w-3 text-sky-600" /> Estado Atual
+                  </span>
+                  <p className="font-black text-slate-950 text-xs">{selectedRumor.estado}</p>
                 </div>
 
-                <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-0.5">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Nível de Risco</span>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">
+                <div className="p-3 rounded-2xl border border-amber-200 bg-amber-50/40 space-y-1">
+                  <span className="text-[10px] text-amber-800 uppercase font-black flex items-center gap-1">
+                    <ShieldAlert className="h-3 w-3 text-amber-600" /> Nível de Risco
+                  </span>
+                  <p className="font-black text-slate-950 text-xs">
                     {selectedRumor.nivelRisco || 'Médio'}
                   </p>
                 </div>
               </div>
 
               {/* Resposta */}
-              <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                  Estratégia de Resposta & Comunicação de Risco:
+              <div className="p-3.5 rounded-2xl bg-emerald-50/60 border-2 border-emerald-200 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                  Estratégia de Resposta & Comunicação de Risco (RCCE):
                 </span>
-                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                <p className="text-xs font-bold text-slate-950 leading-relaxed">
                   {selectedRumor.resposta}
                 </p>
               </div>
 
               {/* Responsável */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 bg-slate-50">
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Responsável</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{selectedRumor.responsavel}</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-black block">Responsável</span>
+                  <span className="font-black text-slate-950 text-xs">{selectedRumor.responsavel}</span>
                   {selectedRumor.responsavelCargo && (
-                    <span className="text-[10px] text-slate-400 block">{selectedRumor.responsavelCargo}</span>
+                    <span className="text-[10.5px] font-semibold text-slate-600 block">{selectedRumor.responsavelCargo}</span>
                   )}
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Coordenação</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-[10px] text-slate-500 uppercase font-black block">Coordenação</span>
+                  <span className="font-black text-blue-700 text-xs">
                     {selectedRumor.coordNome || 'Geral'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-slate-100">
               <button
+                type="button"
                 onClick={() => {
                   const toEdit = selectedRumor;
                   setSelectedRumor(null);
                   handleOpenEditModal(toEdit);
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                <span>Editar</span>
+                <span>Editar Rumor</span>
               </button>
               <button
+                type="button"
                 onClick={() => setSelectedRumor(null)}
-                className="px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="px-4 py-2 rounded-xl border-2 border-slate-300 bg-slate-100 font-black text-xs text-slate-800 hover:bg-slate-200 transition cursor-pointer"
               >
                 Fechar
               </button>
@@ -1068,34 +1127,38 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && rumorToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl border-2 border-red-200 bg-white p-6 shadow-2xl space-y-4 text-slate-900">
             <div className="flex items-center gap-3 text-red-600">
-              <AlertTriangle className="h-6 w-6 shrink-0" />
-              <h3 className="text-sm font-black uppercase tracking-wider">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                <AlertTriangle className="h-6 w-6 shrink-0" />
+              </div>
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-950">
                 Confirmar Eliminação de Rumor
               </h3>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-700 font-medium leading-relaxed">
               Tem a certeza de que deseja eliminar o registo do rumor:
               <br />
-              <strong className="text-slate-900 dark:text-white mt-1 block">
+              <strong className="text-slate-950 font-black mt-1.5 block p-2 rounded-xl bg-slate-100 border border-slate-200">
                 "{rumorToDelete.rumor}"
               </strong>
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-slate-100">
               <button
+                type="button"
                 onClick={() => {
                   setIsDeleteModalOpen(false);
                   setRumorToDelete(null);
                 }}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 rounded-xl border-2 border-slate-300 font-black text-xs text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 font-bold text-xs text-white shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 font-black text-xs text-white shadow-md shadow-red-500/25 transition cursor-pointer"
               >
                 Eliminar Registo
               </button>

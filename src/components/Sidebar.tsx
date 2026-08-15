@@ -21,9 +21,11 @@ import {
   PanelLeftOpen,
   Newspaper,
   MessageSquareWarning,
+  UserPlus,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
+import { hasElevatedAccess, isAdmin as checkIsAdmin, isReadOnlyEvaluator } from '../utils/permissions';
 import {
   Theme,
   UserThemeConfig,
@@ -49,6 +51,7 @@ interface SidebarProps {
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
   onOpenPortalNews?: () => void;
+  onOpenCadastroHub?: (type?: 'mobilizador' | 'supervisor' | 'admin_junior' | 'admin') => void;
   onLogout: () => void;
   onCloseMobile: () => void;
 }
@@ -69,10 +72,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNotepad,
   onOpenAuditLogs,
   onOpenPortalNews,
+  onOpenCadastroHub,
   onLogout,
   onCloseMobile,
 }) => {
   const isAdmin = user.tipo === 'admin';
+  const isElevated = hasElevatedAccess(user);
   const todayStr = new Date().toISOString().split('T')[0];
   const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
   const [internalCollapsed, setInternalCollapsed] = React.useState(false);
@@ -469,7 +474,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 iconColor: 'text-purple-400',
                 tooltip: 'Gere e visualiza a lista de mobilizadores comunitários.',
               })}
-              {isAdmin &&
+              {isElevated &&
                 renderNavItem({
                   id: 'nav-financas',
                   tab: 'financas',
@@ -477,6 +482,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   icon: Wallet,
                   iconColor: 'text-amber-400',
                   tooltip: 'Controlo financeiro de pagamentos e subsidiação.',
+                })}
+              {user.tipo === 'supervisor' && onOpenCadastroHub &&
+                renderNavItem({
+                  id: 'nav-cadastrar-mobilizador-sidebar',
+                  label: 'Cadastrar Mobilizador',
+                  icon: UserPlus,
+                  iconColor: 'text-purple-400',
+                  tooltip: 'Registar novo mobilizador comunitário sob a sua supervisão.',
+                  badge: (
+                    <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-black text-purple-400">
+                      NOVO
+                    </span>
+                  ),
+                  onClick: () => onOpenCadastroHub('mobilizador'),
                 })}
             </div>
           </div>
@@ -494,7 +513,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {renderNavItem({
                 id: 'nav-atrasos',
                 tab: 'atrasos',
-                label: isAdmin ? 'Controlo de Atrasos' : 'Alertas de Atraso',
+                label: isElevated ? 'Controlo de Atrasos' : 'Alertas de Atraso',
                 icon: ShieldAlert,
                 iconColor: 'text-rose-400',
                 tooltip: 'Monitoriza em tempo real as submissões e atrasos.',
@@ -507,7 +526,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                     style={activeTab === 'atrasos' ? { color: primaryColor } : undefined}
                   >
-                    {isAdmin ? alertStatus.count : '!'}
+                    {isElevated ? alertStatus.count : '!'}
                   </span>
                 ) : undefined,
               })}
@@ -555,7 +574,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div>
             {!isCollapsed ? (
               <div className="px-3 pb-1 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-                {isAdmin ? 'Administração & Análise' : 'Análise Operacional'}
+                {user.tipo === 'admin_junior'
+                  ? 'Avaliação Institucional UNICEF'
+                  : isElevated
+                  ? 'Administração & Análise'
+                  : 'Análise Operacional'}
               </div>
             ) : (
               <div className="my-1 border-t border-slate-300/30 dark:border-slate-700/50 mx-2" />
@@ -570,7 +593,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 tooltip: 'Apresenta o resumo consolidado dos dados.',
               })}
 
-              {isAdmin && (
+              {isElevated && (
                 <>
                   {renderNavItem({
                     id: 'nav-relatorios',
@@ -611,7 +634,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     tooltip: 'Gere as unidades de coordenação e locais.',
                   })}
 
-                  {onOpenNotepad &&
+                  {onOpenNotepad && isAdmin &&
                     renderNavItem({
                       id: 'nav-notepad',
                       label: 'Bloco de Notas',
@@ -626,7 +649,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick: onOpenNotepad,
                     })}
 
-                  {onOpenPortalNews &&
+                  {onOpenPortalNews && isAdmin &&
                     renderNavItem({
                       id: 'nav-portal-news',
                       label: 'Notícias do Portal',
@@ -639,6 +662,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </span>
                       ),
                       onClick: onOpenPortalNews,
+                    })}
+
+                  {onOpenCadastroHub && isAdmin &&
+                    renderNavItem({
+                      id: 'nav-central-cadastro',
+                      label: 'Cadastrar...',
+                      icon: UserPlus,
+                      iconColor: 'text-purple-400',
+                      tooltip: 'Central única de cadastros: Mobilizadores (RH-MC), Supervisores, Avaliador UNICEF e Administradores.',
+                      badge: (
+                        <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-black text-purple-400">
+                          CADASTRO
+                        </span>
+                      ),
+                      onClick: () => onOpenCadastroHub(),
                     })}
 
                   {onOpenAuditLogs &&

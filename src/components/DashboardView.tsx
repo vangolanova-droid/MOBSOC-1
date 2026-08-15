@@ -42,7 +42,9 @@ import {
   Award,
   HelpCircle,
   MessageSquareWarning,
+  UserPlus,
 } from 'lucide-react';
+import { isReadOnlyEvaluator } from '../utils/permissions';
 import {
   BarChart,
   Bar,
@@ -142,6 +144,7 @@ interface DashboardViewProps {
   rumores?: FichaRumor[];
   onNewFicha: () => void;
   onOpenRumores?: () => void;
+  onOpenCadastroHub?: (type?: 'mobilizador' | 'supervisor' | 'admin_junior' | 'admin') => void;
   onViewAllFichas: () => void;
   onViewPFACases?: () => void;
   onOpenAiModal: () => void;
@@ -163,6 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   rumores = [],
   onNewFicha,
   onOpenRumores,
+  onOpenCadastroHub,
   onViewAllFichas,
   onViewPFACases,
   onOpenAiModal,
@@ -364,19 +368,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          {onViewPFACases && (
-            <ActionTooltip content="Abre o painel de vigilância de Paralisia Flácida Aguda (PFA) para controlo epidemiológico da Pólio (UNICEF/OMS).">
-              <button
-                onClick={onViewPFACases}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 px-3 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer animate-pulse"
-                id="dash-btn-pfa"
-              >
-                <ShieldAlert className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                <span>Casos PFA ({casosPFA.length})</span>
-              </button>
-            </ActionTooltip>
-          )}
-
           {/* Botão de Ponto Verde Piscante: Supervisores a Lançar Dados */}
           <button
             onClick={() => setIsActiveSupervisorsOpen(true)}
@@ -391,6 +382,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>{activeSupervisorsCount} Supervisores em Lançamento</span>
           </button>
 
+          {/* BADGE DE MODO AVALIAÇÃO UNICEF SE ADMIN JÚNIOR */}
+          {isReadOnlyEvaluator(user) && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-950 shadow-2xs">
+              <Eye className="h-3.5 w-3.5 text-amber-600" />
+              <span>Modo Avaliação UNICEF (Leitura)</span>
+            </div>
+          )}
+
+          {onViewPFACases && (
+            <ActionTooltip content="Abre o painel de vigilância de Paralisia Flácida Aguda (PFA) para controlo epidemiológico da Pólio (UNICEF/OMS).">
+              <button
+                onClick={onViewPFACases}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 px-3 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer animate-pulse"
+                id="dash-btn-pfa"
+              >
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                <span>Casos PFA ({casosPFA.length})</span>
+              </button>
+            </ActionTooltip>
+          )}
+
           <ActionTooltip content="Abre a inteligência artificial para resumir dados, gerar relatórios operacionais e identificar tendências no terreno.">
             <button
               onClick={onOpenAiModal}
@@ -402,16 +414,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </ActionTooltip>
 
-          <ActionTooltip content="Abre o formulário digital para registar uma nova ficha de mobilização de campo.">
-            <button
-              onClick={onNewFicha}
-              className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
-              id="dash-btn-nova-ficha"
-            >
-              <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-              <span>Nova Ficha</span>
-            </button>
-          </ActionTooltip>
+          {!isReadOnlyEvaluator(user) && (
+            <ActionTooltip content="Abre o formulário digital para registar uma nova ficha de mobilização de campo.">
+              <button
+                onClick={onNewFicha}
+                className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition active:scale-[0.98] cursor-pointer"
+                id="dash-btn-nova-ficha"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                <span>Nova Ficha</span>
+              </button>
+            </ActionTooltip>
+          )}
 
           <ActionTooltip content="6 - Ficha de Gestão de Rumores (Identificação, classificação e resposta a boatos na vacinação - Acesso para Supervisores e Administradores).">
             <button
