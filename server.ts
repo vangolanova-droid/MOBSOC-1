@@ -360,7 +360,18 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '15mb' }));
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (_req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // ---------------------------------------------------------
   // 1. ROTAS PÚBLICAS (Sem Autenticação)
@@ -582,10 +593,10 @@ async function startServer() {
   });
 
   app.delete('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id);
-    coordenacoes = coordenacoes.filter((c) => c.id !== id);
-    deleteDocFromFirestore('coordenacoes', String(id));
-    broadcastEvent('coordenacoes', 'delete', { id });
+    const rawId = req.params.id;
+    coordenacoes = coordenacoes.filter((c) => String(c.id) !== String(rawId) && Number(c.id) !== Number(rawId));
+    deleteDocFromFirestore('coordenacoes', String(rawId));
+    broadcastEvent('coordenacoes', 'delete', { id: rawId });
     res.json({ success: true });
   });
 
@@ -673,10 +684,10 @@ async function startServer() {
   });
 
   app.delete('/api/users/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id);
-    users = users.filter((u) => u.id !== id);
-    deleteDocFromFirestore('users', String(id));
-    broadcastEvent('users', 'delete', { id });
+    const rawId = req.params.id;
+    users = users.filter((u) => String(u.id) !== String(rawId) && Number(u.id) !== Number(rawId));
+    deleteDocFromFirestore('users', String(rawId));
+    broadcastEvent('users', 'delete', { id: rawId });
     res.json({ success: true });
   });
 
@@ -713,8 +724,8 @@ async function startServer() {
   });
 
   app.patch('/api/mobilizadores/:id', (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id);
-    const index = mobilizadores.findIndex((m) => m.id === id);
+    const rawId = req.params.id;
+    const index = mobilizadores.findIndex((m) => String(m.id) === String(rawId) || Number(m.id) === Number(rawId));
     if (index === -1) {
       return res.status(404).json({ error: 'Mobilizador não encontrado' });
     }
@@ -734,17 +745,17 @@ async function startServer() {
     if (supervisorId !== undefined) mobilizadores[index].supervisorId = supervisorId;
     if (supervisorNome !== undefined) mobilizadores[index].supervisorNome = supervisorNome;
 
-    persistDocToFirestore('mobilizadores', String(id), mobilizadores[index]);
+    persistDocToFirestore('mobilizadores', String(mobilizadores[index].id), mobilizadores[index]);
     broadcastEvent('mobilizadores', 'update', mobilizadores[index]);
 
     res.json(mobilizadores[index]);
   });
 
   app.delete('/api/mobilizadores/:id', (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id);
-    mobilizadores = mobilizadores.filter((m) => m.id !== id);
-    deleteDocFromFirestore('mobilizadores', String(id));
-    broadcastEvent('mobilizadores', 'delete', { id });
+    const rawId = req.params.id;
+    mobilizadores = mobilizadores.filter((m) => String(m.id) !== String(rawId) && Number(m.id) !== Number(rawId));
+    deleteDocFromFirestore('mobilizadores', String(rawId));
+    broadcastEvent('mobilizadores', 'delete', { id: rawId });
     res.json({ success: true });
   });
 
@@ -771,11 +782,59 @@ async function startServer() {
     res.status(201).json(newFicha);
   });
 
+  app.post('/api/fichas/batch', (req: AuthenticatedRequest, res: Response) => {
+    const items = Array.isArray(req.body) ? req.body : req.body.fichas || [];
+    const saved: any[] = [];
+    for (const item of items) {
+      const ficha = {
+        ...item,
+        id: item.id || Date.now() + Math.floor(Math.random() * 1000),
+        userId: req.user?.id || item.userId,
+        supervisorNome: req.user?.nome || item.supervisorNome,
+        createdAt: item.createdAt || new Date().toISOString(),
+      };
+      const existingIdx = fichas.findIndex((f) => String(f.id) === String(ficha.id) || Number(f.id) === Number(ficha.id));
+      if (existingIdx >= 0) {
+        fichas[existingIdx] = { ...fichas[existingIdx], ...ficha };
+      } else {
+        fichas.unshift(ficha);
+      }
+      persistDocToFirestore('fichas', String(ficha.id), ficha);
+      saved.push(ficha);
+    }
+    broadcastEvent('fichas', 'batch', { count: saved.length });
+    res.json({ success: true, count: saved.length, fichas: saved });
+  });
+
+  app.patch('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
+    const rawId = req.params.id;
+    const idx = fichas.findIndex((f) => String(f.id) === String(rawId) || Number(f.id) === Number(rawId));
+    if (idx === -1) {
+      return res.status(404).json({ error: 'Ficha não encontrada' });
+    }
+    fichas[idx] = { ...fichas[idx], ...req.body };
+    persistDocToFirestore('fichas', String(fichas[idx].id), fichas[idx]);
+    broadcastEvent('fichas', 'update', fichas[idx]);
+    res.json(fichas[idx]);
+  });
+
+  app.put('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
+    const rawId = req.params.id;
+    const idx = fichas.findIndex((f) => String(f.id) === String(rawId) || Number(f.id) === Number(rawId));
+    if (idx === -1) {
+      return res.status(404).json({ error: 'Ficha não encontrada' });
+    }
+    fichas[idx] = { ...fichas[idx], ...req.body };
+    persistDocToFirestore('fichas', String(fichas[idx].id), fichas[idx]);
+    broadcastEvent('fichas', 'update', fichas[idx]);
+    res.json(fichas[idx]);
+  });
+
   app.delete('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id);
-    fichas = fichas.filter((f) => Number(f.id) !== id);
-    deleteDocFromFirestore('fichas', String(id));
-    broadcastEvent('fichas', 'delete', { id });
+    const rawId = req.params.id;
+    fichas = fichas.filter((f) => String(f.id) !== String(rawId) && Number(f.id) !== Number(rawId));
+    deleteDocFromFirestore('fichas', String(rawId));
+    broadcastEvent('fichas', 'delete', { id: rawId });
     res.json({ success: true });
   });
 
