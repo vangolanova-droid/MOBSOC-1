@@ -22,8 +22,6 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
 }) => {
   const [editingPost, setEditingPost] = useState<PortalPost | null>(initialPostToEdit || null);
   const [isCreating, setIsCreating] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<PortalPost | null>(null);
-  const [isDeletingPost, setIsDeletingPost] = useState(false);
 
   // Form states
   const [titulo, setTitulo] = useState(initialPostToEdit?.titulo || '');
@@ -472,7 +470,11 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setPostToDelete(p)}
+                      onClick={async () => {
+                        if (confirm(`Tem a certeza que deseja eliminar a notícia "${p.titulo}"?`)) {
+                          await onDeletePost(p.id);
+                        }
+                      }}
                       className="p-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-800/50 text-rose-300 transition cursor-pointer"
                       title="Eliminar esta notícia"
                     >
@@ -485,55 +487,6 @@ export const PortalNewsManagerModal: React.FC<PortalNewsManagerModalProps> = ({
           )}
         </div>
       </div>
-
-      {/* Modal de Confirmação de Eliminação */}
-      {postToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-950/80 border border-red-800/60">
-                <Trash2 className="h-5 w-5 text-red-400" />
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-white">Eliminar Publicação</h4>
-                <p className="text-xs text-slate-400">Esta ação não pode ser desfeita.</p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-300">
-              Tem a certeza que deseja eliminar permanentemente a notícia <strong className="text-white">"{postToDelete.titulo}"</strong>?
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                disabled={isDeletingPost}
-                onClick={() => setPostToDelete(null)}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isDeletingPost}
-                onClick={async () => {
-                  if (!postToDelete) return;
-                  setIsDeletingPost(true);
-                  try {
-                    await onDeletePost(postToDelete.id);
-                    setPostToDelete(null);
-                  } catch (err: any) {
-                    alert(err.message || 'Erro ao eliminar publicação.');
-                  } finally {
-                    setIsDeletingPost(false);
-                  }
-                }}
-                className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-black text-white transition shadow-md"
-              >
-                {isDeletingPost ? 'A eliminar...' : 'Sim, Eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

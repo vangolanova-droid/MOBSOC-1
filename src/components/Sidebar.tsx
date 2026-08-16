@@ -21,13 +21,9 @@ import {
   PanelLeftOpen,
   Newspaper,
   MessageSquareWarning,
-  UserPlus,
-  Settings,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
-import { hasElevatedAccess, isAdmin as checkIsAdmin, isReadOnlyEvaluator } from '../utils/permissions';
-import { SettingsModal } from './SettingsModal';
 import {
   Theme,
   UserThemeConfig,
@@ -46,18 +42,13 @@ interface SidebarProps {
   isOpen: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  theme?: 'light' | 'dark';
   currentPalette?: Theme;
   themeConfig?: UserThemeConfig;
-  onSelectPalette?: (palette: Theme) => void;
   onUpdateThemeConfig?: (config: UserThemeConfig) => void;
-  onToggleTheme?: () => void;
-  onOpenAiModal?: () => void;
   onSelectTab: (tab: string) => void;
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
   onOpenPortalNews?: () => void;
-  onOpenCadastroHub?: (type?: 'mobilizador' | 'supervisor' | 'admin_junior' | 'admin') => void;
   onLogout: () => void;
   onCloseMobile: () => void;
 }
@@ -71,26 +62,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   isCollapsed: propIsCollapsed,
   onToggleCollapse,
-  theme = 'light',
   currentPalette,
   themeConfig,
-  onSelectPalette,
   onUpdateThemeConfig,
-  onToggleTheme,
-  onOpenAiModal,
   onSelectTab,
   onOpenNotepad,
   onOpenAuditLogs,
   onOpenPortalNews,
-  onOpenCadastroHub,
   onLogout,
   onCloseMobile,
 }) => {
   const isAdmin = user.tipo === 'admin';
-  const isElevated = hasElevatedAccess(user);
   const todayStr = new Date().toISOString().split('T')[0];
   const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [internalCollapsed, setInternalCollapsed] = React.useState(false);
 
   // Synchronize internal collapsed state with prop if provided
@@ -485,7 +469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 iconColor: 'text-purple-400',
                 tooltip: 'Gere e visualiza a lista de mobilizadores comunitários.',
               })}
-              {isElevated &&
+              {isAdmin &&
                 renderNavItem({
                   id: 'nav-financas',
                   tab: 'financas',
@@ -493,20 +477,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   icon: Wallet,
                   iconColor: 'text-amber-400',
                   tooltip: 'Controlo financeiro de pagamentos e subsidiação.',
-                })}
-              {user.tipo === 'supervisor' && onOpenCadastroHub &&
-                renderNavItem({
-                  id: 'nav-cadastrar-mobilizador-sidebar',
-                  label: 'Cadastrar Mobilizador',
-                  icon: UserPlus,
-                  iconColor: 'text-purple-400',
-                  tooltip: 'Registar novo mobilizador comunitário sob a sua supervisão.',
-                  badge: (
-                    <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-black text-purple-400">
-                      NOVO
-                    </span>
-                  ),
-                  onClick: () => onOpenCadastroHub('mobilizador'),
                 })}
             </div>
           </div>
@@ -524,7 +494,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {renderNavItem({
                 id: 'nav-atrasos',
                 tab: 'atrasos',
-                label: isElevated ? 'Controlo de Atrasos' : 'Alertas de Atraso',
+                label: isAdmin ? 'Controlo de Atrasos' : 'Alertas de Atraso',
                 icon: ShieldAlert,
                 iconColor: 'text-rose-400',
                 tooltip: 'Monitoriza em tempo real as submissões e atrasos.',
@@ -537,7 +507,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                     style={activeTab === 'atrasos' ? { color: primaryColor } : undefined}
                   >
-                    {isElevated ? alertStatus.count : '!'}
+                    {isAdmin ? alertStatus.count : '!'}
                   </span>
                 ) : undefined,
               })}
@@ -585,11 +555,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div>
             {!isCollapsed ? (
               <div className="px-3 pb-1 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-                {user.tipo === 'admin_junior'
-                  ? 'Avaliação Institucional UNICEF'
-                  : isElevated
-                  ? 'Administração & Análise'
-                  : 'Análise Operacional'}
+                {isAdmin ? 'Administração & Análise' : 'Análise Operacional'}
               </div>
             ) : (
               <div className="my-1 border-t border-slate-300/30 dark:border-slate-700/50 mx-2" />
@@ -604,7 +570,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 tooltip: 'Apresenta o resumo consolidado dos dados.',
               })}
 
-              {isElevated && (
+              {isAdmin && (
                 <>
                   {renderNavItem({
                     id: 'nav-relatorios',
@@ -645,7 +611,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     tooltip: 'Gere as unidades de coordenação e locais.',
                   })}
 
-                  {onOpenNotepad && isAdmin &&
+                  {onOpenNotepad &&
                     renderNavItem({
                       id: 'nav-notepad',
                       label: 'Bloco de Notas',
@@ -660,7 +626,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick: onOpenNotepad,
                     })}
 
-                  {onOpenPortalNews && isAdmin &&
+                  {onOpenPortalNews &&
                     renderNavItem({
                       id: 'nav-portal-news',
                       label: 'Notícias do Portal',
@@ -673,21 +639,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </span>
                       ),
                       onClick: onOpenPortalNews,
-                    })}
-
-                  {onOpenCadastroHub && isAdmin &&
-                    renderNavItem({
-                      id: 'nav-central-cadastro',
-                      label: 'Cadastrar...',
-                      icon: UserPlus,
-                      iconColor: 'text-purple-400',
-                      tooltip: 'Central única de cadastros: Mobilizadores (RH-MC), Supervisores, Avaliador UNICEF e Administradores.',
-                      badge: (
-                        <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-black text-purple-400">
-                          CADASTRO
-                        </span>
-                      ),
-                      onClick: () => onOpenCadastroHub(),
                     })}
 
                   {onOpenAuditLogs &&
@@ -837,45 +788,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Botão de Configurações do Sistema - Debaixo da Cor do Sidebar */}
-          {!isCollapsed ? (
-            <ActionTooltip content="Configurações do Sistema: temas, fontes, cantos arredondados e modo escuro.">
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition shadow-2xs cursor-pointer ${
-                  currentSidebarPreset.isDark
-                    ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                    : 'bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200'
-                }`}
-                title="Clique para abrir as Configurações do Sistema"
-                id="btn-sidebar-configuracoes"
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <Settings className="h-4 w-4 shrink-0 text-blue-500 animate-spin-slow" />
-                  <span className="truncate">Configurações</span>
-                </div>
-                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20">
-                  Sistema
-                </span>
-              </button>
-            </ActionTooltip>
-          ) : (
-            <ActionTooltip content="Configurações do Sistema">
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className={`flex h-10 w-10 items-center justify-center mx-auto rounded-xl border transition cursor-pointer ${
-                  currentSidebarPreset.isDark
-                    ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                    : 'bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200'
-                }`}
-                title="Configurações do Sistema"
-                id="btn-sidebar-configuracoes-recolhido"
-              >
-                <Settings className="h-5 w-5 text-blue-500" />
-              </button>
-            </ActionTooltip>
-          )}
-
           {/* Logout Button */}
           {renderNavItem({
             id: 'btn-logout',
@@ -889,23 +801,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
       </aside>
-
-      {/* Modal de Configurações do Sistema */}
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        user={user}
-        theme={theme}
-        currentPalette={currentPalette}
-        themeConfig={themeConfig}
-        onSelectPalette={onSelectPalette}
-        onUpdateThemeConfig={onUpdateThemeConfig}
-        onToggleTheme={onToggleTheme}
-        onOpenAiModal={onOpenAiModal}
-        onOpenNotepad={onOpenNotepad}
-        onOpenPortalNews={onOpenPortalNews}
-        onOpenAuditLogs={onOpenAuditLogs}
-      />
     </>
   );
 };

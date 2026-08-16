@@ -139,21 +139,6 @@ export const INITIAL_USERS: User[] = [
     isLogged: false,
     ultimoAcesso: 'Há 2 dias (Desconectado)',
   },
-  {
-    id: 5,
-    nome: 'Chefe Avaliador UNICEF (Acesso Júnior)',
-    email: 'unicef.avaliacao@sirdm.gov',
-    senha: 'unicef2026',
-    telefone: '923000111',
-    tipo: 'admin_junior',
-    coordId: null,
-    coordNome: 'Avaliação Global Angola (UNICEF)',
-    coordenadorNome: 'Gabinete de Avaliação UNICEF',
-    status: 'ativo',
-    isOnline: false,
-    isLogged: false,
-    ultimoAcesso: 'Pronto para Avaliação de Expansão',
-  },
 ];
 
 export const INITIAL_FICHAS: Ficha[] = [

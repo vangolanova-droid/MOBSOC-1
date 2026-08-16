@@ -41,7 +41,6 @@ import {
   Share2,
 } from 'lucide-react';
 import { User, PortalPost, Ficha, Coordination } from '../types';
-import { api } from '../services/api';
 import happyChildrenBgImg from '../assets/images/happy_children_mobilization_1786264645591.jpg';
 
 // High-resolution image specifically representing social mobilization / happy children
@@ -147,31 +146,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const cleanEmail = email.trim().toLowerCase();
     const inputUsername = cleanEmail.split('@')[0];
 
-    try {
-      const loginRes = await api.login(cleanEmail, senha);
-      if (loginRes && loginRes.user) {
-        onLogin(loginRes.user);
-        return;
-      }
-    } catch (apiErr: any) {
-      console.warn('[SisMob Auth] Resposta da API:', apiErr.message);
-      if (apiErr.message && apiErr.message.includes('pendente')) {
-        setError('A sua conta de supervisor encontra-se PENDENTE DE APROVAÇÃO pelo Administrador Geral do SirDm. Aguarde a validação da Direção Municipal de Saúde.');
-        return;
-      }
-      if (apiErr.message && apiErr.message.includes('Acesso negado')) {
-        setError(apiErr.message);
-        return;
-      }
-    }
-
-    // Fallback local caso o backend esteja em bootstrapping inicial
+    // Check if input matches standard Admin credentials explicitly
     const isAdminEmailMatch =
       cleanEmail === 'v.angola.nova@gmail.com' ||
       cleanEmail === 'v.angola.nova' ||
@@ -191,7 +172,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         (inputUsername.length > 0 && uUsername === inputUsername) ||
         (u.telefone && u.telefone.replace(/\s+/g, '') === cleanEmail.replace(/\s+/g, ''));
 
-      return matchesEmailOrUsername && (u.senha === senha || u.senha.startsWith('$2'));
+      return matchesEmailOrUsername && u.senha === senha;
     });
 
     if (!found && isAdminEmailMatch && isAdminPassMatch) {

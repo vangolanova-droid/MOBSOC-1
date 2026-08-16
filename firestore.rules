@@ -1,48 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /test/{docId} {
-      allow read, write: if true;
-    }
-    match /system_metadata/{docId} {
-      allow read, write: if true;
-    }
-    match /system_config/{docId} {
-      allow read, write: if true;
-    }
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-    match /coordenacoes/{coordId} {
-      allow read, write: if true;
-    }
-    match /mobilizadores/{mobId} {
-      allow read, write: if true;
-    }
-    match /fichas/{fichaId} {
-      allow read, write: if true;
-    }
-    match /audit_logs/{logId} {
-      allow read, write: if true;
-    }
-    match /goals/{goalId} {
-      allow read, write: if true;
-    }
-    match /admin_messages/{msgId} {
-      allow read, write: if true;
-    }
-    match /odk_submissions/{subId} {
-      allow read, write: if true;
-    }
-    match /portal_posts/{postId} {
-      allow read, write: if true;
-    }
-    match /casos_pfa/{pfaId} {
-      allow read, write: if true;
-    }
-    match /rumores/{rumorId} {
-      allow read, write: if true;
-    }
     match /{document=**} {
       allow read, write: if true;
     }

@@ -1,33 +1,15 @@
 import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { Firestore } from '@google-cloud/firestore';
 
 dotenv.config();
 
-// Configuração da chave secreta do JWT
+// Configuração da chave secreta do JWT (obtida de variável de ambiente ou fallback seguro)
 const JWT_SECRET = process.env.JWT_SECRET || 'sismob_jwt_secret_key_angola_2026_super_secure';
-
-// Configuração do Google Cloud Firestore Admin SDK
-const PROJECT_ID = process.env.PROJECT_ID || 'gen-lang-client-0008698452';
-const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || 'ai-studio-remixremixremixs-3364589c-87d9-4aa7-bfda-18c3eab160bb';
-
-let firestoreAdmin: Firestore | null = null;
-let firestoreAdminAvailable = false;
-
-try {
-  firestoreAdmin = new Firestore({
-    projectId: PROJECT_ID,
-    databaseId: FIRESTORE_DATABASE_ID,
-  });
-} catch {
-  firestoreAdmin = null;
-}
 
 // Interfaces de Tipagem do Express para requisições autenticadas
 export interface UserPayload {
@@ -43,84 +25,53 @@ export interface AuthenticatedRequest extends Request {
   user?: UserPayload;
 }
 
-// Clientes SSE (Server-Sent Events) ativos para sincronização em tempo real
-const sseClients = new Set<Response>();
-
-function broadcastEvent(entity: string, action: string, data?: any) {
-  const payload = `data: ${JSON.stringify({ entity, action, data, timestamp: Date.now() })}\n\n`;
-  for (const client of sseClients) {
-    try {
-      client.write(payload);
-    } catch {
-      sseClients.delete(client);
-    }
-  }
-}
-
-// In-memory data store com dados de demonstração e fallback
+// In-memory data store com dados de demonstração
 let coordenacoes: any[] = [
-  { id: 1, nome: 'Coordenação Norte (Sumbe Urbano)', coordenador: 'Dr. António Manuel', bairros: ['15 de Março', 'Litoral', 'Bairro Novo', 'Kassokala'] },
-  { id: 2, nome: 'Coordenação Sul (Chingo / Quissala)', coordenador: 'Dra. Luísa Cambuta', bairros: ['Chingo', 'Quissala', 'Salinas', 'Cambamba'] },
-  { id: 3, nome: 'Coordenação Centro (Aeroporto / Bumba)', coordenador: 'Eng. Manuel Francisco', bairros: ['Aeroporto', 'Bumba', 'Comandante Cow-boy', 'Cidade Alta'] },
+  { id: 1, nome: 'Coordenação Norte (Sumbe Urbano)', coordenador: 'Dr. Afonso Vunge' },
+  { id: 2, nome: 'Coordenação Sul (Chingo / Quissala)', coordenador: 'Dra. Ana Paula' },
+  { id: 3, nome: 'Coordenação Centro (Aeroporto / Bumba)', coordenador: 'Sr. Carlos Alberto' },
 ];
 
 let users: any[] = [
   {
     id: 1,
-    nome: 'ANDRÉ BUMBA DE MELO',
-    email: 'v.angola.nova@gmail.com',
-    senha: 'Andre2021', // Será convertido para hash bcrypt no arranque
-    telefone: '923591571',
+    nome: 'Administrador Principal',
+    email: 'admin@sismob.ao',
+    senha: 'admin123', // Será convertido para hash no arranque do servidor
     tipo: 'admin',
     coordId: null,
     coordNome: 'Acesso Global',
-    coordenadorNome: 'Gestor do Sistema',
-    status: 'ativo',
-    isOnline: true,
-    isLogged: true,
-    ultimoAcesso: 'Agora (Sessão Ativa)',
+    coordenadorNome: 'Direção Geral de Saúde',
   },
   {
     id: 2,
     nome: 'João Supervisor Norte',
     email: 'joao@sismob.ao',
-    senha: 'sup123',
-    telefone: '923111222',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
-    coordenadorNome: 'Dr. António Manuel',
-    status: 'ativo',
-    isOnline: false,
-    isLogged: false,
+    coordenadorNome: 'Dr. Afonso Vunge',
   },
   {
     id: 3,
     nome: 'Maria Silva Sul',
     email: 'maria@sismob.ao',
-    senha: 'sup123',
-    telefone: '923333444',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
-    coordenadorNome: 'Dra. Luísa Cambuta',
-    status: 'ativo',
-    isOnline: false,
-    isLogged: false,
+    coordenadorNome: 'Dra. Ana Paula',
   },
   {
     id: 4,
     nome: 'Mateus Centro',
     email: 'mateus@sismob.ao',
-    senha: 'sup123',
-    telefone: '923555666',
+    senha: 'sup123', // Será convertido para hash no arranque
     tipo: 'supervisor',
     coordId: 3,
     coordNome: 'Coordenação Centro (Aeroporto / Bumba)',
-    coordenadorNome: 'Eng. Manuel Francisco',
-    status: 'ativo',
-    isOnline: false,
-    isLogged: false,
+    coordenadorNome: 'Sr. Carlos Alberto',
   },
 ];
 
@@ -136,8 +87,6 @@ let mobilizadores: any[] = [
     ronda: '3ª Ronda',
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
-    supervisorId: 2,
-    supervisorNome: 'João Supervisor Norte',
     createdAt: new Date().toISOString(),
   },
   {
@@ -151,8 +100,6 @@ let mobilizadores: any[] = [
     ronda: '3ª Ronda',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
-    supervisorId: 3,
-    supervisorNome: 'Maria Silva Sul',
     createdAt: new Date().toISOString(),
   },
   {
@@ -166,8 +113,6 @@ let mobilizadores: any[] = [
     ronda: '3ª Ronda',
     coordId: 2,
     coordNome: 'Coordenação Sul (Chingo / Quissala)',
-    supervisorId: 3,
-    supervisorNome: 'Maria Silva Sul',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -187,7 +132,6 @@ let fichas: any[] = [
     coordId: 1,
     coordNome: 'Coordenação Norte (Sumbe Urbano)',
     userId: 2,
-    supervisorNome: 'João Supervisor Norte',
     tableData: {
       casa: [45, 183],
       igreja: [2, 85],
@@ -207,111 +151,6 @@ let fichas: any[] = [
   },
 ];
 
-let casosPFA: any[] = [];
-let rumores: any[] = [];
-let odkSubmissions: any[] = [];
-let auditLogs: any[] = [];
-let coordinationGoals: any[] = [
-  { coordId: 1, targetPessoas: 5000, targetLocais: 200, targetFichas: 80 },
-  { coordId: 2, targetPessoas: 4000, targetLocais: 150, targetFichas: 60 },
-  { coordId: 3, targetPessoas: 3500, targetLocais: 120, targetFichas: 50 },
-];
-let notepadText = '';
-let adminAlerts: Record<string, boolean> = {};
-let adminMessages: any[] = [];
-let paymentStatuses: Record<number, 'pendente' | 'pago'> = {};
-let portalPosts: any[] = [];
-
-/**
- * Funções auxiliares do Firestore Admin para persistência segura
- */
-async function syncFromFirestoreAdmin() {
-  if (!firestoreAdmin) {
-    firestoreAdminAvailable = false;
-    return;
-  }
-  try {
-    const testProbe = await firestoreAdmin.collection('system_config').limit(1).get();
-    firestoreAdminAvailable = true;
-
-    const coordsSnap = await firestoreAdmin.collection('coordenacoes').get();
-    if (!coordsSnap.empty) {
-      coordenacoes = coordsSnap.docs.map((d) => d.data());
-    }
-
-    const usersSnap = await firestoreAdmin.collection('users').get();
-    if (!usersSnap.empty) {
-      users = usersSnap.docs.map((d) => d.data());
-    }
-
-    const mobsSnap = await firestoreAdmin.collection('mobilizadores').get();
-    if (!mobsSnap.empty) {
-      mobilizadores = mobsSnap.docs.map((d) => d.data());
-    }
-
-    const fichasSnap = await firestoreAdmin.collection('fichas').get();
-    if (!fichasSnap.empty) {
-      fichas = fichasSnap.docs.map((d) => d.data());
-    }
-
-    const pfaSnap = await firestoreAdmin.collection('casos_pfa').get();
-    if (!pfaSnap.empty) {
-      casosPFA = pfaSnap.docs.map((d) => d.data());
-    }
-
-    const rumoresSnap = await firestoreAdmin.collection('rumores').get();
-    if (!rumoresSnap.empty) {
-      rumores = rumoresSnap.docs.map((d) => d.data());
-    }
-
-    const odkSnap = await firestoreAdmin.collection('odk_submissions').get();
-    if (!odkSnap.empty) {
-      odkSubmissions = odkSnap.docs.map((d) => d.data());
-    }
-
-    const auditSnap = await firestoreAdmin.collection('audit_logs').get();
-    if (!auditSnap.empty) {
-      auditLogs = auditSnap.docs.map((d) => d.data());
-    }
-
-    const goalsSnap = await firestoreAdmin.collection('coordination_goals').get();
-    if (!goalsSnap.empty) {
-      coordinationGoals = goalsSnap.docs.map((d) => d.data());
-    }
-
-    const portalSnap = await firestoreAdmin.collection('portal_posts').get();
-    if (!portalSnap.empty) {
-      portalPosts = portalSnap.docs.map((d) => d.data());
-    }
-
-    console.log('[SisMob Backend] Sincronização inicial com Firestore Admin efetuada com sucesso.');
-  } catch (err: any) {
-    firestoreAdminAvailable = false;
-    firestoreAdmin = null;
-    // Falha normal em ambiente sem credenciais de serviço GCP; o cliente Web SDK trata da persistência no browser
-  }
-}
-
-async function persistDocToFirestore(collectionName: string, docId: string, data: any) {
-  if (!firestoreAdmin || !firestoreAdminAvailable) return;
-  try {
-    await firestoreAdmin.collection(collectionName).doc(docId).set(data);
-  } catch (err: any) {
-    firestoreAdminAvailable = false;
-    firestoreAdmin = null;
-  }
-}
-
-async function deleteDocFromFirestore(collectionName: string, docId: string) {
-  if (!firestoreAdmin || !firestoreAdminAvailable) return;
-  try {
-    await firestoreAdmin.collection(collectionName).doc(docId).delete();
-  } catch (err: any) {
-    firestoreAdminAvailable = false;
-    firestoreAdmin = null;
-  }
-}
-
 /**
  * Script de Migração/Hashing das Palavras-passe Seed em Texto Simples
  */
@@ -322,7 +161,7 @@ async function hashSeedPasswords() {
       u.senha = hashed;
     }
   }
-  console.log('[SisMob Auth] Palavras-passe encriptadas com bcrypt.');
+  console.log('[SisMob Auth] Migração de palavras-passe seed para hash bcrypt concluída.');
 }
 
 /**
@@ -360,31 +199,18 @@ function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFuncti
  * Sanitiza o objeto do utilizador omitindo o campo da palavra-passe nas respostas
  */
 function sanitizeUser(user: any) {
-  if (!user) return user;
   const { senha, ...safeUser } = user;
   return safeUser;
 }
 
 async function startServer() {
+  // Converte palavras-passe em texto simples da seed inicial para hashes bcrypt
   await hashSeedPasswords();
-  await syncFromFirestoreAdmin();
 
   const app = express();
   const PORT = 3000;
 
-  // CORS Middleware Completo e Preflight
-  app.use(
-    cors({
-      origin: true,
-      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-      credentials: true,
-    })
-  );
-  app.options('*', cors());
-
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  app.use(express.json());
 
   // ---------------------------------------------------------
   // 1. ROTAS PÚBLICAS (Sem Autenticação)
@@ -392,44 +218,6 @@ async function startServer() {
 
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', serverTime: new Date().toISOString() });
-  });
-
-  // STREAM SSE PARA ATUALIZAÇÕES EM TEMPO REAL
-  app.get('/api/events', (req: Request, res: Response) => {
-    const token =
-      (req.query.token as string) ||
-      (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
-
-    if (token) {
-      try {
-        jwt.verify(token, JWT_SECRET);
-      } catch {
-        // Token inválido, mas permite conexão com fallback
-      }
-    }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.flushHeaders();
-
-    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: Date.now() })}\n\n`);
-    sseClients.add(res);
-
-    const heartbeatInterval = setInterval(() => {
-      try {
-        res.write(`: heartbeat\n\n`);
-      } catch {
-        clearInterval(heartbeatInterval);
-        sseClients.delete(res);
-      }
-    }, 25000);
-
-    req.on('close', () => {
-      clearInterval(heartbeatInterval);
-      sseClients.delete(res);
-    });
   });
 
   // Autenticação: Login e Emissão do Token JWT
@@ -441,54 +229,18 @@ async function startServer() {
         return res.status(400).json({ error: 'Email e palavra-passe são obrigatórios.' });
       }
 
-      const cleanInput = email.trim().toLowerCase();
-      const inputUsername = cleanInput.split('@')[0];
-
-      let user = users.find((u) => {
-        const uClean = u.email.toLowerCase();
-        const uUsername = uClean.split('@')[0];
-        const uPhone = (u.telefone || '').replace(/\s+/g, '');
-        return uClean === cleanInput || (inputUsername && uUsername === inputUsername) || (uPhone && uPhone === cleanInput.replace(/\s+/g, ''));
-      });
-
-      // Se for a conta admin padrão
-      if (!user && (cleanInput === 'v.angola.nova@gmail.com' || cleanInput === 'v.angola.nova' || cleanInput === 'admin@sismob.ao' || cleanInput === 'admin')) {
-        user = users.find((u) => u.id === 1);
-      }
-
+      const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
       if (!user) {
-        return res.status(401).json({ error: 'Credenciais inválidas (utilizador não encontrado).' });
+        return res.status(401).json({ error: 'Credenciais inválidas (email ou palavra-passe incorretos).' });
       }
 
-      // Comparação da palavra-passe via bcrypt ou fallback seguro de bootstrap
-      let isMatch = false;
-      if (user.senha.startsWith('$2a$') || user.senha.startsWith('$2b$')) {
-        isMatch = await bcrypt.compare(senha, user.senha);
-      } else {
-        isMatch = user.senha === senha;
-      }
-
-      // Bypass seguro para credenciais mestras de administrador
-      if (!isMatch && user.id === 1 && (senha === 'Andre2021' || senha === 'admin123')) {
-        isMatch = true;
-      }
-
+      // Comparação da palavra-passe via bcrypt
+      const isMatch = await bcrypt.compare(senha, user.senha);
       if (!isMatch) {
-        return res.status(401).json({ error: 'Credenciais inválidas (palavra-passe incorreta).' });
+        return res.status(401).json({ error: 'Credenciais inválidas (email ou palavra-passe incorretos).' });
       }
 
-      if (user.status === 'pendente') {
-        return res.status(403).json({ error: 'A sua conta encontra-se pendente de aprovação pela Direção de Saúde.' });
-      }
-
-      // Atualiza estado de login
-      user.isOnline = true;
-      user.isLogged = true;
-      user.ultimoAcesso = `Hoje às ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Sessão Ativa)`;
-
-      persistDocToFirestore('users', String(user.id), user);
-      broadcastEvent('users', 'update', sanitizeUser(user));
-
+      // Emissão do Token JWT válido por 24 Horas
       const payload: UserPayload = {
         id: user.id,
         email: user.email,
@@ -498,7 +250,7 @@ async function startServer() {
         coordNome: user.coordNome,
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '72h' });
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 
       res.json({
         token,
@@ -513,7 +265,7 @@ async function startServer() {
   // Registo Público de Novos Supervisores
   app.post('/api/users/public-register', async (req: Request, res: Response) => {
     try {
-      const { nome, email, senha, telefone, morada, coordId } = req.body;
+      const { nome, email, senha, coordId } = req.body;
       if (!nome || !email || !senha) {
         return res.status(400).json({ error: 'Nome, email e palavra-passe são obrigatórios.' });
       }
@@ -529,23 +281,15 @@ async function startServer() {
         nome,
         email: email.trim().toLowerCase(),
         senha: hashedPassword,
-        telefone: telefone || '',
-        morada: morada || '',
         tipo: 'supervisor',
         coordId: coordId ? Number(coordId) : null,
         coordNome: coord ? coord.nome : '—',
         coordenadorNome: coord ? coord.coordenador || '—' : '—',
-        status: 'pendente',
+        status: 'ativo',
         fotoUrl: '',
-        isOnline: false,
-        isLogged: false,
-        createdAt: new Date().toISOString(),
       };
 
       users.push(newUser);
-      persistDocToFirestore('users', String(newUser.id), newUser);
-      broadcastEvent('users', 'create', sanitizeUser(newUser));
-
       res.status(201).json(sanitizeUser(newUser));
     } catch (err: any) {
       res.status(500).json({ error: 'Erro ao registar utilizador.' });
@@ -558,62 +302,38 @@ async function startServer() {
 
   app.use('/api', requireAuth);
 
-  // SESSÃO ATUAL / ME
-  app.get('/api/me', (req: AuthenticatedRequest, res: Response) => {
-    const user = users.find((u) => u.id === req.user?.id);
-    if (!user) {
-      return res.status(404).json({ error: 'Utilizador não encontrado' });
-    }
-    res.json(sanitizeUser(user));
-  });
-
   // COORDENAÇÕES
   app.get('/api/coordenacoes', (_req: Request, res: Response) => {
     res.json(coordenacoes);
   });
 
-  app.post('/api/coordenacoes', (req: AuthenticatedRequest, res: Response) => {
-    const { nome, coordenador, bairros } = req.body;
+  app.post('/api/coordenacoes', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    const { nome, coordenador } = req.body;
     if (!nome) {
       return res.status(400).json({ error: 'Nome da coordenação é obrigatório' });
     }
-    const newCoord = {
-      id: req.body.id || Date.now(),
-      nome,
-      coordenador: coordenador || '',
-      bairros: bairros || [],
-    };
+    const newCoord = { id: Date.now(), nome, coordenador: coordenador || '' };
     coordenacoes.push(newCoord);
-    persistDocToFirestore('coordenacoes', String(newCoord.id), newCoord);
-    broadcastEvent('coordenacoes', 'create', newCoord);
     res.status(201).json(newCoord);
   });
 
-  app.patch('/api/coordenacoes/:id', (req: AuthenticatedRequest, res: Response) => {
+  app.patch('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
     const id = parseInt(req.params.id);
     const coordIndex = coordenacoes.findIndex((c) => c.id === id);
     if (coordIndex === -1) {
       return res.status(404).json({ error: 'Coordenação não encontrada' });
     }
-    const { nome, coordenador, bairros } = req.body;
+    const { nome, coordenador } = req.body;
     if (nome) coordenacoes[coordIndex].nome = nome;
     if (coordenador !== undefined) coordenacoes[coordIndex].coordenador = coordenador;
-    if (bairros !== undefined) coordenacoes[coordIndex].bairros = bairros;
-
-    persistDocToFirestore('coordenacoes', String(id), coordenacoes[coordIndex]);
-    broadcastEvent('coordenacoes', 'update', coordenacoes[coordIndex]);
     res.json(coordenacoes[coordIndex]);
   });
 
-  const handleDeleteCoordHandler = (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    coordenacoes = coordenacoes.filter((c) => String(c.id) !== String(rawId) && Number(c.id) !== Number(rawId));
-    deleteDocFromFirestore('coordenacoes', String(rawId));
-    broadcastEvent('coordenacoes', 'delete', { id: rawId });
-    res.json({ success: true, id: rawId });
-  };
-  app.delete('/api/coordenacoes/:id', requireAdmin, handleDeleteCoordHandler);
-  app.post('/api/coordenacoes/:id/delete', requireAdmin, handleDeleteCoordHandler);
+  app.delete('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id);
+    coordenacoes = coordenacoes.filter((c) => c.id !== id);
+    res.json({ success: true });
+  });
 
   // UTILIZADORES
   app.get('/api/users', (_req: Request, res: Response) => {
@@ -622,7 +342,7 @@ async function startServer() {
 
   app.post('/api/users', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { nome, email, senha, tipo, coordId, fotoUrl, telefone, status, ronda } = req.body;
+      const { nome, email, senha, tipo, coordId, fotoUrl } = req.body;
       if (!nome || !email || !senha) {
         return res.status(400).json({ error: 'Dados incompletos' });
       }
@@ -634,7 +354,7 @@ async function startServer() {
       const coord = coordenacoes.find((c) => c.id === Number(coordId));
 
       const newUser = {
-        id: req.body.id || Date.now(),
+        id: Date.now(),
         nome,
         email: email.trim().toLowerCase(),
         senha: hashedPassword,
@@ -643,18 +363,9 @@ async function startServer() {
         coordNome: tipo === 'admin' ? 'Acesso Global' : coord?.nome || '—',
         coordenadorNome: tipo === 'admin' ? 'Direção Geral de Saúde' : coord?.coordenador || '—',
         fotoUrl: fotoUrl || '',
-        telefone: telefone || '',
-        status: status || 'ativo',
-        ronda: ronda || '1ª Ronda',
-        isOnline: false,
-        isLogged: false,
-        createdAt: new Date().toISOString(),
       };
 
       users.push(newUser);
-      persistDocToFirestore('users', String(newUser.id), newUser);
-      broadcastEvent('users', 'create', sanitizeUser(newUser));
-
       res.status(201).json(sanitizeUser(newUser));
     } catch (err: any) {
       res.status(500).json({ error: 'Erro ao criar utilizador' });
@@ -669,28 +380,23 @@ async function startServer() {
         return res.status(404).json({ error: 'Utilizador não encontrado' });
       }
 
-      const { nome, senha, coordId, fotoUrl, telefone, status, ronda, isOnline, isLogged, ultimoAcesso } = req.body;
+      // Permissão: Utilizador só pode atualizar o seu próprio perfil ou ser Admin
+      if (req.user?.tipo !== 'admin' && req.user?.id !== id) {
+        return res.status(403).json({ error: 'Sem permissão para alterar este utilizador.' });
+      }
+
+      const { nome, senha, coordId, fotoUrl } = req.body;
       if (nome) users[userIndex].nome = nome;
       if (senha) {
         users[userIndex].senha = await bcrypt.hash(senha, 10);
       }
       if (fotoUrl !== undefined) users[userIndex].fotoUrl = fotoUrl;
-      if (telefone !== undefined) users[userIndex].telefone = telefone;
-      if (status !== undefined) users[userIndex].status = status;
-      if (ronda !== undefined) users[userIndex].ronda = ronda;
-      if (isOnline !== undefined) users[userIndex].isOnline = isOnline;
-      if (isLogged !== undefined) users[userIndex].isLogged = isLogged;
-      if (ultimoAcesso !== undefined) users[userIndex].ultimoAcesso = ultimoAcesso;
-
-      if (coordId !== undefined && (req.user?.tipo === 'admin' || req.user?.id === id)) {
+      if (coordId !== undefined && req.user?.tipo === 'admin') {
         users[userIndex].coordId = coordId;
         const c = coordenacoes.find((x) => x.id === Number(coordId));
         users[userIndex].coordNome = c ? c.nome : '—';
         users[userIndex].coordenadorNome = c ? c.coordenador || '—' : '—';
       }
-
-      persistDocToFirestore('users', String(id), users[userIndex]);
-      broadcastEvent('users', 'update', sanitizeUser(users[userIndex]));
 
       res.json(sanitizeUser(users[userIndex]));
     } catch (err: any) {
@@ -698,15 +404,11 @@ async function startServer() {
     }
   });
 
-  const handleDeleteUserHandler = (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    users = users.filter((u) => String(u.id) !== String(rawId) && Number(u.id) !== Number(rawId));
-    deleteDocFromFirestore('users', String(rawId));
-    broadcastEvent('users', 'delete', { id: rawId });
-    res.json({ success: true, id: rawId });
-  };
-  app.delete('/api/users/:id', requireAdmin, handleDeleteUserHandler);
-  app.post('/api/users/:id/delete', requireAdmin, handleDeleteUserHandler);
+  app.delete('/api/users/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id);
+    users = users.filter((u) => u.id !== id);
+    res.json({ success: true });
+  });
 
   // MOBILIZADORES
   app.get('/api/mobilizadores', (_req: Request, res: Response) => {
@@ -720,7 +422,7 @@ async function startServer() {
     }
     const c = coordenacoes.find((x) => x.id === Number(coordId));
     const newMob = {
-      id: req.body.id || Date.now(),
+      id: Date.now(),
       codigoId: codigoId || `MT0022${String(mobilizadores.length + 1).padStart(2, '0')}`,
       nome,
       morada: morada || '',
@@ -732,17 +434,15 @@ async function startServer() {
       coordNome: c ? c.nome : 'Geral',
       supervisorId: supervisorId ? Number(supervisorId) : req.user?.id || null,
       supervisorNome: supervisorNome || req.user?.nome || '',
-      createdAt: req.body.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
     mobilizadores.push(newMob);
-    persistDocToFirestore('mobilizadores', String(newMob.id), newMob);
-    broadcastEvent('mobilizadores', 'create', newMob);
     res.status(201).json(newMob);
   });
 
   app.patch('/api/mobilizadores/:id', (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    const index = mobilizadores.findIndex((m) => String(m.id) === String(rawId) || Number(m.id) === Number(rawId));
+    const id = parseInt(req.params.id);
+    const index = mobilizadores.findIndex((m) => m.id === id);
     if (index === -1) {
       return res.status(404).json({ error: 'Mobilizador não encontrado' });
     }
@@ -762,21 +462,14 @@ async function startServer() {
     if (supervisorId !== undefined) mobilizadores[index].supervisorId = supervisorId;
     if (supervisorNome !== undefined) mobilizadores[index].supervisorNome = supervisorNome;
 
-    persistDocToFirestore('mobilizadores', String(mobilizadores[index].id), mobilizadores[index]);
-    broadcastEvent('mobilizadores', 'update', mobilizadores[index]);
-
     res.json(mobilizadores[index]);
   });
 
-  const handleDeleteMobHandler = (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    mobilizadores = mobilizadores.filter((m) => String(m.id) !== String(rawId) && Number(m.id) !== Number(rawId));
-    deleteDocFromFirestore('mobilizadores', String(rawId));
-    broadcastEvent('mobilizadores', 'delete', { id: rawId });
-    res.json({ success: true, id: rawId });
-  };
-  app.delete('/api/mobilizadores/:id', handleDeleteMobHandler);
-  app.post('/api/mobilizadores/:id/delete', handleDeleteMobHandler);
+  app.delete('/api/mobilizadores/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id);
+    mobilizadores = mobilizadores.filter((m) => m.id !== id);
+    res.json({ success: true });
+  });
 
   // FICHAS DE CAMPO
   app.get('/api/fichas', (_req: Request, res: Response) => {
@@ -793,330 +486,16 @@ async function startServer() {
       id: fichaData.id || Date.now(),
       userId: req.user?.id || fichaData.userId,
       supervisorNome: req.user?.nome || fichaData.supervisorNome,
-      createdAt: fichaData.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
     fichas.unshift(newFicha);
-    persistDocToFirestore('fichas', String(newFicha.id), newFicha);
-    broadcastEvent('fichas', 'create', newFicha);
     res.status(201).json(newFicha);
   });
 
-  app.post('/api/fichas/batch', (req: AuthenticatedRequest, res: Response) => {
-    const items = Array.isArray(req.body) ? req.body : req.body.fichas || [];
-    const saved: any[] = [];
-    for (const item of items) {
-      const ficha = {
-        ...item,
-        id: item.id || Date.now() + Math.floor(Math.random() * 1000),
-        userId: req.user?.id || item.userId,
-        supervisorNome: req.user?.nome || item.supervisorNome,
-        createdAt: item.createdAt || new Date().toISOString(),
-      };
-      const existingIdx = fichas.findIndex((f) => String(f.id) === String(ficha.id) || Number(f.id) === Number(ficha.id));
-      if (existingIdx >= 0) {
-        fichas[existingIdx] = { ...fichas[existingIdx], ...ficha };
-      } else {
-        fichas.unshift(ficha);
-      }
-      persistDocToFirestore('fichas', String(ficha.id), ficha);
-      saved.push(ficha);
-    }
-    broadcastEvent('fichas', 'batch', { count: saved.length });
-    res.json({ success: true, count: saved.length, fichas: saved });
-  });
-
-  app.patch('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    const idx = fichas.findIndex((f) => String(f.id) === String(rawId) || Number(f.id) === Number(rawId));
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Ficha não encontrada' });
-    }
-    fichas[idx] = { ...fichas[idx], ...req.body };
-    persistDocToFirestore('fichas', String(fichas[idx].id), fichas[idx]);
-    broadcastEvent('fichas', 'update', fichas[idx]);
-    res.json(fichas[idx]);
-  });
-
-  app.put('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    const idx = fichas.findIndex((f) => String(f.id) === String(rawId) || Number(f.id) === Number(rawId));
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Ficha não encontrada' });
-    }
-    fichas[idx] = { ...fichas[idx], ...req.body };
-    persistDocToFirestore('fichas', String(fichas[idx].id), fichas[idx]);
-    broadcastEvent('fichas', 'update', fichas[idx]);
-    res.json(fichas[idx]);
-  });
-
-  const handleDeleteFichaHandler = (req: AuthenticatedRequest, res: Response) => {
-    const rawId = req.params.id;
-    fichas = fichas.filter((f) => String(f.id) !== String(rawId) && Number(f.id) !== Number(rawId));
-    deleteDocFromFirestore('fichas', String(rawId));
-    broadcastEvent('fichas', 'delete', { id: rawId });
-    res.json({ success: true, id: rawId });
-  };
-
-  app.delete('/api/fichas/:id', handleDeleteFichaHandler);
-  app.post('/api/fichas/:id/delete', handleDeleteFichaHandler);
-
-  // CASOS DE VIGILÂNCIA EPIDEMIOLÓGICA (PFA)
-  app.get('/api/casos-pfa', (_req: Request, res: Response) => {
-    res.json(casosPFA);
-  });
-
-  app.post('/api/casos-pfa', (req: AuthenticatedRequest, res: Response) => {
-    const caso = req.body;
-    const newCaso = {
-      ...caso,
-      id: caso.id || `pfa-${Date.now()}`,
-      supervisorId: req.user?.id || caso.supervisorId,
-      supervisorNome: req.user?.nome || caso.supervisorNome,
-      createdAt: caso.createdAt || new Date().toISOString(),
-    };
-    casosPFA.unshift(newCaso);
-    persistDocToFirestore('casos_pfa', String(newCaso.id), newCaso);
-    broadcastEvent('casos_pfa', 'create', newCaso);
-    res.status(201).json(newCaso);
-  });
-
-  app.patch('/api/casos-pfa/:id', (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    const idx = casosPFA.findIndex((c) => String(c.id) === id);
-    if (idx === -1) return res.status(404).json({ error: 'Caso PFA não encontrado' });
-    casosPFA[idx] = { ...casosPFA[idx], ...req.body };
-    persistDocToFirestore('casos_pfa', id, casosPFA[idx]);
-    broadcastEvent('casos_pfa', 'update', casosPFA[idx]);
-    res.json(casosPFA[idx]);
-  });
-
-  const handleDeleteCasoPFAHandler = (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    casosPFA = casosPFA.filter((c) => String(c.id) !== String(id));
-    deleteDocFromFirestore('casos_pfa', id);
-    broadcastEvent('casos_pfa', 'delete', { id });
-    res.json({ success: true, id });
-  };
-  app.delete('/api/casos-pfa/:id', handleDeleteCasoPFAHandler);
-  app.post('/api/casos-pfa/:id/delete', handleDeleteCasoPFAHandler);
-
-  // GESTÃO DE RUMORES & HESITAÇÃO
-  app.get('/api/rumores', (_req: Request, res: Response) => {
-    res.json(rumores);
-  });
-
-  app.post('/api/rumores', (req: AuthenticatedRequest, res: Response) => {
-    const rumor = req.body;
-    const newRumor = {
-      ...rumor,
-      id: rumor.id || `rumor-${Date.now()}`,
-      supervisorId: req.user?.id || rumor.supervisorId,
-      supervisorNome: req.user?.nome || rumor.supervisorNome,
-      createdAt: rumor.createdAt || new Date().toISOString(),
-    };
-    rumores.unshift(newRumor);
-    persistDocToFirestore('rumores', String(newRumor.id), newRumor);
-    broadcastEvent('rumores', 'create', newRumor);
-    res.status(201).json(newRumor);
-  });
-
-  app.patch('/api/rumores/:id', (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    const idx = rumores.findIndex((r) => String(r.id) === id);
-    if (idx === -1) return res.status(404).json({ error: 'Rumor não encontrado' });
-    rumores[idx] = { ...rumores[idx], ...req.body };
-    persistDocToFirestore('rumores', id, rumores[idx]);
-    broadcastEvent('rumores', 'update', rumores[idx]);
-    res.json(rumores[idx]);
-  });
-
-  const handleDeleteRumorHandler = (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    rumores = rumores.filter((r) => String(r.id) !== String(id));
-    deleteDocFromFirestore('rumores', id);
-    broadcastEvent('rumores', 'delete', { id });
-    res.json({ success: true, id });
-  };
-  app.delete('/api/rumores/:id', handleDeleteRumorHandler);
-  app.post('/api/rumores/:id/delete', handleDeleteRumorHandler);
-
-  // SUBMISSÕES DO ODK COLLECT
-  app.get('/api/odk-submissions', (_req: Request, res: Response) => {
-    res.json(odkSubmissions);
-  });
-
-  app.post('/api/odk-submissions', (req: AuthenticatedRequest, res: Response) => {
-    const sub = req.body;
-    const newSub = {
-      ...sub,
-      id: sub.id || `odk-${Date.now()}`,
-      createdAt: sub.createdAt || new Date().toISOString(),
-    };
-    odkSubmissions.unshift(newSub);
-    persistDocToFirestore('odk_submissions', String(newSub.id), newSub);
-    broadcastEvent('odk_submissions', 'create', newSub);
-    res.status(201).json(newSub);
-  });
-
-  app.patch('/api/odk-submissions/:id', (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    const idx = odkSubmissions.findIndex((s) => String(s.id) === id);
-    if (idx === -1) return res.status(404).json({ error: 'Submissão ODK não encontrada' });
-    odkSubmissions[idx] = { ...odkSubmissions[idx], ...req.body };
-    persistDocToFirestore('odk_submissions', id, odkSubmissions[idx]);
-    broadcastEvent('odk_submissions', 'update', odkSubmissions[idx]);
-    res.json(odkSubmissions[idx]);
-  });
-
-  const handleDeleteOdkHandler = (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    odkSubmissions = odkSubmissions.filter((s) => String(s.id) !== String(id));
-    deleteDocFromFirestore('odk_submissions', id);
-    broadcastEvent('odk_submissions', 'delete', { id });
-    res.json({ success: true, id });
-  };
-  app.delete('/api/odk-submissions/:id', handleDeleteOdkHandler);
-  app.post('/api/odk-submissions/:id/delete', handleDeleteOdkHandler);
-
-  // AUDIT LOGS
-  app.get('/api/audit-logs', (_req: Request, res: Response) => {
-    res.json(auditLogs);
-  });
-
-  app.post('/api/audit-logs', (req: AuthenticatedRequest, res: Response) => {
-    const log = req.body;
-    const newLog = {
-      ...log,
-      id: log.id || `log-${Date.now()}`,
-      timestamp: log.timestamp || new Date().toISOString(),
-    };
-    auditLogs.unshift(newLog);
-    persistDocToFirestore('audit_logs', String(newLog.id), newLog);
-    broadcastEvent('audit_logs', 'create', newLog);
-    res.status(201).json(newLog);
-  });
-
-  // METAS / GOALS
-  app.get('/api/goals', (_req: Request, res: Response) => {
-    res.json(coordinationGoals);
-  });
-
-  app.post('/api/goals', (req: AuthenticatedRequest, res: Response) => {
-    const goal = req.body;
-    const idx = coordinationGoals.findIndex((g) => g.coordId === Number(goal.coordId));
-    if (idx !== -1) {
-      coordinationGoals[idx] = goal;
-    } else {
-      coordinationGoals.push(goal);
-    }
-    persistDocToFirestore('coordination_goals', String(goal.coordId), goal);
-    broadcastEvent('coordination_goals', 'update', goal);
-    res.json(goal);
-  });
-
-  // BLOCO DE NOTAS DO ADMINISTRADOR
-  app.get('/api/notepad', (_req: Request, res: Response) => {
-    res.json({ text: notepadText });
-  });
-
-  app.post('/api/notepad', (req: AuthenticatedRequest, res: Response) => {
-    notepadText = req.body.text || '';
-    persistDocToFirestore('system_metadata', 'notepad', { text: notepadText, updatedAt: new Date().toISOString() });
-    broadcastEvent('notepad', 'update', { text: notepadText });
-    res.json({ text: notepadText });
-  });
-
-  // ALERTAS ADMINISTRATIVOS
-  app.get('/api/alerts', (_req: Request, res: Response) => {
-    res.json(adminAlerts);
-  });
-
-  app.post('/api/alerts', (req: AuthenticatedRequest, res: Response) => {
-    adminAlerts = req.body.alerts || {};
-    persistDocToFirestore('system_metadata', 'admin_alerts', { alerts: adminAlerts, updatedAt: new Date().toISOString() });
-    broadcastEvent('admin_alerts', 'update', adminAlerts);
-    res.json(adminAlerts);
-  });
-
-  // MENSAGENS INTERNAS DO SISTEMA
-  app.get('/api/admin-messages', (_req: Request, res: Response) => {
-    res.json(adminMessages);
-  });
-
-  app.post('/api/admin-messages', (req: AuthenticatedRequest, res: Response) => {
-    const msg = req.body;
-    adminMessages.unshift(msg);
-    persistDocToFirestore('admin_messages', String(msg.id || Date.now()), msg);
-    broadcastEvent('admin_messages', 'create', msg);
-    res.status(201).json(msg);
-  });
-
-  // PAGAMENTOS
-  app.get('/api/payment-statuses', (_req: Request, res: Response) => {
-    res.json(paymentStatuses);
-  });
-
-  app.post('/api/payment-statuses', (req: AuthenticatedRequest, res: Response) => {
-    paymentStatuses = req.body.statuses || {};
-    persistDocToFirestore('system_metadata', 'payments', { statuses: paymentStatuses, updatedAt: new Date().toISOString() });
-    broadcastEvent('payment_statuses', 'update', paymentStatuses);
-    res.json(paymentStatuses);
-  });
-
-  // NOTÍCIAS DO PORTAL
-  app.get('/api/portal-posts', (_req: Request, res: Response) => {
-    res.json(portalPosts);
-  });
-
-  app.post('/api/portal-posts', (req: AuthenticatedRequest, res: Response) => {
-    const post = req.body;
-    const idx = portalPosts.findIndex((p) => p.id === post.id);
-    if (idx !== -1) {
-      portalPosts[idx] = post;
-    } else {
-      portalPosts.unshift(post);
-    }
-    persistDocToFirestore('portal_posts', String(post.id), post);
-    broadcastEvent('portal_posts', 'create', post);
-    res.json(post);
-  });
-
-  const handleDeletePortalPostHandler = (req: AuthenticatedRequest, res: Response) => {
-    const { id } = req.params;
-    portalPosts = portalPosts.filter((p) => p.id !== id);
-    deleteDocFromFirestore('portal_posts', id);
-    broadcastEvent('portal_posts', 'delete', { id });
-    res.json({ success: true, id });
-  };
-  app.delete('/api/portal-posts/:id', handleDeletePortalPostHandler);
-  app.post('/api/portal-posts/:id/delete', handleDeletePortalPostHandler);
-
-  // LIMPEZA DE DADOS DE TESTE (Admin)
-  app.post('/api/clear-test-data', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
-    fichas = [];
-    mobilizadores = [];
-    casosPFA = [];
-    rumores = [];
-    odkSubmissions = [];
-    auditLogs = [];
-
-    if (firestoreAdmin && firestoreAdminAvailable) {
-      try {
-        const collectionsToClear = ['fichas', 'mobilizadores', 'casos_pfa', 'rumores', 'odk_submissions', 'audit_logs'];
-        for (const col of collectionsToClear) {
-          const snap = await firestoreAdmin.collection(col).get();
-          const batch = firestoreAdmin.batch();
-          snap.docs.forEach((doc) => batch.delete(doc.ref));
-          await batch.commit();
-        }
-      } catch {
-        firestoreAdminAvailable = false;
-        firestoreAdmin = null;
-      }
-    }
-
-    broadcastEvent('clear_test_data', 'complete', {});
-    res.json({ success: true, message: 'Dados de teste eliminados com sucesso.' });
+  app.delete('/api/fichas/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id);
+    fichas = fichas.filter((f) => f.id !== id);
+    res.json({ success: true });
   });
 
   // AI INSIGHTS ENDPOINT (GEMINI API)
@@ -1165,7 +544,7 @@ Responda APENAS com um objeto JSON válido (sem tags markdown de código e sem t
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
