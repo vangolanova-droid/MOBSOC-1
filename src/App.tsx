@@ -555,6 +555,7 @@ export default function App() {
         onOpenNotepad={() => setNotepadOpen(true)}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenPortalNews={() => setPortalNewsOpen(true)}
+        onOpenGoalModal={() => setGoalModalOpen(true)}
         onLogout={handleLogout}
         onCloseMobile={() => setSidebarOpen(false)}
       />
@@ -582,6 +583,7 @@ export default function App() {
           onOpenNotepad={() => setNotepadOpen(true)}
           onOpenAuditLogs={handleOpenAuditLogs}
           onOpenPortalNews={() => setPortalNewsOpen(true)}
+          onOpenGoalModal={() => setGoalModalOpen(true)}
           onSelectTab={(tab) => setActiveTab(tab)}
         />
 
@@ -749,7 +751,7 @@ export default function App() {
               </div>
             ))}
 
-          {activeTab === 'utilizadores' && currentUser.tipo === 'admin' && (
+          {(activeTab === 'utilizadores' || activeTab === 'cadastrarUtilizador') && currentUser.tipo === 'admin' && (
             <UtilizadoresView
               users={users}
               coordenacoes={coordenacoes}
@@ -760,7 +762,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'coordenacoes' && currentUser.tipo === 'admin' && (
+          {(activeTab === 'coordenacoes' || activeTab === 'cadastrarCoordenacao') && currentUser.tipo === 'admin' && (
             <CoordenacoesView
               coordenacoes={coordenacoes}
               users={users}

@@ -774,22 +774,22 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-white text-[#0B5CAD] font-bold uppercase">
+              <div className="overflow-x-auto rounded-xl border-2 border-slate-300">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-100 text-[#0B5CAD] font-bold uppercase border-b-2 border-slate-300">
                     <tr>
-                      <th className="p-2.5">Local</th>
-                      <th className="p-2.5 text-center">Locais Visitados</th>
+                      <th className="p-2.5 border-r-2 border-slate-300">Local</th>
+                      <th className="p-2.5 text-center border-r-2 border-slate-300">Locais Visitados</th>
                       <th className="p-2.5 text-center">Pessoas Alcançadas</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y-2 divide-slate-200">
                     {LOCATION_CONFIGS.map((loc) => {
                       const pair = selectedFicha.tableData[loc.key] || [0, 0];
                       return (
                         <tr key={loc.key}>
-                          <td className="p-2 text-slate-800 font-medium">{loc.label}</td>
-                          <td className="p-2 text-center font-mono text-slate-600 font-semibold">
+                          <td className="p-2 text-slate-800 font-medium border-r-2 border-slate-200">{loc.label}</td>
+                          <td className="p-2 text-center font-mono text-slate-700 font-semibold border-r-2 border-slate-200">
                             {pair[0]}
                           </td>
                           <td className="p-2 text-center font-mono font-black text-[#2E7D32]">
@@ -962,37 +962,37 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                   </h4>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-white text-[#0B5CAD] font-bold uppercase text-[10px]">
+                <div className="overflow-x-auto rounded-xl border-2 border-slate-300">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-100 text-[#0B5CAD] font-bold uppercase text-[10px] border-b-2 border-slate-300">
                       <tr>
-                        <th className="p-2.5">Local Visitado</th>
-                        <th className="p-2.5 text-center w-36">Nº de Locais</th>
+                        <th className="p-2.5 border-r-2 border-slate-300">Local Visitado</th>
+                        <th className="p-2.5 text-center w-36 border-r-2 border-slate-300">Nº de Locais</th>
                         <th className="p-2.5 text-center w-36">Nº de Pessoas</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y-2 divide-slate-200">
                       {LOCATION_CONFIGS.map((loc) => {
                         const pair = editTableData[loc.key] || [0, 0];
                         return (
                           <tr key={loc.key} className="hover:bg-slate-50">
-                            <td className="p-2.5 font-semibold text-slate-800">{loc.label}</td>
-                            <td className="p-2 text-center">
+                            <td className="p-2.5 font-semibold text-slate-800 border-r-2 border-slate-200">{loc.label}</td>
+                            <td className="p-2 text-center border-r-2 border-slate-200 bg-slate-50/50">
                               <input
                                 type="number"
                                 min="0"
                                 value={pair[0]}
                                 onChange={(e) => handleTableInputChange(loc.key, 0, e.target.value)}
-                                className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-center font-mono text-xs font-bold text-slate-800 outline-none focus:border-[#0B5CAD]"
+                                className="w-24 rounded-lg border-2 border-slate-300 bg-white px-2 py-1 text-center font-mono text-xs font-bold text-slate-800 outline-none focus:border-[#0B5CAD]"
                               />
                             </td>
-                            <td className="p-2 text-center">
+                            <td className="p-2 text-center bg-slate-50/50">
                               <input
                                 type="number"
                                 min="0"
                                 value={pair[1]}
                                 onChange={(e) => handleTableInputChange(loc.key, 1, e.target.value)}
-                                className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-center font-mono text-xs font-bold text-[#2E7D32] outline-none focus:border-[#0B5CAD]"
+                                className="w-24 rounded-lg border-2 border-slate-300 bg-white px-2 py-1 text-center font-mono text-xs font-bold text-[#2E7D32] outline-none focus:border-[#0B5CAD]"
                               />
                             </td>
                           </tr>

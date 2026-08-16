@@ -320,47 +320,47 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
       </div>
 
       {/* Dados Gerais Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-          <MapPin className="h-4 w-4 text-blue-600" />
+      <div className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span>Localização & Mobilizador</span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Província
             </label>
             <input
               type="text"
               readOnly
               value={provincia}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Município / Distrito
             </label>
             <input
               type="text"
               readOnly
               value={municipio}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none"
             />
           </div>
 
           {/* Coordenação Responsável between Município and Comuna */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Coordenação Responsável
             </label>
             {isAdmin ? (
               <select
                 value={coordId}
                 onChange={(e) => setCoordId(Number(e.target.value))}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs font-medium text-slate-900 dark:text-white outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
                 id="select-ficha-coord"
               >
                 {coordenacoes.map((c) => (
@@ -378,25 +378,25 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
                   user.coordNome ||
                   '—'
                 }
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+                className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none"
               />
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Comuna
             </label>
             <input
               type="text"
               readOnly
               value={comuna}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 cursor-not-allowed outline-none"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Bairro / Comunidade <span className="text-red-500">*</span>
             </label>
 
@@ -404,7 +404,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               <select
                 value={availableBairros.includes(bairro) ? bairro : ''}
                 onChange={(e) => setBairro(e.target.value)}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
                 id="select-ficha-bairro"
               >
                 <option value="">-- Selecionar Bairro Registado --</option>
@@ -422,16 +422,16 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               placeholder="Ou digite o nome do bairro..."
               value={bairro}
               onChange={(e) => setBairro(e.target.value)}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
               id="input-ficha-bairro"
             />
           </div>
 
           {/* Nome do Mobilizador right after Bairro */}
           <div>
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <span>Nome do Mobilizador</span>
-              <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 font-mono font-bold text-[11px] border border-sky-200">
+              <span className="px-2 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900/60 text-sky-800 dark:text-sky-300 font-mono font-bold text-[11px] border border-sky-300 dark:border-sky-700">
                 {ronda}
               </span>
               <span className="text-red-500">*</span>
@@ -441,7 +441,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
                 <select
                   value={mobilizador}
                   onChange={(e) => handleSelectMobilizador(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 font-medium"
+                  className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 font-medium"
                   id="select-ficha-mobilizador"
                 >
                   <option value="">-- Seleccionar Mobilizador Registado --</option>
@@ -458,7 +458,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
                   placeholder="Nome completo do agente"
                   value={mobilizador}
                   onChange={(e) => setMobilizador(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+                  className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
                   id="input-ficha-mobilizador"
                 />
               )}
@@ -466,7 +466,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Contacto Telefónico
             </label>
             <input
@@ -474,13 +474,13 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               placeholder="9XX XXX XXX"
               value={telefone}
               onChange={(e) => setTelefone(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
               id="input-ficha-telefone"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <span>Número da Equipa</span>
               <span className="text-[10px] font-normal text-slate-400">(Fixo / Cadastro RH)</span>
             </label>
@@ -490,11 +490,11 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
                 readOnly
                 placeholder="—"
                 value={numeroEquipa || (mobilizador ? 'Sem equipa atribuída' : 'Selecione o mobilizador')}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-slate-100 pl-3.5 pr-3 text-xs font-bold text-indigo-900 cursor-not-allowed outline-none"
+                className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 pl-3.5 pr-3 text-xs font-bold text-indigo-900 dark:text-indigo-300 cursor-not-allowed outline-none"
                 id="input-ficha-equipa"
               />
               {numeroEquipa && (
-                <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-mono font-black text-[11px] border border-indigo-200">
+                <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 font-mono font-black text-[11px] border border-indigo-300 dark:border-indigo-700">
                   {numeroEquipa}
                 </span>
               )}
@@ -502,13 +502,13 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Ronda da Campanha <span className="text-red-500">*</span>
             </label>
             <select
               value={ronda}
               onChange={(e) => setRonda(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs font-medium text-slate-900 dark:text-white outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
               id="select-ficha-ronda"
             >
               <option value="1ª Ronda">1ª Ronda</option>
@@ -519,7 +519,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               Data da Atividade <span className="text-red-500">*</span>
             </label>
             <input
@@ -527,7 +527,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               required
               value={data}
               onChange={(e) => setData(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
               id="input-ficha-data"
             />
           </div>
@@ -536,91 +536,95 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
 
       {/* Summary Counters Bar */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-center shadow-xs">
-          <div className="text-2xl font-bold font-mono text-emerald-700">
+        <div className="rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/80 dark:bg-emerald-950/40 p-4 text-center shadow-xs">
+          <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
             {grandPessoas.toLocaleString()}
           </div>
-          <div className="text-xs font-medium text-emerald-800 mt-1">
+          <div className="text-xs font-bold text-emerald-900 dark:text-emerald-300 mt-1">
             Total Pessoas Alcançadas
           </div>
         </div>
 
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-center shadow-xs">
-          <div className="text-2xl font-bold font-mono text-blue-700">
+        <div className="rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-950/40 p-4 text-center shadow-xs">
+          <div className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-400">
             {grandLocais.toLocaleString()}
           </div>
-          <div className="text-xs font-medium text-blue-800 mt-1">
+          <div className="text-xs font-bold text-blue-900 dark:text-blue-300 mt-1">
             Total Locais Visitados
           </div>
         </div>
 
-        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 text-center shadow-xs">
-          <div className="text-2xl font-bold font-mono text-amber-700">
+        <div className="rounded-xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/40 p-4 text-center shadow-xs">
+          <div className="text-2xl font-bold font-mono text-amber-700 dark:text-amber-400">
             {casaPessoas.toLocaleString()}
           </div>
-          <div className="text-xs font-medium text-amber-800 mt-1">
+          <div className="text-xs font-bold text-amber-900 dark:text-amber-300 mt-1">
             Pessoas Casa a Casa
           </div>
         </div>
 
-        <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-4 text-center shadow-xs">
-          <div className="text-2xl font-bold font-mono text-purple-700">
+        <div className="rounded-xl border-2 border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-950/40 p-4 text-center shadow-xs">
+          <div className="text-2xl font-bold font-mono text-purple-700 dark:text-purple-400">
             {otherPessoas.toLocaleString()}
           </div>
-          <div className="text-xs font-medium text-purple-800 mt-1">
+          <div className="text-xs font-bold text-purple-900 dark:text-purple-300 mt-1">
             Pessoas Outros Locais
           </div>
         </div>
       </div>
 
       {/* Mobilization Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <div className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-            <Calculator className="h-4 w-4 text-blue-600" />
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <span>Matriz de Mobilização no Terreno (Locais & Pessoas)</span>
           </div>
-          <span className="text-xs text-slate-500 font-medium">Cálculo em tempo real</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Cálculo em tempo real</span>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-xs text-slate-800">
-            <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase border-b border-slate-200">
+        <div className="overflow-x-auto rounded-xl border-2 border-slate-400 dark:border-slate-600 shadow-xs">
+          <table className="w-full text-left text-xs text-slate-900 dark:text-slate-100 border-collapse">
+            <thead className="bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase border-b-2 border-slate-400 dark:border-slate-600">
               <tr>
-                <th className="p-3">Local de Mobilização</th>
-                <th className="p-3 text-center w-40 bg-emerald-50/50 text-emerald-800 border-x border-slate-200">
+                <th className="p-3.5 border-r-2 border-slate-400 dark:border-slate-600">
+                  Local de Mobilização
+                </th>
+                <th className="p-3.5 text-center w-44 bg-emerald-100/70 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border-r-2 border-slate-400 dark:border-slate-600 font-bold">
                   Total Locais
                 </th>
-                <th className="p-3 text-center w-40 bg-blue-50/50 text-blue-800">
+                <th className="p-3.5 text-center w-44 bg-blue-100/70 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 font-bold">
                   Total Pessoas
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y-2 divide-slate-300 dark:divide-slate-700 bg-white dark:bg-slate-900">
               {/* Casa a Casa Items */}
               {LOCATION_CONFIGS.filter((l) => l.group === 'casa').map((loc) => {
                 const val = tableState[loc.key] || [0, 0];
                 return (
-                  <tr key={loc.key} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3 font-medium text-slate-800">{loc.label}</td>
-                    <td className="p-1.5 border-x border-slate-100">
+                  <tr key={loc.key} className="hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors">
+                    <td className="p-3 font-semibold text-slate-800 dark:text-slate-200 border-r-2 border-slate-300 dark:border-slate-700">
+                      {loc.label}
+                    </td>
+                    <td className="p-2 border-r-2 border-slate-300 dark:border-slate-700 bg-emerald-50/30 dark:bg-emerald-950/20">
                       <input
                         type="number"
                         min="0"
                         value={val[0] || ''}
                         onChange={(e) => handleInputChange(loc.key, 0, e.target.value)}
                         placeholder="0"
-                        className="w-full h-9 bg-slate-50 p-2 text-center font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 rounded-lg border border-slate-200 transition"
+                        className="w-full h-9 bg-white dark:bg-slate-800 p-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 rounded-lg border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 transition"
                       />
                     </td>
-                    <td className="p-1.5">
+                    <td className="p-2 bg-blue-50/30 dark:bg-blue-950/20">
                       <input
                         type="number"
                         min="0"
                         value={val[1] || ''}
                         onChange={(e) => handleInputChange(loc.key, 1, e.target.value)}
                         placeholder="0"
-                        className="w-full h-9 bg-slate-50 p-2 text-center font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 rounded-lg border border-slate-200 transition"
+                        className="w-full h-9 bg-white dark:bg-slate-800 p-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 rounded-lg border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 transition"
                       />
                     </td>
                   </tr>
@@ -628,17 +632,21 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               })}
 
               {/* Subtotal Casa a Casa */}
-              <tr className="bg-emerald-50/70 font-bold border-y border-emerald-200 text-emerald-800">
-                <td className="p-3 text-xs">↳ SUB-TOTAL CASA A CASA</td>
-                <td className="p-3 text-center font-mono border-x border-emerald-200">
+              <tr className="bg-emerald-100/80 dark:bg-emerald-950/80 font-bold border-y-2 border-emerald-400 dark:border-emerald-600 text-emerald-950 dark:text-emerald-200">
+                <td className="p-3 text-xs border-r-2 border-emerald-400 dark:border-emerald-600 font-extrabold">
+                  ↳ SUB-TOTAL CASA A CASA
+                </td>
+                <td className="p-3 text-center font-mono text-sm border-r-2 border-emerald-400 dark:border-emerald-600 font-black">
                   {casaLocais}
                 </td>
-                <td className="p-3 text-center font-mono">{casaPessoas}</td>
+                <td className="p-3 text-center font-mono text-sm font-black">
+                  {casaPessoas}
+                </td>
               </tr>
 
               {/* Section Header for Other Locals */}
-              <tr className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider border-y border-slate-200">
-                <td colSpan={3} className="p-3">
+              <tr className="bg-slate-200/90 dark:bg-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider border-y-2 border-slate-400 dark:border-slate-600">
+                <td colSpan={3} className="p-3 font-extrabold text-slate-900 dark:text-white">
                   Outros Locais de Mobilização Comunitária
                 </td>
               </tr>
@@ -647,26 +655,28 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               {LOCATION_CONFIGS.filter((l) => l.group === 'other').map((loc) => {
                 const val = tableState[loc.key] || [0, 0];
                 return (
-                  <tr key={loc.key} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3 font-medium text-slate-800">{loc.label}</td>
-                    <td className="p-1.5 border-x border-slate-100">
+                  <tr key={loc.key} className="hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors">
+                    <td className="p-3 font-semibold text-slate-800 dark:text-slate-200 border-r-2 border-slate-300 dark:border-slate-700">
+                      {loc.label}
+                    </td>
+                    <td className="p-2 border-r-2 border-slate-300 dark:border-slate-700 bg-emerald-50/30 dark:bg-emerald-950/20">
                       <input
                         type="number"
                         min="0"
                         value={val[0] || ''}
                         onChange={(e) => handleInputChange(loc.key, 0, e.target.value)}
                         placeholder="0"
-                        className="w-full h-9 bg-slate-50 p-2 text-center font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 rounded-lg border border-slate-200 transition"
+                        className="w-full h-9 bg-white dark:bg-slate-800 p-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 rounded-lg border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 transition"
                       />
                     </td>
-                    <td className="p-1.5">
+                    <td className="p-2 bg-blue-50/30 dark:bg-blue-950/20">
                       <input
                         type="number"
                         min="0"
                         value={val[1] || ''}
                         onChange={(e) => handleInputChange(loc.key, 1, e.target.value)}
                         placeholder="0"
-                        className="w-full h-9 bg-slate-50 p-2 text-center font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 rounded-lg border border-slate-200 transition"
+                        className="w-full h-9 bg-white dark:bg-slate-800 p-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/30 rounded-lg border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 transition"
                       />
                     </td>
                   </tr>
@@ -674,23 +684,27 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               })}
 
               {/* Subtotal Other */}
-              <tr className="bg-blue-50/70 font-bold border-y border-blue-200 text-blue-800">
-                <td className="p-3 text-xs">↳ SUB-TOTAL OUTROS LOCAIS</td>
-                <td className="p-3 text-center font-mono border-x border-blue-200">
+              <tr className="bg-blue-100/80 dark:bg-blue-950/80 font-bold border-y-2 border-blue-400 dark:border-blue-600 text-blue-950 dark:text-blue-200">
+                <td className="p-3 text-xs border-r-2 border-blue-400 dark:border-blue-600 font-extrabold">
+                  ↳ SUB-TOTAL OUTROS LOCAIS
+                </td>
+                <td className="p-3 text-center font-mono text-sm border-r-2 border-blue-400 dark:border-blue-600 font-black">
                   {otherLocais}
                 </td>
-                <td className="p-3 text-center font-mono">{otherPessoas}</td>
+                <td className="p-3 text-center font-mono text-sm font-black">
+                  {otherPessoas}
+                </td>
               </tr>
             </tbody>
 
             {/* Grand Total Footer */}
             <tfoot>
-              <tr className="bg-slate-900 text-sm font-bold text-white">
-                <td className="p-3.5">TOTAL GERAL DE ATIVIDADES</td>
-                <td className="p-3.5 text-center font-mono border-x border-slate-800">
+              <tr className="bg-slate-900 text-sm font-bold text-white border-t-2 border-slate-950">
+                <td className="p-3.5 border-r-2 border-slate-700 font-black">TOTAL GERAL DE ATIVIDADES</td>
+                <td className="p-3.5 text-center font-mono text-base border-r-2 border-slate-700 font-black text-emerald-400">
                   {grandLocais}
                 </td>
-                <td className="p-3.5 text-center font-mono">
+                <td className="p-3.5 text-center font-mono text-base font-black text-blue-400">
                   {grandPessoas}
                 </td>
               </tr>
@@ -700,19 +714,19 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
       </div>
 
       {/* Pergunta Final de Aceitação */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-          <HelpCircle className="h-4 w-4 text-purple-600" />
+      <div className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          <HelpCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           <span>Pergunta de Aceitação da Visita Vacinal</span>
         </div>
 
-        <p className="text-sm font-semibold text-slate-800">
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
           "As equipas virão vacinar as crianças. Queres que venham à tua casa?"
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-xs font-semibold text-emerald-700">
+            <label className="block text-xs font-bold text-emerald-800 dark:text-emerald-300">
               Responderam SIM
             </label>
             <input
@@ -721,16 +735,16 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               value={sim || ''}
               onChange={(e) => setSim(Math.max(0, parseInt(e.target.value) || 0))}
               placeholder="0"
-              className="mt-1.5 w-full h-11 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 text-sm font-bold font-mono text-emerald-800 outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 transition"
+              className="mt-1.5 w-full h-11 rounded-xl border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 px-3.5 text-sm font-bold font-mono text-emerald-900 dark:text-emerald-200 outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/30 transition"
               id="input-ficha-sim"
             />
-            <p className="mt-1 text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+            <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <span>✓ Preenchido automaticamente com base no total de pessoas alcançadas ({grandPessoas} pessoas)</span>
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-red-700">
+            <label className="block text-xs font-bold text-red-800 dark:text-red-300">
               Responderam NÃO
             </label>
             <input
@@ -739,18 +753,18 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
               value={nao || ''}
               onChange={(e) => setNao(Math.max(0, parseInt(e.target.value) || 0))}
               placeholder="0"
-              className="mt-1.5 w-full h-11 rounded-xl border border-red-200 bg-red-50/50 px-3.5 text-sm font-bold font-mono text-red-800 outline-none focus:border-red-600 focus:bg-white focus:ring-2 focus:ring-red-600/20 transition"
+              className="mt-1.5 w-full h-11 rounded-xl border-2 border-red-400 dark:border-red-600 bg-red-50/60 dark:bg-red-950/40 px-3.5 text-sm font-bold font-mono text-red-900 dark:text-red-200 outline-none focus:border-red-600 focus:bg-white focus:ring-2 focus:ring-red-600/30 transition"
               id="input-ficha-nao"
             />
           </div>
 
           <div className="sm:col-span-1">
-            <label className="block text-xs font-semibold text-purple-700">
+            <label className="block text-xs font-bold text-purple-800 dark:text-purple-300">
               Taxa de Aceitação
             </label>
-            <div className="mt-1.5 flex h-11 items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 px-3.5 text-xs font-bold text-purple-900">
+            <div className="mt-1.5 flex h-11 items-center justify-between rounded-xl border-2 border-purple-400 dark:border-purple-600 bg-purple-50/60 dark:bg-purple-950/40 px-3.5 text-xs font-bold text-purple-950 dark:text-purple-200">
               <span>{acceptancePct}% de Aceitação</span>
-              <span className="text-xs text-purple-600 font-medium">
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">
                 ({sim} SIM / {totalRespostas} Total)
               </span>
             </div>
@@ -758,7 +772,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
             Motivo da Recusa (quando responderam NÃO)
           </label>
           <input
@@ -766,15 +780,15 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
             placeholder="Descreva o motivo informado pelas famílias recusantes..."
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+            className="mt-1.5 w-full h-11 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
             id="input-ficha-motivo"
           />
         </div>
       </div>
 
       {/* Secção Especial de Vigilância de PFA (Paralisia Flácida Aguda) */}
-      <div className={`rounded-2xl border p-6 shadow-sm space-y-4 transition-all ${
-        pfaDetetado ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-white'
+      <div className={`rounded-2xl border-2 p-6 shadow-sm space-y-4 transition-all ${
+        pfaDetetado ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-950/40' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">

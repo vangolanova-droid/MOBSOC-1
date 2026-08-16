@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard,
   FilePlus,
@@ -21,9 +21,12 @@ import {
   PanelLeftOpen,
   Newspaper,
   MessageSquareWarning,
+  Plus,
+  Layers,
 } from 'lucide-react';
 import { User, Ficha, ODKSubmission } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
+import { NovoRegistoHubModal } from './NovoRegistoHubModal';
 import {
   Theme,
   UserThemeConfig,
@@ -49,6 +52,7 @@ interface SidebarProps {
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
   onOpenPortalNews?: () => void;
+  onOpenGoalModal?: () => void;
   onLogout: () => void;
   onCloseMobile: () => void;
 }
@@ -69,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNotepad,
   onOpenAuditLogs,
   onOpenPortalNews,
+  onOpenGoalModal,
   onLogout,
   onCloseMobile,
 }) => {
@@ -76,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const todayStr = new Date().toISOString().split('T')[0];
   const [colorPickerOpen, setColorPickerOpen] = React.useState(false);
   const [internalCollapsed, setInternalCollapsed] = React.useState(false);
+  const [isHubCadastrosOpen, setIsHubCadastrosOpen] = useState(false);
 
   // Synchronize internal collapsed state with prop if provided
   const isCollapsed = propIsCollapsed ?? internalCollapsed;
@@ -375,6 +381,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-3">
+          {/* Ação Primária Mestre: Central de Cadastros */}
+          <div className="pb-1">
+            {!isCollapsed ? (
+              <ActionTooltip content="Central unificada para novos registos: Ficha Diária, Rumores, Casos PFA, Mobilizadores e Utilizadores.">
+                <button
+                  onClick={() => setIsHubCadastrosOpen(true)}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 text-xs font-black shadow-md shadow-blue-500/25 transition active:scale-98 cursor-pointer"
+                  id="nav-btn-central-cadastros"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-white/20">
+                      <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                    </div>
+                    <span className="truncate tracking-wide">Novo Registo</span>
+                  </div>
+                  <span className="rounded-md bg-white/25 px-1.5 py-0.2 text-[9px] font-black uppercase">
+                    Hub
+                  </span>
+                </button>
+              </ActionTooltip>
+            ) : (
+              <ActionTooltip content="Central de Cadastros e Lançamentos">
+                <button
+                  onClick={() => setIsHubCadastrosOpen(true)}
+                  className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md transition active:scale-95 cursor-pointer"
+                  id="nav-btn-central-cadastros-recolhido"
+                >
+                  <Plus className="h-5 w-5 stroke-[3]" />
+                </button>
+              </ActionTooltip>
+            )}
+          </div>
+
           {/* Main Section */}
           <div>
             {!isCollapsed ? (
@@ -801,6 +840,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
       </aside>
+
+      {/* Central Unificada de Cadastros e Lançamentos Modal */}
+      <NovoRegistoHubModal
+        isOpen={isHubCadastrosOpen}
+        onClose={() => setIsHubCadastrosOpen(false)}
+        user={user}
+        onSelectAction={(actionKey) => {
+          if (actionKey === 'modalMetas' && onOpenGoalModal) {
+            onOpenGoalModal();
+          } else if (actionKey === 'modalNoticias' && onOpenPortalNews) {
+            onOpenPortalNews();
+          } else if (onSelectTab) {
+            onSelectTab(actionKey);
+          }
+        }}
+      />
     </>
   );
 };

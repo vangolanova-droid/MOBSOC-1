@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   Plus,
+  Layers,
   Menu,
   Wifi,
   WifiOff,
@@ -34,6 +35,7 @@ import {
 import { Coordination, User, Ficha, ODKSubmission, AuditLog, Mobilizador } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
+import { NovoRegistoHubModal } from './NovoRegistoHubModal';
 import {
   Theme,
   THEMES,
@@ -78,6 +80,8 @@ interface HeaderProps {
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
   onOpenPortalNews?: () => void;
+  onOpenGoalModal?: () => void;
+  onOpenHubCadastros?: () => void;
   onSelectTab?: (tab: string) => void;
 }
 
@@ -102,11 +106,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotepad,
   onOpenAuditLogs,
   onOpenPortalNews,
+  onOpenGoalModal,
+  onOpenHubCadastros,
   onSelectTab,
 }) => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isActiveSupervisorsOpen, setIsActiveSupervisorsOpen] = useState(false);
+  const [isHubCadastrosOpen, setIsHubCadastrosOpen] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<'todas' | 'fichas' | 'odk' | 'criticas'>('todas');
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(new Set());
 
@@ -335,6 +342,18 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 text-xs">
+        {/* Botão Mestre Unificado: Central de Cadastros / Lançamentos */}
+        <ActionTooltip content="Central unificada para registar fichas, rumores, casos PFA, mobilizadores, utilizadores e coordenações.">
+          <button
+            onClick={() => setIsHubCadastrosOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-white/30 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 px-3.5 py-1.5 text-xs font-black text-blue-700 dark:text-blue-300 shadow-sm transition active:scale-95 cursor-pointer"
+            id="btn-header-novo-registo-hub"
+          >
+            <Plus className="h-4 w-4 stroke-[3] text-blue-600 dark:text-blue-400" />
+            <span className="font-extrabold tracking-wide">Novo Registo</span>
+          </button>
+        </ActionTooltip>
+
         {/* Indicador de Supervisores com Ponto Verde Piscando */}
         <button
           onClick={() => setIsActiveSupervisorsOpen(true)}
@@ -883,6 +902,22 @@ export const Header: React.FC<HeaderProps> = ({
         mobilizadores={mobilizadores}
         onSelectSupervisorFichas={() => {
           if (onSelectTab) onSelectTab('listFichas');
+        }}
+      />
+
+      {/* Central Unificada de Cadastros e Lançamentos Modal */}
+      <NovoRegistoHubModal
+        isOpen={isHubCadastrosOpen}
+        onClose={() => setIsHubCadastrosOpen(false)}
+        user={user}
+        onSelectAction={(actionKey) => {
+          if (actionKey === 'modalMetas' && onOpenGoalModal) {
+            onOpenGoalModal();
+          } else if (actionKey === 'modalNoticias' && onOpenPortalNews) {
+            onOpenPortalNews();
+          } else if (onSelectTab) {
+            onSelectTab(actionKey);
+          }
         }}
       />
     </header>
