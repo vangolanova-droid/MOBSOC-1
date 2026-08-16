@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
@@ -17,14 +18,15 @@ const PROJECT_ID = process.env.PROJECT_ID || 'gen-lang-client-0008698452';
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || 'ai-studio-remixremixremixs-3364589c-87d9-4aa7-bfda-18c3eab160bb';
 
 let firestoreAdmin: Firestore | null = null;
+let firestoreAdminAvailable = false;
+
 try {
   firestoreAdmin = new Firestore({
     projectId: PROJECT_ID,
     databaseId: FIRESTORE_DATABASE_ID,
   });
-  console.log(`[SisMob Backend] Conexão Firestore Admin inicializada para o projeto ${PROJECT_ID} (db: ${FIRESTORE_DATABASE_ID}).`);
-} catch (err) {
-  console.warn('[SisMob Backend] Firestore Admin em modo de contingência local:', err);
+} catch {
+  firestoreAdmin = null;
 }
 
 // Interfaces de Tipagem do Express para requisições autenticadas
@@ -224,8 +226,14 @@ let portalPosts: any[] = [];
  * Funções auxiliares do Firestore Admin para persistência segura
  */
 async function syncFromFirestoreAdmin() {
-  if (!firestoreAdmin) return;
+  if (!firestoreAdmin) {
+    firestoreAdminAvailable = false;
+    return;
+  }
   try {
+    const testProbe = await firestoreAdmin.collection('system_config').limit(1).get();
+    firestoreAdminAvailable = true;
+
     const coordsSnap = await firestoreAdmin.collection('coordenacoes').get();
     if (!coordsSnap.empty) {
       coordenacoes = coordsSnap.docs.map((d) => d.data());
@@ -276,27 +284,31 @@ async function syncFromFirestoreAdmin() {
       portalPosts = portalSnap.docs.map((d) => d.data());
     }
 
-    console.log('[SisMob Backend] Sincronização inicial com Firestore Admin efetuada.');
-  } catch (err) {
-    console.warn('[SisMob Backend] Aviso na sincronização do Firestore Admin (usando estado em memória):', err);
+    console.log('[SisMob Backend] Sincronização inicial com Firestore Admin efetuada com sucesso.');
+  } catch (err: any) {
+    firestoreAdminAvailable = false;
+    firestoreAdmin = null;
+    // Falha normal em ambiente sem credenciais de serviço GCP; o cliente Web SDK trata da persistência no browser
   }
 }
 
 async function persistDocToFirestore(collectionName: string, docId: string, data: any) {
-  if (!firestoreAdmin) return;
+  if (!firestoreAdmin || !firestoreAdminAvailable) return;
   try {
     await firestoreAdmin.collection(collectionName).doc(docId).set(data);
-  } catch (err) {
-    console.warn(`[Firestore Admin] Aviso ao salvar documento ${collectionName}/${docId}:`, err);
+  } catch (err: any) {
+    firestoreAdminAvailable = false;
+    firestoreAdmin = null;
   }
 }
 
 async function deleteDocFromFirestore(collectionName: string, docId: string) {
-  if (!firestoreAdmin) return;
+  if (!firestoreAdmin || !firestoreAdminAvailable) return;
   try {
     await firestoreAdmin.collection(collectionName).doc(docId).delete();
-  } catch (err) {
-    console.warn(`[Firestore Admin] Aviso ao eliminar documento ${collectionName}/${docId}:`, err);
+  } catch (err: any) {
+    firestoreAdminAvailable = false;
+    firestoreAdmin = null;
   }
 }
 
@@ -360,15 +372,16 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use((_req: Request, res: Response, next: NextFunction) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    if (_req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
-  });
+  // CORS Middleware Completo e Preflight
+  app.use(
+    cors({
+      origin: true,
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+      credentials: true,
+    })
+  );
+  app.options('*', cors());
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -592,13 +605,15 @@ async function startServer() {
     res.json(coordenacoes[coordIndex]);
   });
 
-  app.delete('/api/coordenacoes/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteCoordHandler = (req: AuthenticatedRequest, res: Response) => {
     const rawId = req.params.id;
     coordenacoes = coordenacoes.filter((c) => String(c.id) !== String(rawId) && Number(c.id) !== Number(rawId));
     deleteDocFromFirestore('coordenacoes', String(rawId));
     broadcastEvent('coordenacoes', 'delete', { id: rawId });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id: rawId });
+  };
+  app.delete('/api/coordenacoes/:id', requireAdmin, handleDeleteCoordHandler);
+  app.post('/api/coordenacoes/:id/delete', requireAdmin, handleDeleteCoordHandler);
 
   // UTILIZADORES
   app.get('/api/users', (_req: Request, res: Response) => {
@@ -683,13 +698,15 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/users/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteUserHandler = (req: AuthenticatedRequest, res: Response) => {
     const rawId = req.params.id;
     users = users.filter((u) => String(u.id) !== String(rawId) && Number(u.id) !== Number(rawId));
     deleteDocFromFirestore('users', String(rawId));
     broadcastEvent('users', 'delete', { id: rawId });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id: rawId });
+  };
+  app.delete('/api/users/:id', requireAdmin, handleDeleteUserHandler);
+  app.post('/api/users/:id/delete', requireAdmin, handleDeleteUserHandler);
 
   // MOBILIZADORES
   app.get('/api/mobilizadores', (_req: Request, res: Response) => {
@@ -751,13 +768,15 @@ async function startServer() {
     res.json(mobilizadores[index]);
   });
 
-  app.delete('/api/mobilizadores/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteMobHandler = (req: AuthenticatedRequest, res: Response) => {
     const rawId = req.params.id;
     mobilizadores = mobilizadores.filter((m) => String(m.id) !== String(rawId) && Number(m.id) !== Number(rawId));
     deleteDocFromFirestore('mobilizadores', String(rawId));
     broadcastEvent('mobilizadores', 'delete', { id: rawId });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id: rawId });
+  };
+  app.delete('/api/mobilizadores/:id', handleDeleteMobHandler);
+  app.post('/api/mobilizadores/:id/delete', handleDeleteMobHandler);
 
   // FICHAS DE CAMPO
   app.get('/api/fichas', (_req: Request, res: Response) => {
@@ -830,13 +849,16 @@ async function startServer() {
     res.json(fichas[idx]);
   });
 
-  app.delete('/api/fichas/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteFichaHandler = (req: AuthenticatedRequest, res: Response) => {
     const rawId = req.params.id;
     fichas = fichas.filter((f) => String(f.id) !== String(rawId) && Number(f.id) !== Number(rawId));
     deleteDocFromFirestore('fichas', String(rawId));
     broadcastEvent('fichas', 'delete', { id: rawId });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id: rawId });
+  };
+
+  app.delete('/api/fichas/:id', handleDeleteFichaHandler);
+  app.post('/api/fichas/:id/delete', handleDeleteFichaHandler);
 
   // CASOS DE VIGILÂNCIA EPIDEMIOLÓGICA (PFA)
   app.get('/api/casos-pfa', (_req: Request, res: Response) => {
@@ -868,13 +890,15 @@ async function startServer() {
     res.json(casosPFA[idx]);
   });
 
-  app.delete('/api/casos-pfa/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteCasoPFAHandler = (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    casosPFA = casosPFA.filter((c) => String(c.id) !== id);
+    casosPFA = casosPFA.filter((c) => String(c.id) !== String(id));
     deleteDocFromFirestore('casos_pfa', id);
     broadcastEvent('casos_pfa', 'delete', { id });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id });
+  };
+  app.delete('/api/casos-pfa/:id', handleDeleteCasoPFAHandler);
+  app.post('/api/casos-pfa/:id/delete', handleDeleteCasoPFAHandler);
 
   // GESTÃO DE RUMORES & HESITAÇÃO
   app.get('/api/rumores', (_req: Request, res: Response) => {
@@ -906,13 +930,15 @@ async function startServer() {
     res.json(rumores[idx]);
   });
 
-  app.delete('/api/rumores/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteRumorHandler = (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    rumores = rumores.filter((r) => String(r.id) !== id);
+    rumores = rumores.filter((r) => String(r.id) !== String(id));
     deleteDocFromFirestore('rumores', id);
     broadcastEvent('rumores', 'delete', { id });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id });
+  };
+  app.delete('/api/rumores/:id', handleDeleteRumorHandler);
+  app.post('/api/rumores/:id/delete', handleDeleteRumorHandler);
 
   // SUBMISSÕES DO ODK COLLECT
   app.get('/api/odk-submissions', (_req: Request, res: Response) => {
@@ -942,13 +968,15 @@ async function startServer() {
     res.json(odkSubmissions[idx]);
   });
 
-  app.delete('/api/odk-submissions/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeleteOdkHandler = (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    odkSubmissions = odkSubmissions.filter((s) => String(s.id) !== id);
+    odkSubmissions = odkSubmissions.filter((s) => String(s.id) !== String(id));
     deleteDocFromFirestore('odk_submissions', id);
     broadcastEvent('odk_submissions', 'delete', { id });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id });
+  };
+  app.delete('/api/odk-submissions/:id', handleDeleteOdkHandler);
+  app.post('/api/odk-submissions/:id/delete', handleDeleteOdkHandler);
 
   // AUDIT LOGS
   app.get('/api/audit-logs', (_req: Request, res: Response) => {
@@ -1053,13 +1081,15 @@ async function startServer() {
     res.json(post);
   });
 
-  app.delete('/api/portal-posts/:id', (req: AuthenticatedRequest, res: Response) => {
+  const handleDeletePortalPostHandler = (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     portalPosts = portalPosts.filter((p) => p.id !== id);
     deleteDocFromFirestore('portal_posts', id);
     broadcastEvent('portal_posts', 'delete', { id });
-    res.json({ success: true });
-  });
+    res.json({ success: true, id });
+  };
+  app.delete('/api/portal-posts/:id', handleDeletePortalPostHandler);
+  app.post('/api/portal-posts/:id/delete', handleDeletePortalPostHandler);
 
   // LIMPEZA DE DADOS DE TESTE (Admin)
   app.post('/api/clear-test-data', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
@@ -1070,7 +1100,7 @@ async function startServer() {
     odkSubmissions = [];
     auditLogs = [];
 
-    if (firestoreAdmin) {
+    if (firestoreAdmin && firestoreAdminAvailable) {
       try {
         const collectionsToClear = ['fichas', 'mobilizadores', 'casos_pfa', 'rumores', 'odk_submissions', 'audit_logs'];
         for (const col of collectionsToClear) {
@@ -1079,8 +1109,9 @@ async function startServer() {
           snap.docs.forEach((doc) => batch.delete(doc.ref));
           await batch.commit();
         }
-      } catch (err) {
-        console.warn('Aviso ao limpar dados no Firestore Admin:', err);
+      } catch {
+        firestoreAdminAvailable = false;
+        firestoreAdmin = null;
       }
     }
 

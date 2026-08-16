@@ -21,6 +21,7 @@ import {
   INITIAL_CASOS_PFA,
   INITIAL_RUMORES,
 } from '../data/initialData';
+import { fsDeleteFicha, fsDeleteMobilizador, fsDeleteCoordination } from './firebaseService';
 
 // Token e Sessão Segura
 const TOKEN_KEY = 'sismob_jwt_token';
@@ -107,6 +108,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   return response.json() as Promise<T>;
+}
+
+async function deleteResource(endpoint: string): Promise<{ success: boolean }> {
+  try {
+    return await request<{ success: boolean }>(endpoint, { method: 'DELETE' });
+  } catch (err: any) {
+    if (err.message && (err.message.includes('405') || err.message.includes('Method Not Allowed'))) {
+      console.warn(`[SisMob API] 405 recebido para DELETE ${endpoint}. Tentando fallback POST ${endpoint}/delete...`);
+      return await request<{ success: boolean }>(`${endpoint}/delete`, { method: 'POST' });
+    }
+    throw err;
+  }
 }
 
 export const api = {
@@ -216,9 +229,8 @@ export const api = {
   },
 
   async deleteCoordination(id: number, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/coordenacoes/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteResource(`/api/coordenacoes/${id}`);
+    await fsDeleteCoordination(id).catch(console.warn);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -284,10 +296,8 @@ export const api = {
     return updated;
   },
 
-  async deleteUser(id: number, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/users/${id}`, {
-      method: 'DELETE',
-    });
+  async deleteUser(id: number | string, currentUser?: User | null): Promise<boolean> {
+    await deleteResource(`/api/users/${id}`);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -357,10 +367,9 @@ export const api = {
     return updated;
   },
 
-  async deleteMobilizador(id: number, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/mobilizadores/${id}`, {
-      method: 'DELETE',
-    });
+  async deleteMobilizador(id: number | string, currentUser?: User | null): Promise<boolean> {
+    await deleteResource(`/api/mobilizadores/${id}`);
+    await fsDeleteMobilizador(Number(id)).catch(console.warn);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -479,10 +488,9 @@ export const api = {
     }
   },
 
-  async deleteFicha(id: number, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/fichas/${id}`, {
-      method: 'DELETE',
-    });
+  async deleteFicha(id: number | string, currentUser?: User | null): Promise<boolean> {
+    await deleteResource(`/api/fichas/${id}`);
+    await fsDeleteFicha(Number(id)).catch(console.warn);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -493,7 +501,7 @@ export const api = {
       acao: 'Eliminação',
       entidade: 'Ficha',
       detalhes: `Ficha ID #${id} foi eliminada do sistema.`,
-      fichaId: id,
+      fichaId: Number(id),
     }).catch(console.warn);
 
     return true;
@@ -571,9 +579,7 @@ export const api = {
   },
 
   async deleteCasoPFA(id: string, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/casos-pfa/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteResource(`/api/casos-pfa/${id}`);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -640,9 +646,7 @@ export const api = {
   },
 
   async deleteRumor(id: string, currentUser?: User | null): Promise<boolean> {
-    await request<{ success: boolean }>(`/api/rumores/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteResource(`/api/rumores/${id}`);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -729,9 +733,7 @@ export const api = {
   },
 
   async deleteOdkSubmission(id: string, currentUser?: User | null): Promise<void> {
-    await request<{ success: boolean }>(`/api/odk-submissions/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteResource(`/api/odk-submissions/${id}`);
 
     await this.addAuditLog({
       id: 'log-' + Date.now(),
@@ -863,9 +865,7 @@ export const api = {
   },
 
   async deletePortalPost(id: string): Promise<void> {
-    await request(`/api/portal-posts/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteResource(`/api/portal-posts/${id}`);
   },
 
   // LIMPEZA DE DADOS DE TESTE
