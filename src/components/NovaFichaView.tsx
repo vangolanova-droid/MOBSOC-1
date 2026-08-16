@@ -8,7 +8,7 @@ interface NovaFichaViewProps {
   user: User;
   coordenacoes: Coordination[];
   mobilizadores: Mobilizador[];
-  onSaveFicha: (ficha: Partial<Ficha>) => Promise<void>;
+  onSaveFicha: (ficha: Partial<Ficha>) => Promise<Ficha | void>;
 }
 
 export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
@@ -271,7 +271,7 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
 
     setIsSaving(true);
     try {
-      await onSaveFicha({
+      const savedResult = await onSaveFicha({
         provincia,
         municipio,
         comuna,
@@ -297,7 +297,20 @@ export const NovaFichaView: React.FC<NovaFichaViewProps> = ({
         pfaDetetado,
         pfaCasos: pfaCasosList,
       });
-      showToast('Ficha gravada com sucesso!', 'success');
+
+      // Se guardado localmente / em fila offline, dá feedback tranquilizador ao mobilizador
+      if (
+        (savedResult && savedResult.syncStatus === 'pending') ||
+        (typeof navigator !== 'undefined' && !navigator.onLine)
+      ) {
+        showToast(
+          'Ficha guardada no dispositivo. Vai ser enviada automaticamente quando a internet voltar.',
+          'info'
+        );
+      } else {
+        showToast('Ficha gravada com sucesso!', 'success');
+      }
+
       handleReset();
     } catch (err: any) {
       console.error(err);

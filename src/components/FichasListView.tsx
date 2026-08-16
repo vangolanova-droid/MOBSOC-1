@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   ChevronDown,
   Lock,
+  Cloud,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Ficha, User, Coordination, Mobilizador, FichaTableData } from '../types';
@@ -552,39 +553,61 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
                     <td className="p-2 sm:p-2.5 font-mono text-slate-400">{i + 1}</td>
                     <td className="p-2 sm:p-2.5 font-mono text-slate-600">{f.data}</td>
                     <td className="p-2 sm:p-2.5 font-medium">
-                      <div className="relative inline-flex items-center">
-                        <select
-                          value={f.status || 'pendente'}
-                          onChange={(e) =>
-                            handleUpdateStatus(
-                              f.id,
-                              e.target.value as 'aprovada' | 'pendente' | 'rejeitada'
-                            )
-                          }
-                          disabled={!onUpdateFicha}
-                          className={`appearance-none cursor-pointer rounded-full pl-2.5 pr-6 py-1 text-[11px] font-extrabold border transition-all outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                            isApproved
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
-                              : isRejected
-                              ? 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:border-red-700'
-                              : pending48h
-                              ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
-                              : 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-                          }`}
-                          title="Clique para alterar o estado desta ficha diretamente"
-                          id={`inline-status-select-${f.id}`}
-                        >
-                          <option value="pendente" className="bg-white text-slate-900 font-bold">
-                            ⏳ Pendente {pending48h ? '(+48h)' : ''}
-                          </option>
-                          <option value="aprovada" className="bg-white text-emerald-800 font-bold">
-                            ✅ Aprovada
-                          </option>
-                          <option value="rejeitada" className="bg-white text-red-800 font-bold">
-                            ❌ Rejeitada
-                          </option>
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 opacity-60 text-slate-600 dark:text-slate-300" />
+                      <div className="flex flex-col gap-1 items-start">
+                        <div className="relative inline-flex items-center">
+                          <select
+                            value={f.status || 'pendente'}
+                            onChange={(e) =>
+                              handleUpdateStatus(
+                                f.id,
+                                e.target.value as 'aprovada' | 'pendente' | 'rejeitada'
+                              )
+                            }
+                            disabled={!onUpdateFicha}
+                            className={`appearance-none cursor-pointer rounded-full pl-2.5 pr-6 py-1 text-[11px] font-extrabold border transition-all outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                              isApproved
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                                : isRejected
+                                ? 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:border-red-700'
+                                : pending48h
+                                ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
+                                : 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                            }`}
+                            title="Clique para alterar o estado desta ficha diretamente"
+                            id={`inline-status-select-${f.id}`}
+                          >
+                            <option value="pendente" className="bg-white text-slate-900 font-bold">
+                              ⏳ Pendente {pending48h ? '(+48h)' : ''}
+                            </option>
+                            <option value="aprovada" className="bg-white text-emerald-800 font-bold">
+                              ✅ Aprovada
+                            </option>
+                            <option value="rejeitada" className="bg-white text-red-800 font-bold">
+                              ❌ Rejeitada
+                            </option>
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 opacity-60 text-slate-600 dark:text-slate-300" />
+                        </div>
+
+                        {/* Selo Visual de Estado Offline / Sincronização */}
+                        {f.syncStatus === 'pending' && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-1.5 py-0.5 text-[9px] font-bold"
+                            title="Guardada localmente no dispositivo. Será sincronizada automaticamente assim que a ligação à internet for restabelecida."
+                          >
+                            <Cloud className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
+                            <span>Aguarda sincronização</span>
+                          </span>
+                        )}
+                        {f.syncStatus === 'error' && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-md bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800 px-1.5 py-0.5 text-[9px] font-bold"
+                            title="Ocorreu um erro ao sincronizar esta ficha."
+                          >
+                            <AlertCircle className="h-2.5 w-2.5 text-red-600 dark:text-red-400 shrink-0" />
+                            <span>Erro de sincronização</span>
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="p-2 sm:p-2.5 font-medium">
@@ -1081,6 +1104,34 @@ export const FichasListView: React.FC<FichasListViewProps> = React.memo(({
         isOpen={showEditRestrictionModal}
         onClose={() => setShowEditRestrictionModal(false)}
         actionType="edit"
+      />
+
+      {/* Confirm Delete Ficha Modal */}
+      <ConfirmModal
+        isOpen={!!deletingFicha}
+        user={user}
+        title="Eliminar Ficha de Mobilização"
+        message={
+          deletingFicha
+            ? `Tem a certeza que deseja eliminar permanentemente a Ficha #${deletingFicha.id} do mobilizador "${deletingFicha.mobilizador}" (${deletingFicha.bairro})? Esta ação é irreversível.`
+            : ''
+        }
+        confirmText="Eliminar Ficha"
+        isSubmitting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeletingFicha(null)}
+      />
+
+      {/* Confirm Clear Test Data Modal */}
+      <ConfirmModal
+        isOpen={isClearTestModalOpen}
+        user={user}
+        title="Limpar Todos os Dados de Teste"
+        message="Tem a certeza que deseja eliminar todas as fichas de teste do sistema? Esta ação reporá a base de dados oficial e não pode ser revertida."
+        confirmText="Sim, Limpar Dados de Teste"
+        isSubmitting={isClearingTest}
+        onConfirm={handleConfirmClearTestData}
+        onClose={() => setIsClearTestModalOpen(false)}
       />
 
       {/* Validation by Supervisor Modal */}

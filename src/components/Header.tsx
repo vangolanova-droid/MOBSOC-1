@@ -34,6 +34,7 @@ import {
 import { Coordination, User, Ficha, ODKSubmission, AuditLog, Mobilizador } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
 import { ActiveSupervisorsModal } from './ActiveSupervisorsModal';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
 import {
   Theme,
   THEMES,
@@ -350,6 +351,9 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
           <span className="text-emerald-300 font-black">{activeSupervisorsCount}</span>
         </button>
+
+        {/* Indicador de Sincronização e Modo Offline */}
+        <SyncStatusIndicator />
 
         {/* Dark Mode Direct Button */}
         <button

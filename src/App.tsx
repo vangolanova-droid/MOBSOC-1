@@ -10,8 +10,8 @@ import {
   INITIAL_RUMORES,
 } from './data/initialData';
 import { FIELD_GALLERY_ITEMS } from './data/fieldGalleryData';
-import { api } from './services/api';
-import { fsSubscribeCollection, initFirestoreDatabase, fsSaveGoal, fsSavePortalPost, fsDeletePortalPost, fsGetPortalPosts, fsSaveCasoPFA, fsUpdateCasoPFA, fsSaveRumor, fsUpdateRumor, fsDeleteRumor } from './services/firebaseService';
+import { api, getStoredUser } from './services/api';
+import { initSyncService, subscribeFichaSynced } from './services/syncService';
 import {
   Theme,
   UserThemeConfig,
@@ -98,6 +98,30 @@ export default function App() {
   const [palette, setPalette] = useState<Theme>(() => applyThemeVariables(getUserConfig()));
   const [loading, setLoading] = useState(true);
 
+  // Inicializar o serviço de sincronização offline e escutar fichas sincronizadas com sucesso
+  useEffect(() => {
+    const cleanupSync = initSyncService();
+
+    const unsubscribeFicha = subscribeFichaSynced((syncedFicha, localId) => {
+      setFichas((prev) => {
+        const idx = prev.findIndex(
+          (f) => (f.localId && f.localId === localId) || f.id === syncedFicha.id
+        );
+        if (idx !== -1) {
+          const next = [...prev];
+          next[idx] = { ...syncedFicha, syncStatus: 'synced' };
+          return next;
+        }
+        return deduplicateById([{ ...syncedFicha, syncStatus: 'synced' }, ...prev]);
+      });
+    });
+
+    return () => {
+      cleanupSync();
+      unsubscribeFicha();
+    };
+  }, []);
+
   // Sync theme and CSS variables on mount & when config changes
   useEffect(() => {
     const appliedTheme = applyThemeVariables(themeConfig);
@@ -122,142 +146,168 @@ export default function App() {
     saveUserConfig(updated);
   };
 
-  // Initialize data with instant cache loading + Firebase real-time subscriptions
+  // Initialize data with secure API fetch + SSE real-time subscriptions
   useEffect(() => {
-    let unsubUsers: (() => void) | undefined;
-    let unsubCoords: (() => void) | undefined;
-    let unsubMobs: (() => void) | undefined;
-    let unsubFichas: (() => void) | undefined;
+    let unsubscribeSSE: (() => void) | undefined;
 
-    const setupFirebaseRealtime = async () => {
-      await initFirestoreDatabase();
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        const [u, c, m, f, pfa, rum, odk, logs, gls, posts, online] = await Promise.all([
+          api.getUsers(),
+          api.getCoordenacoes(),
+          api.getMobilizadores(),
+          api.getFichas(),
+          api.getCasosPFA(),
+          api.getRumores(),
+          api.getOdkSubmissions(),
+          api.getAuditLogs(),
+          api.getGoals(),
+          api.getPortalPosts(),
+          api.checkServerHealth(),
+        ]);
 
-      const sid = api.getSessionUser();
+        let dedupedUsers = deduplicateById(u);
+        const adminIdx = dedupedUsers.findIndex((user) => user.id === 1 || user.tipo === 'admin');
+        if (adminIdx === -1) {
+          dedupedUsers = [INITIAL_USERS[0], ...dedupedUsers];
+        }
 
-      unsubUsers = fsSubscribeCollection<User>(
-        'users',
-        (items) => {
-          let deduped = deduplicateById(items);
-          const adminIdx = deduped.findIndex((u) => u.id === 1 || u.tipo === 'admin');
-          if (adminIdx === -1) {
-            deduped = [INITIAL_USERS[0], ...deduped];
+        setUsers(dedupedUsers);
+        setCoordenacoes(deduplicateById(c));
+        setMobilizadores(deduplicateById(m));
+        setFichas(deduplicateById(f));
+        setCasosPFA(deduplicateById(pfa));
+        setRumores(deduplicateById(rum));
+        setOdkSubmissions(deduplicateById(odk));
+        setAuditLogs(logs);
+        setGoals(gls);
+        setPortalPosts(deduplicateById(posts).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setIsOnline(online);
+
+        const storedUser = getStoredUser();
+        const sid = api.getSessionUser();
+        if (sid) {
+          const found = dedupedUsers.find((user) => user.id === sid);
+          if (found) {
+            setCurrentUser(found);
+          } else if (storedUser) {
+            setCurrentUser(storedUser);
+          }
+        }
+      } catch (err) {
+        console.warn('[SisMob] Erro ao carregar dados iniciais:', err);
+      } finally {
+        setLoading(false);
+      }
+
+      // Connect SSE for real-time live data updates across devices
+      unsubscribeSSE = api.subscribeToEvents((event) => {
+        const { entity, action, data } = event;
+        if (!data) return;
+
+        if (entity === 'fichas') {
+          if (action === 'delete') {
+            setFichas((prev) => prev.filter((f) => String(f.id) !== String(data.id)));
           } else {
-            deduped[adminIdx] = {
-              ...deduped[adminIdx],
-              id: 1,
-              nome: 'ANDRÉ BUMBA DE MELO',
-              email: 'v.angola.nova@gmail.com',
-              senha: 'Andre2021',
-              telefone: '923591571',
-              tipo: 'admin',
-              status: 'ativo',
-            };
+            setFichas((prev) => deduplicateById([data, ...prev]));
           }
-          setUsers(deduped);
-          if (sid) {
-            const found = deduped.find((u) => u.id === sid);
-            if (found) setCurrentUser(found);
+        } else if (entity === 'users') {
+          if (action === 'delete') {
+            setUsers((prev) => prev.filter((u) => u.id !== data.id));
+          } else {
+            setUsers((prev) => deduplicateById([data, ...prev]));
           }
-          setLoading(false);
-        },
-        (a, b) => a.id - b.id
-      );
-
-      unsubCoords = fsSubscribeCollection<Coordination>(
-        'coordenacoes',
-        (items) => setCoordenacoes(deduplicateById(items)),
-        (a, b) => a.id - b.id
-      );
-
-      unsubMobs = fsSubscribeCollection<Mobilizador>(
-        'mobilizadores',
-        (items) => setMobilizadores(deduplicateById(items)),
-        (a, b) => a.id - b.id
-      );
-
-      unsubFichas = fsSubscribeCollection<Ficha>(
-        'fichas',
-        (items) => setFichas(deduplicateById(items)),
-        (a, b) => Number(b.id) - Number(a.id)
-      );
-
-      fsSubscribeCollection<CasoPFA>(
-        'casos_pfa',
-        (items) => setCasosPFA(deduplicateById(items)),
-        (a, b) => b.createdAt.localeCompare(a.createdAt)
-      );
-
-      fsSubscribeCollection<FichaRumor>(
-        'rumores',
-        (items) => setRumores(deduplicateById(items)),
-        (a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')
-      );
-
-      fsSubscribeCollection<ODKSubmission>(
-        'odk_submissions',
-        (items) => setOdkSubmissions(deduplicateById(items)),
-        (a, b) => b.createdAt.localeCompare(a.createdAt)
-      );
-
-      fsSubscribeCollection<AuditLog>(
-        'audit_logs',
-        (items) => setAuditLogs(items),
-        (a, b) => b.timestamp.localeCompare(a.timestamp)
-      );
-
-      fsSubscribeCollection<CoordinationGoal>(
-        'coordination_goals',
-        (items) => setGoals(items),
-        (a, b) => a.coordId - b.coordId
-      );
-
-      fsSubscribeCollection<PortalPost>(
-        'portal_posts',
-        (items) => {
-          setPortalPosts(deduplicateById(items).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-        },
-        (a, b) => b.createdAt.localeCompare(a.createdAt)
-      );
-
-      api.checkServerHealth().then((online) => setIsOnline(online));
+        } else if (entity === 'coordenacoes') {
+          if (action === 'delete') {
+            setCoordenacoes((prev) => prev.filter((c) => c.id !== data.id));
+          } else {
+            setCoordenacoes((prev) => deduplicateById([data, ...prev]));
+          }
+        } else if (entity === 'mobilizadores') {
+          if (action === 'delete') {
+            setMobilizadores((prev) => prev.filter((m) => m.id !== data.id));
+          } else {
+            setMobilizadores((prev) => deduplicateById([data, ...prev]));
+          }
+        } else if (entity === 'casos_pfa') {
+          if (action === 'delete') {
+            setCasosPFA((prev) => prev.filter((c) => String(c.id) !== String(data.id)));
+          } else {
+            setCasosPFA((prev) => deduplicateById([data, ...prev]));
+          }
+        } else if (entity === 'rumores') {
+          if (action === 'delete') {
+            setRumores((prev) => prev.filter((r) => String(r.id) !== String(data.id)));
+          } else {
+            setRumores((prev) => deduplicateById([data, ...prev]));
+          }
+        } else if (entity === 'odk_submissions') {
+          if (action === 'delete') {
+            setOdkSubmissions((prev) => prev.filter((s) => String(s.id) !== String(data.id)));
+          } else {
+            setOdkSubmissions((prev) => deduplicateById([data, ...prev]));
+          }
+        } else if (entity === 'audit_logs') {
+          setAuditLogs((prev) => [data, ...prev]);
+        } else if (entity === 'portal_posts') {
+          if (action === 'delete') {
+            setPortalPosts((prev) => prev.filter((p) => p.id !== data.id));
+          } else {
+            setPortalPosts((prev) => deduplicateById([data, ...prev]));
+          }
+        }
+      });
     };
 
-    setupFirebaseRealtime();
+    initializeData();
 
     return () => {
-      if (unsubUsers) unsubUsers();
-      if (unsubCoords) unsubCoords();
-      if (unsubMobs) unsubMobs();
-      if (unsubFichas) unsubFichas();
+      if (unsubscribeSSE) unsubscribeSSE();
     };
   }, []);
 
   const handleSaveGoal = async (goal: CoordinationGoal) => {
-    await fsSaveGoal(goal);
+    await api.saveGoal(goal);
+    setGoals((prev) => {
+      const idx = prev.findIndex((g) => g.coordId === goal.coordId);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = goal;
+        return copy;
+      }
+      return [...prev, goal];
+    });
   };
 
   const handleSavePortalPost = useCallback(async (post: PortalPost) => {
-    await fsSavePortalPost(post);
+    await api.savePortalPost(post);
     setPortalPosts((prev) => deduplicateById([post, ...prev]));
   }, []);
 
   const handleDeletePortalPost = useCallback(async (id: string) => {
-    await fsDeletePortalPost(id);
+    await api.deletePortalPost(id);
     setPortalPosts((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
   const handleRefresh = useCallback(async () => {
     try {
-      const [f, u, c, m] = await Promise.all([
+      const [f, u, c, m, pfa, rum, odk] = await Promise.all([
         api.getFichas(),
         api.getUsers(),
         api.getCoordenacoes(),
         api.getMobilizadores(),
+        api.getCasosPFA(),
+        api.getRumores(),
+        api.getOdkSubmissions(),
       ]);
       setFichas(f);
       setUsers(u);
       setCoordenacoes(c);
       setMobilizadores(m);
+      setCasosPFA(pfa);
+      setRumores(rum);
+      setOdkSubmissions(odk);
     } catch (e) {
       console.warn('Refresh warning:', e);
     }
@@ -276,14 +326,11 @@ export default function App() {
     api.setSessionUser(user.id);
     setActiveTab('dashboard');
 
-    // Sync online status to Firestore
-    import('./services/firebaseService').then(({ fsUpdateUser }) => {
-      fsUpdateUser(user.id, {
-        isOnline: true,
-        isLogged: true,
-        ultimoAcesso: `Hoje às ${timeStr} (Sessão Ativa)`,
-      }).catch(console.warn);
-    });
+    api.updateUser(user.id, {
+      isOnline: true,
+      isLogged: true,
+      ultimoAcesso: `Hoje às ${timeStr} (Sessão Ativa)`,
+    }, updatedUser).catch(console.warn);
 
     api.addAuditLog({
       id: 'log-' + Date.now(),
@@ -308,13 +355,11 @@ export default function App() {
       };
       setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? offlineUser : u)));
 
-      import('./services/firebaseService').then(({ fsUpdateUser }) => {
-        fsUpdateUser(currentUser.id, {
-          isOnline: false,
-          isLogged: false,
-          ultimoAcesso: `Desconectado às ${timeStr}`,
-        }).catch(console.warn);
-      });
+      api.updateUser(currentUser.id, {
+        isOnline: false,
+        isLogged: false,
+        ultimoAcesso: `Desconectado às ${timeStr}`,
+      }, currentUser).catch(console.warn);
     }
     setCurrentUser(null);
     api.setSessionUser(null);
@@ -393,64 +438,50 @@ export default function App() {
     setMobilizadores([]);
   }, [currentUser]);
 
-  const handleSaveFicha = useCallback(async (fichaPartial: Partial<Ficha>) => {
+  const handleSaveFicha = useCallback(async (fichaPartial: Partial<Ficha>): Promise<Ficha> => {
     const created = await api.createFicha(fichaPartial, currentUser);
     setFichas((prev) => deduplicateById([created, ...prev]));
 
-    // If PFA cases were attached, save them to the PFA collection
-    if (fichaPartial.pfaCasos && fichaPartial.pfaCasos.length > 0) {
+    // Se estiver online e houver casos de PFA anexados, regista também na coleção de PFA
+    if (created.syncStatus === 'synced' && fichaPartial.pfaCasos && fichaPartial.pfaCasos.length > 0) {
       for (const caso of fichaPartial.pfaCasos) {
-        await fsSaveCasoPFA({ ...caso, fichaId: created.id });
+        await api.createCasoPFA({ ...caso, fichaId: created.id }, currentUser).catch(console.warn);
       }
     }
 
     setActiveTab('listFichas');
+    return created;
   }, [currentUser]);
 
   const handleSaveCasoPFA = useCallback(async (caso: CasoPFA) => {
-    await fsSaveCasoPFA(caso);
-    setCasosPFA((prev) => deduplicateById([caso, ...prev]));
-  }, []);
+    const created = await api.createCasoPFA(caso, currentUser);
+    setCasosPFA((prev) => deduplicateById([created, ...prev]));
+  }, [currentUser]);
 
   const handleUpdateCasoPFA = useCallback(async (id: string, fields: Partial<CasoPFA>) => {
-    await fsUpdateCasoPFA(id, fields);
-    setCasosPFA((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c)));
-  }, []);
+    const updated = await api.updateCasoPFA(id, fields, currentUser);
+    setCasosPFA((prev) => prev.map((c) => (String(c.id) === String(id) ? updated : c)));
+  }, [currentUser]);
+
+  const handleDeleteCasoPFA = useCallback(async (id: string) => {
+    await api.deleteCasoPFA(id, currentUser);
+    setCasosPFA((prev) => prev.filter((c) => String(c.id) !== String(id)));
+  }, [currentUser]);
 
   const handleSaveRumor = useCallback(async (rumor: FichaRumor) => {
-    await fsSaveRumor(rumor);
-    setRumores((prev) => deduplicateById([rumor, ...prev]));
-    api.addAuditLog({
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      usuarioId: currentUser?.id ?? 0,
-      usuarioNome: currentUser?.nome ?? 'Sistema',
-      usuarioTipo: currentUser?.tipo ?? 'supervisor',
-      acao: 'Registo de Rumor',
-      entidade: 'Gestão de Rumores',
-      detalhes: `Novo rumor registado em ${rumor.local}: "${rumor.rumor.substring(0, 50)}..."`,
-    });
+    const created = await api.createRumor(rumor, currentUser);
+    setRumores((prev) => deduplicateById([created, ...prev]));
   }, [currentUser]);
 
   const handleUpdateRumor = useCallback(async (id: string, fields: Partial<FichaRumor>) => {
-    await fsUpdateRumor(id, fields);
-    setRumores((prev) => prev.map((r) => (r.id === id ? { ...r, ...fields } : r)));
-    api.addAuditLog({
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      usuarioId: currentUser?.id ?? 0,
-      usuarioNome: currentUser?.nome ?? 'Sistema',
-      usuarioTipo: currentUser?.tipo ?? 'supervisor',
-      acao: 'Atualização de Rumor',
-      entidade: 'Gestão de Rumores',
-      detalhes: `Rumor ${id} atualizado. Estado: ${fields.estado || 'Modificado'}`,
-    });
+    const updated = await api.updateRumor(id, fields, currentUser);
+    setRumores((prev) => prev.map((r) => (String(r.id) === String(id) ? updated : r)));
   }, [currentUser]);
 
   const handleDeleteRumor = useCallback(async (id: string) => {
-    await fsDeleteRumor(id);
-    setRumores((prev) => prev.filter((r) => r.id !== id));
-  }, []);
+    await api.deleteRumor(id, currentUser);
+    setRumores((prev) => prev.filter((r) => String(r.id) !== String(id)));
+  }, [currentUser]);
 
   const handleDeleteFicha = useCallback(async (id: number) => {
     if (!currentUser) {

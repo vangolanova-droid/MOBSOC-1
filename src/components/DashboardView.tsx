@@ -463,17 +463,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              {isAdmin && onOpenGoalModal && (
-                <button
-                  onClick={onOpenGoalModal}
-                  className="flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition cursor-pointer"
-                  id="dash-btn-config-metas"
-                >
-                  <Sliders className="h-3.5 w-3.5" />
-                  <span>Configurar Metas</span>
-                </button>
-              )}
-
               {totalPessoas >= 5000 && (
                 <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[10px] font-bold">
                   Meta Geral Cumprida 🎉
@@ -619,14 +608,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                   <AlertCircle className="h-3 w-3 text-red-600" />
                   <span>{m.nome}</span>
-                  <button
-                    onClick={() => sendWhatsAppReminder(m.nome, 'mobilizador', m.telefone, m.coordNome)}
-                    className="ml-0.5 inline-flex items-center gap-0.5 rounded bg-emerald-600 px-1.5 py-0.2 text-[9px] font-bold text-white hover:bg-emerald-700 transition"
-                    title="Cobrar via WhatsApp"
-                  >
-                    <MessageSquare className="h-2.5 w-2.5" />
-                    <span>WhatsApp</span>
-                  </button>
+                  <span className="text-[10px] font-semibold text-red-700">({m.coordNome || 'Sem Coord.'})</span>
                 </div>
               ))}
               {pendingMobilizadores.length === 0 && (
@@ -638,22 +620,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Notification Toast Alert if Reminder Triggered */}
-      {reminderNotice && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 shadow-xs">
-          <div className="flex items-center gap-3">
-            <Bell className="h-4 w-4 text-amber-600 animate-bounce" />
-            <span className="font-medium">{reminderNotice}</span>
-          </div>
-          <button
-            onClick={() => setReminderNotice(null)}
-            className="rounded-lg bg-white border border-amber-200 px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
-          >
-            Fechar
-          </button>
-        </div>
-      )}
 
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -778,35 +744,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Controls */}
+          {/* Status Indicator */}
           <div className="flex items-center gap-2 self-start sm:self-center">
-            <button
-              onClick={() => setIsUnicefPlaying(!isUnicefPlaying)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title={isUnicefPlaying ? 'Pausar rotação' : 'Iniciar rotação'}
-            >
-              {isUnicefPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-            <button
-              onClick={() =>
-                setUnicefSlideIndex((prev) =>
-                  prev === 0 ? UNICEF_INSTITUTIONAL_SLIDES.length - 1 : prev - 1
-                )
-              }
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title="Anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() =>
-                setUnicefSlideIndex((prev) => (prev + 1) % UNICEF_INSTITUTIONAL_SLIDES.length)
-              }
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition cursor-pointer border border-white/15"
-              title="Próximo"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <span className="text-xs font-bold text-sky-300 bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+              Guia Institucional UNICEF
+            </span>
           </div>
         </div>
 
@@ -865,20 +807,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </motion.div>
         </AnimatePresence>
 
-        {/* Quick Navigation Tabs for the 4 UNICEF Slides */}
+        {/* Status Indicators for the 4 UNICEF Pillars */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           {UNICEF_INSTITUTIONAL_SLIDES.map((slide, idx) => {
             const isActive = idx === (unicefSlideIndex % UNICEF_INSTITUTIONAL_SLIDES.length);
             const Icon = slide.icon;
 
             return (
-              <button
+              <div
                 key={slide.id}
-                onClick={() => setUnicefSlideIndex(idx)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
                   isActive
                     ? 'border-sky-400 bg-sky-500/20 text-white shadow-md ring-2 ring-sky-400/30'
-                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                    : 'border-white/10 bg-white/5 text-slate-300'
                 }`}
               >
                 <div
@@ -896,7 +837,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     {slide.id === 'lema' ? 'Lema UNICEF' : slide.id === 'objetivos' ? 'Meta 0 Recusas' : slide.id === 'preparacao' ? 'Guia de Campo' : 'Comunicação'}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -1088,14 +1029,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Acompanhamento do envio de relatórios em tempo real
             </p>
           </div>
-          <button
-            onClick={onViewAllFichas}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
-            id="dash-btn-ver-todas"
-          >
-            <span>Ver Todas</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <span className="text-[11px] font-semibold text-slate-500">
+            5 registos mais recentes
+          </span>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1138,18 +1074,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
       </div>
-
-      {/* Modal de Supervisores a Lançar Dados */}
-      <ActiveSupervisorsModal
-        isOpen={isActiveSupervisorsOpen}
-        onClose={() => setIsActiveSupervisorsOpen(false)}
-        users={users}
-        currentUser={user}
-        fichas={fichas}
-        coordenacoes={coordenacoes}
-        mobilizadores={mobilizadores}
-        onSelectSupervisorFichas={() => onViewAllFichas()}
-      />
     </div>
   );
 };
