@@ -588,29 +588,29 @@ export const PFACasesView: React.FC<PFACasesViewProps> = ({
       </div>
 
       {/* Data Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="border-b border-slate-100 p-4 bg-slate-50/60 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase">
-            <Activity className="h-4 w-4 text-rose-600" />
+      <div className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <div className="border-b-2 border-slate-300 dark:border-slate-700 p-4 bg-rose-50/70 dark:bg-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider">
+            <Activity className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             <span>Lista Oficial de Casos de PFA Registados ({filteredCases.length})</span>
           </div>
         </div>
 
         {filteredCases.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-100/80 text-[11px] font-extrabold uppercase text-slate-600 border-b border-slate-200">
+            <table className="w-full text-left text-xs text-slate-800 dark:text-slate-200 border-collapse">
+              <thead className="bg-slate-100 dark:bg-slate-800 text-[11px] font-black uppercase text-slate-900 dark:text-slate-100 border-b-2 border-slate-300 dark:border-slate-700">
                 <tr>
-                  <th className="p-3.5">Criança (Nome & Idade)</th>
-                  <th className="p-3.5">Pais / Encarregado</th>
-                  <th className="p-3.5">Localização / Bairro</th>
-                  <th className="p-3.5">Estágio & Sintomas</th>
-                  <th className="p-3.5">Mobilizador</th>
-                  <th className="p-3.5 text-center">Status Vigilância</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Criança (Nome & Idade)</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Pais / Encarregado</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Localização / Bairro</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Estágio & Sintomas</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Mobilizador</th>
+                  <th className="p-3.5 text-center border-r-2 border-slate-300 dark:border-slate-700">Status Vigilância</th>
                   <th className="p-3.5 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y-2 divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
                 {filteredCases.map((item) => {
                   const statusColors: Record<string, string> = {
                     'Notificado à Vigilância': 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -620,25 +620,25 @@ export const PFACasesView: React.FC<PFACasesViewProps> = ({
                   };
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
                       {/* Criança */}
-                      <td className="p-3.5">
-                        <div className="font-extrabold text-slate-900 text-sm">{item.nomeCrianca}</div>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-                          <span className="font-semibold text-slate-700">{item.idadeCrianca}</span>
+                      <td className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
+                        <div className="font-extrabold text-slate-900 dark:text-white text-sm">{item.nomeCrianca}</div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">{item.idadeCrianca}</span>
                           <span>•</span>
                           <span>{item.sexoCrianca}</span>
                         </div>
                       </td>
 
                       {/* Encarregado */}
-                      <td className="p-3.5">
-                        <div className="font-bold text-slate-800 flex items-center gap-1">
+                      <td className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                           <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <span>{item.nomeEncarregado}</span>
                         </div>
                         {item.telefoneEncarregado && (
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                             <Phone className="h-3 w-3 text-slate-400 shrink-0" />
                             <span>{item.telefoneEncarregado}</span>
                           </div>
@@ -646,32 +646,32 @@ export const PFACasesView: React.FC<PFACasesViewProps> = ({
                       </td>
 
                       {/* Localização */}
-                      <td className="p-3.5">
-                        <div className="font-bold text-slate-800 flex items-center gap-1">
+                      <td className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                           <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
                           <span>{item.bairro}</span>
                         </div>
-                        <div className="text-[11px] text-slate-500">{item.coordNome}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">{item.coordNome}</div>
                       </td>
 
                       {/* Estágio */}
-                      <td className="p-3.5">
-                        <div className="font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md inline-block">
+                      <td className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
+                        <div className="font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-md inline-block border border-rose-200 dark:border-rose-800">
                           Estágio: {item.tempoEstagio}
                         </div>
-                        <div className="text-[11px] text-slate-600 mt-1 line-clamp-1">
+                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 line-clamp-1">
                           {item.membroAfetado || 'Membro não especificado'}
                         </div>
                       </td>
 
                       {/* Mobilizador */}
-                      <td className="p-3.5">
-                        <div className="font-semibold text-slate-800">{item.mobilizadorNome}</div>
+                      <td className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{item.mobilizadorNome}</div>
                         <div className="text-[10px] text-slate-400">Detetado em: {item.dataDetecao}</div>
                       </td>
 
                       {/* Status */}
-                      <td className="p-3.5 text-center">
+                      <td className="p-3.5 text-center border-r-2 border-slate-300 dark:border-slate-700">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold border ${
                             statusColors[item.statusNotificacao] || 'bg-slate-100 text-slate-800'

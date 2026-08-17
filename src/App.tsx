@@ -41,9 +41,11 @@ import { BlocoDeNotasModal } from './components/BlocoDeNotasModal';
 import { AuditLogsModal } from './components/AuditLogsModal';
 import { GoalManagerModal } from './components/GoalManagerModal';
 import { PortalNewsManagerModal } from './components/PortalNewsManagerModal';
+import { BackupManagerModal } from './components/BackupManagerModal';
 import { Footer } from './components/Footer';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
+import { getAutoBackupConfig, generateFirestoreBackupPayload, downloadBackupJSON, saveAutoBackupConfig } from './services/backupService';
 
 function deduplicateById<T extends { id: number | string }>(items: T[]): T[] {
   const map = new Map<string, T>();
@@ -76,6 +78,7 @@ export default function App() {
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [auditLogsOpen, setAuditLogsOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
 
   // Alert for Fichas Pendentes (+48h)
   const [pendingAlertDismissed, setPendingAlertDismissed] = useState(false);
@@ -218,6 +221,67 @@ export default function App() {
       if (unsubFichas) unsubFichas();
     };
   }, []);
+
+  // Automatic periodic backup of Firestore data to local JSON snapshot & optional file download
+  useEffect(() => {
+    // Only run when authenticated and there is data loaded
+    if (!currentUser || fichas.length === 0) return;
+
+    const runAutoBackupCheck = async () => {
+      const config = getAutoBackupConfig();
+      if (!config.enabled) return;
+
+      const intervalMs = config.intervalMinutes * 60 * 1000;
+      const lastTime = config.lastBackupTime ? new Date(config.lastBackupTime).getTime() : 0;
+      const now = Date.now();
+
+      if (now - lastTime >= intervalMs) {
+        try {
+          const payload = await generateFirestoreBackupPayload({
+            fichas,
+            mobilizadores,
+            casosPFA,
+            rumores,
+            coordenacoes,
+            users,
+            odkSubmissions,
+            auditLogs,
+          });
+
+          const totalItems =
+            payload.stats.totalFichas +
+            payload.stats.totalMobilizadores +
+            payload.stats.totalCasosPFA +
+            payload.stats.totalRumores +
+            payload.stats.totalCoordenacoes;
+
+          const updatedConfig = {
+            ...config,
+            lastBackupTime: new Date().toISOString(),
+            lastBackupStatus: 'success' as const,
+            lastBackupRecordCount: totalItems,
+          };
+          saveAutoBackupConfig(updatedConfig);
+
+          if (config.autoDownloadOnSchedule) {
+            downloadBackupJSON(payload);
+          }
+          console.info(`[AutoBackup] Backup automático concluído com sucesso (${totalItems} registos).`);
+        } catch (err) {
+          console.warn('[AutoBackup] Falha ao executar backup automático:', err);
+        }
+      }
+    };
+
+    // Run check once on initial mount/data load, and every 60 seconds thereafter
+    const initialTimer = setTimeout(runAutoBackupCheck, 5000);
+    const intervalTimer = setInterval(runAutoBackupCheck, 60 * 1000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(intervalTimer);
+    };
+  }, [currentUser, fichas, mobilizadores, casosPFA, rumores, coordenacoes, users, odkSubmissions, auditLogs]);
 
   const handleSaveGoal = async (goal: CoordinationGoal) => {
     await fsSaveGoal(goal);
@@ -556,6 +620,7 @@ export default function App() {
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenPortalNews={() => setPortalNewsOpen(true)}
         onOpenGoalModal={() => setGoalModalOpen(true)}
+        onOpenBackupModal={() => setBackupModalOpen(true)}
         onLogout={handleLogout}
         onCloseMobile={() => setSidebarOpen(false)}
       />
@@ -584,6 +649,7 @@ export default function App() {
           onOpenAuditLogs={handleOpenAuditLogs}
           onOpenPortalNews={() => setPortalNewsOpen(true)}
           onOpenGoalModal={() => setGoalModalOpen(true)}
+          onOpenBackupModal={() => setBackupModalOpen(true)}
           onSelectTab={(tab) => setActiveTab(tab)}
         />
 
@@ -782,6 +848,7 @@ export default function App() {
               onUpdateThemeConfig={handleUpdateThemeConfig}
               onUpdateUser={handleUpdateUser}
               onClearTestData={handleClearTestData}
+              onOpenBackupModal={() => setBackupModalOpen(true)}
             />
           )}
         </main>
@@ -831,6 +898,22 @@ export default function App() {
           onClose={() => setPortalNewsOpen(false)}
         />
       )}
+
+      {/* Firestore Auto Backup Manager Modal */}
+      <BackupManagerModal
+        isOpen={backupModalOpen}
+        onClose={() => setBackupModalOpen(false)}
+        currentData={{
+          fichas,
+          mobilizadores,
+          casosPFA,
+          rumores,
+          coordenacoes,
+          users,
+          odkSubmissions,
+          auditLogs,
+        }}
+      />
     </div>
   );
 }

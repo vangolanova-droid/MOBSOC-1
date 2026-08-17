@@ -816,35 +816,35 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
 
         {/* TAB 1: LISTA GERAL (# 1 a N) */}
         {activeTab === 'geral' && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full text-left text-xs text-slate-800">
-              <thead className="bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">
+          <div className="overflow-x-auto rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+            <table className="w-full text-left text-xs text-slate-800 dark:text-slate-200 border-collapse">
+              <thead className="bg-slate-100 dark:bg-slate-800 text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b-2 border-slate-300 dark:border-slate-700">
                 <tr>
-                  <th className="p-3.5 w-12 text-center">#</th>
-                  <th className="p-3.5">ID Código</th>
-                  <th className="p-3.5">Nome do Mobilizador</th>
-                  <th className="p-3.5">Ronda</th>
-                  <th className="p-3.5">Morada</th>
-                  <th className="p-3.5">Telefone</th>
-                  <th className="p-3.5">Equipa</th>
-                  <th className="p-3.5">Função</th>
-                  <th className="p-3.5">Coordenação</th>
-                  <th className="p-3.5">Supervisor Responsável</th>
+                  <th className="p-3.5 w-12 text-center border-r-2 border-slate-300 dark:border-slate-700">#</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">ID Código</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Nome do Mobilizador</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Ronda</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Morada</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Telefone</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Equipa</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Função</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Coordenação</th>
+                  <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">Supervisor Responsável</th>
                   <th className="p-3.5 text-right">Ação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y-2 divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
                 {sortedMobilizadores.map((mob, index) => (
-                  <tr key={mob.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 text-center font-mono font-medium text-slate-400 bg-slate-50/50">
+                  <tr key={mob.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
+                    <td className="p-3.5 text-center font-mono font-bold text-slate-500 bg-slate-50/80 dark:bg-slate-800/80 border-r-2 border-slate-200 dark:border-slate-700">
                       {index + 1}
                     </td>
-                    <td className="p-3.5">
+                    <td className="p-3.5 border-r-2 border-slate-200 dark:border-slate-700">
                       <span className="inline-block font-mono font-bold text-xs bg-blue-50 border border-blue-200 text-blue-800 px-2.5 py-1 rounded-lg">
                         {mob.codigoId || `MT0022${String(index + 1).padStart(2, '0')}`}
                       </span>
                     </td>
-                    <td className="p-3.5 font-semibold text-slate-900 flex items-center gap-2.5">
+                    <td className="p-3.5 font-semibold text-slate-900 dark:text-white border-r-2 border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold shrink-0">
                         {mob.nome.charAt(0).toUpperCase()}
                       </div>
@@ -857,14 +857,14 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                         </div>
                       </div>
                     </td>
-                    <td className="p-3.5 font-medium">
+                    <td className="p-3.5 font-medium border-r-2 border-slate-200 dark:border-slate-700">
                       <span className="inline-block rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs text-purple-700 font-bold">
                         {mob.ronda || '3ª Ronda'}
                       </span>
                     </td>
-                    <td className="p-3.5 text-slate-600">{mob.morada || '—'}</td>
-                    <td className="p-3.5 font-mono text-emerald-700 font-semibold">{mob.telefone || '—'}</td>
-                    <td className="p-3.5 font-semibold">
+                    <td className="p-3.5 text-slate-700 dark:text-slate-300 border-r-2 border-slate-200 dark:border-slate-700">{mob.morada || '—'}</td>
+                    <td className="p-3.5 font-mono text-emerald-700 dark:text-emerald-400 font-bold border-r-2 border-slate-200 dark:border-slate-700">{mob.telefone || '—'}</td>
+                    <td className="p-3.5 font-semibold border-r-2 border-slate-200 dark:border-slate-700">
                       {mob.numeroEquipa ? (
                         <span className="inline-block rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
                           {mob.numeroEquipa}
@@ -873,15 +873,15 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
                         <span className="text-slate-400 font-normal text-xs">—</span>
                       )}
                     </td>
-                    <td className="p-3.5">
+                    <td className="p-3.5 border-r-2 border-slate-200 dark:border-slate-700">
                       <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                         {mob.funcao}
                       </span>
                     </td>
-                    <td className="p-3.5 text-slate-600 font-medium">{mob.coordNome || '—'}</td>
-                    <td className="p-3.5 text-slate-700 font-medium">
+                    <td className="p-3.5 text-slate-700 dark:text-slate-300 font-medium border-r-2 border-slate-200 dark:border-slate-700">{mob.coordNome || '—'}</td>
+                    <td className="p-3.5 text-slate-700 dark:text-slate-300 font-medium border-r-2 border-slate-200 dark:border-slate-700">
                       {mob.supervisorNome ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 border border-slate-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                           👤 {mob.supervisorNome}
                         </span>
                       ) : (

@@ -31,6 +31,7 @@ import {
   ExternalLink,
   CheckCheck,
   Filter,
+  DatabaseBackup,
 } from 'lucide-react';
 import { Coordination, User, Ficha, ODKSubmission, AuditLog, Mobilizador } from '../types';
 import { Tooltip as ActionTooltip } from './Tooltip';
@@ -82,6 +83,7 @@ interface HeaderProps {
   onOpenPortalNews?: () => void;
   onOpenGoalModal?: () => void;
   onOpenHubCadastros?: () => void;
+  onOpenBackupModal?: () => void;
   onSelectTab?: (tab: string) => void;
 }
 
@@ -108,6 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPortalNews,
   onOpenGoalModal,
   onOpenHubCadastros,
+  onOpenBackupModal,
   onSelectTab,
 }) => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -707,6 +710,19 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <ShieldCheck className="h-4 w-4 text-indigo-500" />
                     <span>Auditoria</span>
+                  </button>
+                )}
+
+                {onOpenBackupModal && (
+                  <button
+                    onClick={() => {
+                      setIsPaletteOpen(false);
+                      onOpenBackupModal();
+                    }}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition"
+                  >
+                    <DatabaseBackup className="h-4 w-4 text-emerald-600" />
+                    <span>Backup JSON</span>
                   </button>
                 )}
 

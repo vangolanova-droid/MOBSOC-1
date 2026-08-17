@@ -452,15 +452,15 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
       </div>
 
       {/* Official Table Layout (Matching user document structure) */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         {/* Table Title Header Bar */}
-        <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 bg-blue-50/60 dark:bg-slate-800/80 flex items-center justify-between">
+        <div className="p-3.5 border-b-2 border-slate-300 dark:border-slate-700 bg-blue-50/80 dark:bg-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquareWarning className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <h2 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">
               Ficha de Gestão de Rumores
             </h2>
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
               ({filteredRumores.length} registos)
             </span>
           </div>
@@ -468,7 +468,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
           <div className="flex items-center gap-1.5 text-xs">
             <button
               onClick={handlePrint}
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 cursor-pointer"
+              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5 text-slate-500" />
               <span>Imprimir</span>
@@ -480,32 +480,32 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-extrabold uppercase text-[11px] tracking-wider">
-                <th className="p-3 min-w-[220px] border-r border-slate-200/60 dark:border-slate-800">
+              <tr className="border-b-2 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-black uppercase text-[11px] tracking-wider">
+                <th className="p-3.5 min-w-[220px] border-r-2 border-slate-300 dark:border-slate-700">
                   Rumor
                 </th>
-                <th className="p-3 min-w-[140px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[140px] border-r-2 border-slate-300 dark:border-slate-700">
                   Local
                 </th>
-                <th className="p-3 min-w-[100px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[100px] border-r-2 border-slate-300 dark:border-slate-700">
                   Data
                 </th>
-                <th className="p-3 min-w-[140px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[140px] border-r-2 border-slate-300 dark:border-slate-700">
                   Fonte
                 </th>
-                <th className="p-3 min-w-[240px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[240px] border-r-2 border-slate-300 dark:border-slate-700">
                   Resposta
                 </th>
-                <th className="p-3 min-w-[160px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[160px] border-r-2 border-slate-300 dark:border-slate-700">
                   Responsável
                 </th>
-                <th className="p-3 min-w-[130px] border-r border-slate-200/60 dark:border-slate-800">
+                <th className="p-3.5 min-w-[130px] border-r-2 border-slate-300 dark:border-slate-700">
                   Estado
                 </th>
-                <th className="p-3 text-center min-w-[100px]">Ações</th>
+                <th className="p-3.5 text-center min-w-[100px]">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+            <tbody className="divide-y-2 divide-slate-200 dark:divide-slate-700 text-slate-900 dark:text-slate-100">
               {filteredRumores.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-400 space-y-2">
@@ -532,7 +532,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       }`}
                     >
                       {/* Rumor */}
-                      <td className="p-3 font-semibold border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 font-semibold border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <div className="space-y-1">
                           <p className="text-slate-900 dark:text-white leading-snug font-bold">
                             {item.rumor}
@@ -561,7 +561,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       </td>
 
                       {/* Local */}
-                      <td className="p-3 border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <div className="flex items-start gap-1 font-semibold text-slate-900 dark:text-white">
                           <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
                           <span>{item.local}</span>
@@ -574,7 +574,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       </td>
 
                       {/* Data */}
-                      <td className="p-3 font-medium border-r border-slate-200/60 dark:border-slate-800 align-top whitespace-nowrap">
+                      <td className="p-3 font-medium border-r-2 border-slate-300 dark:border-slate-700 align-top whitespace-nowrap">
                         <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
                           <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <span>{item.data}</span>
@@ -582,7 +582,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       </td>
 
                       {/* Fonte */}
-                      <td className="p-3 font-medium text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 font-medium text-slate-700 dark:text-slate-300 border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <div className="flex items-start gap-1">
                           <Radio className="h-3.5 w-3.5 text-purple-500 shrink-0 mt-0.5" />
                           <span>{item.fonte}</span>
@@ -590,14 +590,14 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       </td>
 
                       {/* Resposta */}
-                      <td className="p-3 border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <p className="text-slate-700 dark:text-slate-300 leading-snug font-medium line-clamp-3">
                           {item.resposta}
                         </p>
                       </td>
 
                       {/* Responsável */}
-                      <td className="p-3 border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
                             <UserIcon className="h-3.5 w-3.5 text-blue-600 shrink-0" />
@@ -612,7 +612,7 @@ export const GestaoRumoresView: React.FC<GestaoRumoresViewProps> = ({
                       </td>
 
                       {/* Estado */}
-                      <td className="p-3 border-r border-slate-200/60 dark:border-slate-800 align-top">
+                      <td className="p-3 border-r-2 border-slate-300 dark:border-slate-700 align-top">
                         <div className="space-y-1">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${

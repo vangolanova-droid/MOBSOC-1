@@ -18,6 +18,7 @@ import {
   Moon,
   Sun,
   LayoutGrid,
+  DatabaseBackup,
 } from 'lucide-react';
 import { Coordination, PendingUpdate, User } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -40,6 +41,7 @@ interface PerfilViewProps {
   onUpdateThemeConfig?: (config: UserThemeConfig) => void;
   onUpdateUser: (id: number, fields: Partial<User>) => Promise<void>;
   onClearTestData?: () => Promise<void>;
+  onOpenBackupModal?: () => void;
 }
 
 export const PerfilView: React.FC<PerfilViewProps> = ({
@@ -51,6 +53,7 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
   onUpdateThemeConfig,
   onUpdateUser,
   onClearTestData,
+  onOpenBackupModal,
 }) => {
   const { showToast } = useToast();
   const isAdmin = user.tipo === 'admin';
@@ -1043,72 +1046,99 @@ export const PerfilView: React.FC<PerfilViewProps> = ({
 
       {/* SUB-TAB: Gestão da Base de Dados & Limpar Testes (Admin) */}
       {subTab === 'database' && isAdmin && (
-        <div className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm space-y-5">
-          <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-red-600" />
-                <span>Gestão da Base de Dados & Limpeza de Testes</span>
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Elimine dados e fichas de teste guardados na base de dados Firebase para preparar o sistema para o ambiente de produção real.
-              </p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+          {/* Backup e Redundância */}
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-5 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <DatabaseBackup className="h-5 w-5 text-emerald-600" />
+                  <span>Backup Automático e Redundância Local (JSON)</span>
+                </h3>
+                <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                  Gere cópias de segurança integrais de todas as fichas diárias, mobilizadores, casos PFA, rumores e configurações do Firestore em formato JSON. Configure intervalos automáticos para download periódico no navegador.
+                </p>
+              </div>
+              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Redundância Ativa
+              </span>
             </div>
-            <span className="rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
-              Ação de Administrador
-            </span>
+
+            {onOpenBackupModal && (
+              <button
+                onClick={onOpenBackupModal}
+                className="mt-2 flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition shadow-xs cursor-pointer"
+              >
+                <DatabaseBackup className="h-4 w-4" />
+                <span>Abrir Gestor de Backups & Exportar JSON</span>
+              </button>
+            )}
           </div>
 
-          <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Sincronização & Limpeza Firebase Firestore
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Ao executar a eliminação dos dados de teste, todas as fichas de mobilização de teste, registos temporários de mobilizadores e logs de teste serão removidos diretamente do projeto Firebase.
-            </p>
-
-            {!showClearConfirm ? (
-              <button
-                onClick={() => setShowClearConfirm(true)}
-                className="mt-2 flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-xs font-bold text-white transition shadow-xs"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Eliminar Todos os Dados de Teste da Base de Dados</span>
-              </button>
-            ) : (
-              <div className="rounded-xl border border-red-300 bg-red-50 p-4 space-y-3">
-                <p className="text-xs font-bold text-red-900">
-                  ⚠️ Tem a certeza absoluta? Esta ação apaga os dados de teste na base de dados Firebase e não pode ser desfeita.
+          <div className="border-t border-slate-200 pt-5 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-red-900 flex items-center gap-2">
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                  <span>Limpeza de Dados de Teste</span>
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Elimine dados e fichas de teste guardados na base de dados Firebase para preparar o sistema para o ambiente de produção real.
                 </p>
-                <div className="flex items-center gap-3">
-                  <button
-                    disabled={isClearingTest}
-                    onClick={async () => {
-                      if (!onClearTestData) return;
-                      setIsClearingTest(true);
-                      try {
-                        await onClearTestData();
-                        showToast('Dados de teste eliminados com sucesso da base de dados Firebase!', 'success');
-                        setShowClearConfirm(false);
-                      } catch (err: any) {
-                        showToast(err.message || 'Erro ao eliminar dados de teste.', 'error');
-                      } finally {
-                        setIsClearingTest(false);
-                      }
-                    }}
-                    className="rounded-xl bg-red-700 hover:bg-red-800 px-4 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-50"
-                  >
-                    {isClearingTest ? 'A eliminar do Firebase...' : 'Confirmar e Eliminar do Firebase'}
-                  </button>
-                  <button
-                    onClick={() => setShowClearConfirm(false)}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancelar
-                  </button>
-                </div>
               </div>
-            )}
+              <span className="rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
+                Zona de Risco
+              </span>
+            </div>
+
+            <div className="rounded-xl bg-red-50/50 border border-red-200 p-4 space-y-3">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Ao executar a eliminação dos dados de teste, todas as fichas de mobilização de teste, registos temporários de mobilizadores e logs de teste serão removidos diretamente do projeto Firebase.
+              </p>
+
+              {!showClearConfirm ? (
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="mt-1 flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-xs font-bold text-white transition shadow-xs cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Eliminar Todos os Dados de Teste da Base de Dados</span>
+                </button>
+              ) : (
+                <div className="rounded-xl border border-red-300 bg-red-50 p-4 space-y-3">
+                  <p className="text-xs font-bold text-red-900">
+                    ⚠️ Tem a certeza absoluta? Esta ação apaga os dados de teste na base de dados Firebase e não pode ser desfeita.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      disabled={isClearingTest}
+                      onClick={async () => {
+                        if (!onClearTestData) return;
+                        setIsClearingTest(true);
+                        try {
+                          await onClearTestData();
+                          showToast('Dados de teste eliminados com sucesso da base de dados Firebase!', 'success');
+                          setShowClearConfirm(false);
+                        } catch (err: any) {
+                          showToast(err.message || 'Erro ao eliminar dados de teste.', 'error');
+                        } finally {
+                          setIsClearingTest(false);
+                        }
+                      }}
+                      className="rounded-xl bg-red-700 hover:bg-red-800 px-4 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {isClearingTest ? 'A eliminar do Firebase...' : 'Confirmar e Eliminar do Firebase'}
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1299,7 +1299,7 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
               TABELA
           ================================================== */}
 
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
             {filteredSubmissions.length ===
             0 ? (
               <div className="p-12 text-center">
@@ -1316,44 +1316,44 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-[10px] font-extrabold uppercase text-slate-500">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="border-b-2 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-900 dark:text-slate-100">
                     <tr>
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Recibo ODK
                       </th>
 
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Data/Hora
                       </th>
 
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Supervisor
                       </th>
 
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Coordenação
                       </th>
 
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Formulário
                       </th>
 
-                      <th className="p-3 text-center">
+                      <th className="p-3.5 text-center border-r-2 border-slate-300 dark:border-slate-700">
                         Formulários
                       </th>
 
-                      <th className="p-3">
+                      <th className="p-3.5 border-r-2 border-slate-300 dark:border-slate-700">
                         Status
                       </th>
 
-                      <th className="p-3 text-right">
+                      <th className="p-3.5 text-right">
                         Ações
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y-2 divide-slate-200 dark:divide-slate-700 text-slate-800 dark:text-slate-200">
                     {filteredSubmissions.map(
                       (sub) => {
                         const isConf =
@@ -1374,9 +1374,9 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                         return (
                           <tr
                             key={sub.id}
-                            className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors"
                           >
-                            <td className="p-3 font-mono font-bold text-emerald-600">
+                            <td className="p-3 font-mono font-bold text-emerald-700 dark:text-emerald-400 border-r-2 border-slate-200 dark:border-slate-700">
                               <div className="flex items-center gap-2">
                                 {sub.codigoReciboODK}
 
@@ -1386,32 +1386,32 @@ export const ODKCollectView: React.FC<ODKCollectViewProps> = ({
                               </div>
                             </td>
 
-                            <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300 border-r-2 border-slate-200 dark:border-slate-700">
                               {sub.dataEnvio}{' '}
                               <span className="text-[10px]">
                                 ({sub.horaEnvio})
                               </span>
                             </td>
 
-                            <td className="p-3 font-bold text-slate-900 dark:text-white">
+                            <td className="p-3 font-bold text-slate-900 dark:text-white border-r-2 border-slate-200 dark:border-slate-700">
                               {sub.supervisorNome}
                             </td>
 
-                            <td className="p-3">
-                              <span className="rounded-full bg-blue-50 dark:bg-blue-950 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                            <td className="p-3 border-r-2 border-slate-200 dark:border-slate-700">
+                              <span className="rounded-full bg-blue-50 dark:bg-blue-950 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                 {sub.coordNome}
                               </span>
                             </td>
 
-                            <td className="p-3 font-medium">
+                            <td className="p-3 font-medium text-slate-800 dark:text-slate-200 border-r-2 border-slate-200 dark:border-slate-700">
                               {sub.formNome}
                             </td>
 
-                            <td className="p-3 text-center font-black text-emerald-700 dark:text-emerald-300 text-sm">
+                            <td className="p-3 text-center font-black text-emerald-700 dark:text-emerald-400 text-sm border-r-2 border-slate-200 dark:border-slate-700">
                               {sub.totalFormularios}
                             </td>
 
-                            <td className="p-3">
+                            <td className="p-3 border-r-2 border-slate-200 dark:border-slate-700">
                               {isConf ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300">
                                   <CheckCircle2 className="h-3 w-3" />
