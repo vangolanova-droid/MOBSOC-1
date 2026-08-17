@@ -821,6 +821,8 @@ export default function App() {
             <UtilizadoresView
               users={users}
               coordenacoes={coordenacoes}
+              currentUser={currentUser}
+              initialFocusRegister={activeTab === 'cadastrarUtilizador'}
               onCreateUser={handleCreateUser}
               onUpdateUser={handleUpdateUser}
               onDeleteUser={handleDeleteUser}
@@ -832,6 +834,7 @@ export default function App() {
             <CoordenacoesView
               coordenacoes={coordenacoes}
               users={users}
+              initialFocusRegister={activeTab === 'cadastrarCoordenacao'}
               onCreateCoordination={handleCreateCoordination}
               onUpdateCoordination={handleUpdateCoordination}
               onDeleteCoordination={handleDeleteCoordination}

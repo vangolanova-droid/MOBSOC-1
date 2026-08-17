@@ -34,6 +34,7 @@ import { Coordination, Ficha, Mobilizador, User } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal } from './ConfirmModal';
 import { RestrictionModal } from './RestrictionModal';
+import { NovoMobilizadorModal } from './NovoMobilizadorModal';
 import { exportFinancasPDF } from '../utils/pdfExporter';
 import { exportFinancasExcel } from '../utils/excelExporter';
 
@@ -44,7 +45,7 @@ interface MobilizadoresViewProps {
   coordenacoes: Coordination[];
   fichas?: Ficha[];
   initialFocusRegister?: boolean;
-  initialTab?: 'geral' | 'supervisor' | 'coordenacao' | 'financas';
+  initialTab?: 'geral' | 'supervisor' | 'coordenacao' | 'financas' | 'cadastrar';
   onCreateMobilizador: (mobPartial: Partial<Mobilizador>) => Promise<void>;
   onUpdateMobilizador?: (id: number, fields: Partial<Mobilizador>) => Promise<void>;
   onDeleteMobilizador: (id: number) => Promise<void>;
@@ -82,27 +83,26 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
   const [selectedSupervisorId, setSelectedSupervisorId] = useState<number | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'geral' | 'supervisor' | 'coordenacao' | 'financas'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'geral' | 'supervisor' | 'coordenacao' | 'financas'>(
+    initialTab === 'financas' && !isAdmin ? 'geral' : (initialTab as any) || 'geral'
+  );
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(initialFocusRegister);
+
+  React.useEffect(() => {
+    if (initialFocusRegister) {
+      setIsCadastroModalOpen(true);
+    }
+  }, [initialFocusRegister]);
 
   React.useEffect(() => {
     if (initialTab) {
       if (initialTab === 'financas' && !isAdmin) {
         setActiveTab('geral');
-      } else {
-        setActiveTab(initialTab);
+      } else if (initialTab !== 'cadastrar') {
+        setActiveTab(initialTab as any);
       }
     }
   }, [initialTab, isAdmin]);
-
-  // Auto scroll to form if initialFocusRegister is true
-  React.useEffect(() => {
-    if (initialFocusRegister) {
-      const formEl = document.getElementById('form-cadastrar-mobilizador');
-      if (formEl) {
-        formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [initialFocusRegister]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Financial control state (5.000 Kz default per ficha / day worked)
@@ -505,225 +505,39 @@ export const MobilizadoresView: React.FC<MobilizadoresViewProps> = React.memo(({
         onClose={() => setDeletingMob(null)}
       />
 
+      {/* Novo Mobilizador Modal */}
+      <NovoMobilizadorModal
+        isOpen={isCadastroModalOpen}
+        user={user}
+        users={users}
+        coordenacoes={coordenacoes}
+        mobilizadores={mobilizadores}
+        onClose={() => setIsCadastroModalOpen(false)}
+        onCreateMobilizador={onCreateMobilizador}
+      />
+
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-          <UserPlus className="h-5 w-5 text-blue-600" />
-          <span>Gestão RH-MC — Mobilizadores Comunitários</span>
-        </h1>
-        <p className="mt-1 text-xs text-slate-500">
-          Registo de Recursos Humanos e Mobilizadores Comunitários (RH-MC) da campanha com identificação de Ronda, Morada, Contactos, Supervisor e Coordenação Territorial.
-        </p>
-      </div>
-
-      {/* Cadastro Form Card (Hidden in Finanças view) */}
-      {activeTab !== 'financas' && (
-        <div id="form-cadastrar-mobilizador" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-              <UserCheck className="h-4 w-4 text-blue-600" />
-              <span>Cadastrar Novo Mobilizador</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl text-xs font-mono font-bold text-blue-700">
-              <span>ID a gerar:</span>
-              <span className="text-blue-900 font-extrabold">{nextPreviewCodigoId}</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Nome do Mobilizador <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Afonso Pedro Neto"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="input-mob-nome"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Morada / Endereço
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  placeholder="Ex: Bairro 15 de Março, Sumbe"
-                  value={morada}
-                  onChange={(e) => setMorada(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                  id="input-mob-morada"
-                />
-                <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Contacto Telefónico
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  placeholder="9XX XXX XXX"
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                  id="input-mob-telefone"
-                />
-                <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Número da Equipa <span className="text-red-500">*</span>
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Equipa 01 (Atribuído pela Direção)"
-                  value={numeroEquipa}
-                  onChange={(e) => setNumeroEquipa(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3.5 text-xs font-bold text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                  id="input-mob-equipa"
-                />
-                <Users className="absolute left-3.5 top-3.5 h-4 w-4 text-indigo-500" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Função do Sistema (Específica)
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  readOnly
-                  value="Mobilizador Comunitário"
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-3.5 text-xs font-bold text-slate-700 cursor-not-allowed outline-none"
-                  id="input-mob-funcao"
-                />
-                <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Ronda da Campanha <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={ronda}
-                onChange={(e) => setRonda(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="select-mob-ronda"
-              >
-                <option value="1ª Ronda">1ª Ronda</option>
-                <option value="2ª Ronda">2ª Ronda</option>
-                <option value="3ª Ronda">3ª Ronda</option>
-                <option value="4ª Ronda">4ª Ronda</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Coordenação de Pertença
-              </label>
-              {isAdmin ? (
-                <select
-                  value={coordId}
-                  onChange={(e) => setCoordId(Number(e.target.value))}
-                  className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                  id="select-mob-coord"
-                >
-                  {coordenacoes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="relative mt-1.5">
-                  <input
-                    type="text"
-                    readOnly
-                    value={
-                      coordenacoes.find((c) => c.id === user.coordId)?.nome ||
-                      user.coordNome ||
-                      '—'
-                    }
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-3.5 text-xs font-medium text-slate-600 cursor-not-allowed outline-none"
-                  />
-                  <Building2 className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                </div>
-              )}
-            </div>
-
-            {isAdmin && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700">
-                  Supervisor Responsável
-                </label>
-                <select
-                  value={selectedSupervisorId || ''}
-                  onChange={(e) => {
-                    const supId = e.target.value ? Number(e.target.value) : null;
-                    setSelectedSupervisorId(supId);
-                    if (supId) {
-                      const sup = users.find((u) => u.id === supId);
-                      if (sup?.ronda) {
-                        setRonda(sup.ronda);
-                      }
-                    }
-                  }}
-                  className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                  id="select-mob-supervisor"
-                >
-                  <option value="">-- Selecionar Supervisor --</option>
-                  {users
-                    .filter((u) => u.tipo === 'supervisor' && u.status === 'ativo')
-                    .map((sup) => (
-                      <option key={sup.id} value={sup.id}>
-                        {sup.nome} ({sup.ronda || '1ª Ronda'}) - {sup.coordNome || 'Sem Coord.'}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-1.5 sm:col-span-1">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-bold text-white shadow-xs transition-all duration-200 active:scale-[0.99] ${
-                  isSubmitting
-                    ? 'bg-blue-700 cursor-wait opacity-95 ring-2 ring-blue-400/50'
-                    : 'bg-[#00B2FF] hover:bg-[#009ee3]'
-                }`}
-                id="btn-salvar-mobilizador"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                    <span>A processar ({ronda})...</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    <span>Registar Mobilizador</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-blue-600" />
+            <span>Gestão RH-MC — Mobilizadores Comunitários</span>
+          </h1>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Registo de Recursos Humanos e Mobilizadores Comunitários (RH-MC) da campanha por Ronda, Supervisor e Coordenação.
+          </p>
         </div>
-      )}
+
+        <button
+          type="button"
+          onClick={() => setIsCadastroModalOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition active:scale-95 cursor-pointer shrink-0"
+          id="btn-abrir-modal-cadastrar-mob"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Cadastrar Novo Mobilizador</span>
+        </button>
+      </div>
 
       {/* Lista de Mobilizadores Card */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 space-y-4">

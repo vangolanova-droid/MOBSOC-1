@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { UserPlus, Trash2, ShieldCheck, UserCheck, Lock, Notebook, Clock, Check, X, Phone, UserX, CheckSquare, Square } from 'lucide-react';
+import { UserPlus, Trash2, ShieldCheck, UserCheck, Lock, Notebook, Clock, Check, X, Phone, UserX, CheckSquare, Square, Search, Filter, Users } from 'lucide-react';
 import { Coordination, User, UserRole } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal } from './ConfirmModal';
+import { NovoUtilizadorModal } from './NovoUtilizadorModal';
 import { roleLabel, isAdmin as checkIsAdmin } from '../utils/permissions';
 
 interface UtilizadoresViewProps {
   users: User[];
   coordenacoes: Coordination[];
+  currentUser?: User;
+  initialFocusRegister?: boolean;
   onCreateUser: (user: Partial<User>) => Promise<void>;
   onUpdateUser?: (id: number, fields: Partial<User>) => Promise<void>;
   onDeleteUser: (id: number) => Promise<void>;
@@ -17,23 +20,23 @@ interface UtilizadoresViewProps {
 export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   users,
   coordenacoes,
+  currentUser,
+  initialFocusRegister = false,
   onCreateUser,
   onUpdateUser,
   onDeleteUser,
   onOpenNotepad,
 }) => {
   const { showToast } = useToast();
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [tipo, setTipo] = useState<UserRole>('supervisor');
-  const [coordId, setCoordId] = useState<number>(
-    coordenacoes.length > 0 ? coordenacoes[0].id : 1
-  );
-  const [selectedCoordIds, setSelectedCoordIds] = useState<number[]>([]);
-  const [ronda, setRonda] = useState('3ª Ronda');
-  const [morada, setMorada] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(initialFocusRegister);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'todos' | UserRole>('todos');
+
+  React.useEffect(() => {
+    if (initialFocusRegister) {
+      setIsCadastroModalOpen(true);
+    }
+  }, [initialFocusRegister]);
 
   // Modal State for Password Reset
   const [resetUser, setResetUser] = useState<User | null>(null);
@@ -44,15 +47,22 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Toggle selection for multi-coordination selection (Coordenador role)
-  const toggleCoordId = (id: number) => {
-    setSelectedCoordIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   // Filter pending users
   const pendingUsers = users.filter((u) => u.status === 'pendente');
+
+  const filteredUsers = users.filter((u) => {
+    if (roleFilter !== 'todos' && u.tipo !== roleFilter) return false;
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      return (
+        u.nome.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.coordNome && u.coordNome.toLowerCase().includes(q)) ||
+        (u.morada && u.morada.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
 
   const handleApproveUser = async (u: User) => {
     try {
@@ -98,62 +108,6 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nome.trim() || !email.trim() || !senha.trim()) {
-      showToast('Preencha todos os campos obrigatórios (Nome, Email e Senha).', 'error');
-      return;
-    }
-
-    // Role-based validation for coordinations
-    if (tipo === 'coordenador' && selectedCoordIds.length === 0) {
-      showToast('Selecione pelo menos uma coordenação para o perfil Coordenador.', 'error');
-      return;
-    }
-
-    if ((tipo === 'supervisor' || tipo === 'mobilizador') && !coordId) {
-      showToast('Selecione uma coordenação para este utilizador.', 'error');
-      return;
-    }
-
-    const selectedCoord = coordenacoes.find((c) => c.id === Number(coordId));
-    setIsSubmitting(true);
-    try {
-      const coordNamesList =
-        tipo === 'coordenador'
-          ? coordenacoes
-              .filter((c) => selectedCoordIds.includes(c.id))
-              .map((c) => c.nome)
-              .join(', ')
-          : tipo === 'admin'
-          ? 'Acesso Global'
-          : selectedCoord?.nome || '—';
-
-      await onCreateUser({
-        nome: nome.trim(),
-        email: email.trim(),
-        senha: senha.trim(),
-        tipo,
-        morada: morada.trim(),
-        ronda: tipo === 'admin' ? undefined : ronda,
-        coordId: tipo === 'supervisor' || tipo === 'mobilizador' ? Number(coordId) : null,
-        coordIds: tipo === 'coordenador' ? selectedCoordIds : undefined,
-        coordNome: coordNamesList,
-        coordenadorNome: tipo === 'admin' ? 'Direção Geral' : selectedCoord?.coordenador || '—',
-      });
-      showToast(`Utilizador (${roleLabel(tipo)}) criado com sucesso!`, 'success');
-      setNome('');
-      setEmail('');
-      setSenha('');
-      setMorada('');
-      setSelectedCoordIds([]);
-    } catch (e: any) {
-      showToast(e.message || 'Erro ao criar utilizador.', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleConfirmDelete = async () => {
     if (!deletingUser) return;
     setIsDeleting(true);
@@ -187,27 +141,48 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
       />
 
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Gestão de Utilizadores
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Users className="h-5 w-5 text-orange-600" />
+            <span>Gestão de Utilizadores</span>
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Adicione e gira os acessos de Administradores e Supervisores de equipa
+          <p className="mt-0.5 text-xs text-slate-500">
+            Adicione e gira os acessos de Administradores, Coordenadores e Supervisores de equipa
           </p>
         </div>
 
-        {onOpenNotepad && (
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenNotepad && (
+            <button
+              onClick={onOpenNotepad}
+              className="flex h-10 items-center gap-2 rounded-xl bg-amber-500 px-3.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition shrink-0 cursor-pointer"
+              id="btn-utilizadores-notepad"
+            >
+              <Notebook className="h-4 w-4" />
+              <span>Bloco de Notas</span>
+            </button>
+          )}
+
           <button
-            onClick={onOpenNotepad}
-            className="flex h-10 items-center gap-2 rounded-xl bg-amber-500 px-3.5 text-xs font-medium text-white shadow-xs hover:bg-amber-600 transition shrink-0"
-            id="btn-utilizadores-notepad"
+            onClick={() => setIsCadastroModalOpen(true)}
+            className="flex h-10 items-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-700 px-4 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition active:scale-95 shrink-0 cursor-pointer"
+            id="btn-abrir-modal-cadastrar-user"
           >
-            <Notebook className="h-4 w-4" />
-            <span>Bloco de Notas de Senhas</span>
+            <UserPlus className="h-4 w-4" />
+            <span>Criar Novo Utilizador</span>
           </button>
-        )}
+        </div>
       </div>
+
+      {/* Novo Utilizador Modal */}
+      <NovoUtilizadorModal
+        isOpen={isCadastroModalOpen}
+        currentUser={currentUser || (users.find((u) => u.tipo === 'admin') as User)}
+        coordenacoes={coordenacoes}
+        onClose={() => setIsCadastroModalOpen(false)}
+        onCreateUser={onCreateUser as any}
+      />
 
       {/* PENDING APPROVALS SECTION */}
       {pendingUsers.length > 0 && (
@@ -283,181 +258,75 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
         </div>
       )}
 
-      {/* Add User Form */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
-          <UserPlus className="h-4 w-4 text-[#00B2FF]" />
-          <span>Novo Utilizador do Sistema</span>
-        </div>
-
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {/* Users Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 space-y-4">
+        {/* Table Toolbar / Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Nome Completo
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: Manuel Antunes"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-user-nome"
-            />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span>Utilizadores Registados ({filteredUsers.length})</span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              Acessos de Administradores, Coordenadores Territoriais e Supervisores de equipa
+            </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              placeholder="email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-user-email"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Senha Inicial
-            </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-user-senha"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Tipo de Perfil
-            </label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as UserRole)}
-              className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 font-semibold"
-              id="select-user-tipo"
-            >
-              <option value="supervisor">{roleLabel('supervisor')}</option>
-              <option value="coordenador">{roleLabel('coordenador')}</option>
-              <option value="mobilizador">{roleLabel('mobilizador')}</option>
-              <option value="admin">{roleLabel('admin')}</option>
-            </select>
-          </div>
-
-          {tipo !== 'admin' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Morada / Residência
-              </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative min-w-[200px]">
               <input
                 type="text"
-                placeholder="Ex: Bairro Mbumba Kupuco, Sumbe"
-                value={morada}
-                onChange={(e) => setMorada(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="input-user-morada"
+                placeholder="Pesquisar utilizador..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-orange-500 focus:bg-white"
               />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             </div>
-          )}
 
-          {/* Multi-select for Coordenador */}
-          {tipo === 'coordenador' && (
-            <div className="sm:col-span-2 lg:col-span-3">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Coordenações Sob Responsabilidade <span className="text-red-500">* (Selecione pelo menos 1)</span>
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 max-h-36 overflow-y-auto">
-                {coordenacoes.map((c) => {
-                  const isChecked = selectedCoordIds.includes(c.id);
-                  return (
-                    <button
-                      type="button"
-                      key={c.id}
-                      onClick={() => toggleCoordId(c.id)}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition ${
-                        isChecked
-                          ? 'border-indigo-500 bg-indigo-50 text-indigo-900 font-bold'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {isChecked ? (
-                        <CheckSquare className="h-4 w-4 text-indigo-600 shrink-0" />
-                      ) : (
-                        <Square className="h-4 w-4 text-slate-400 shrink-0" />
-                      )}
-                      <span className="truncate">{c.nome}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Single select for Supervisor & Mobilizador */}
-          {(tipo === 'supervisor' || tipo === 'mobilizador') && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Coordenação <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={coordId}
-                onChange={(e) => setCoordId(Number(e.target.value))}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="select-user-coord"
+            {/* Role Filter */}
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-medium text-slate-600">
+              <button
+                type="button"
+                onClick={() => setRoleFilter('todos')}
+                className={`rounded-lg px-2.5 py-1 text-xs transition ${
+                  roleFilter === 'todos' ? 'bg-white font-bold text-slate-900 shadow-2xs' : 'hover:text-slate-900'
+                }`}
               >
-                {coordenacoes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {tipo !== 'admin' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-700">
-                Ronda Atribuída
-              </label>
-              <select
-                value={ronda}
-                onChange={(e) => setRonda(e.target.value)}
-                className="mt-1.5 w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-                id="select-user-ronda"
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter('supervisor')}
+                className={`rounded-lg px-2.5 py-1 text-xs transition ${
+                  roleFilter === 'supervisor' ? 'bg-white font-bold text-blue-700 shadow-2xs' : 'hover:text-slate-900'
+                }`}
               >
-                <option value="1ª Ronda">1ª Ronda</option>
-                <option value="2ª Ronda">2ª Ronda</option>
-                <option value="3ª Ronda">3ª Ronda</option>
-                <option value="4ª Ronda">4ª Ronda</option>
-              </select>
+                Supervisores
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter('coordenador')}
+                className={`rounded-lg px-2.5 py-1 text-xs transition ${
+                  roleFilter === 'coordenador' ? 'bg-white font-bold text-indigo-700 shadow-2xs' : 'hover:text-slate-900'
+                }`}
+              >
+                Coordenadores
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter('admin')}
+                className={`rounded-lg px-2.5 py-1 text-xs transition ${
+                  roleFilter === 'admin' ? 'bg-white font-bold text-purple-700 shadow-2xs' : 'hover:text-slate-900'
+                }`}
+              >
+                Admins
+              </button>
             </div>
-          )}
-
-          <div className="flex items-end sm:col-span-2 lg:col-span-5">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="h-11 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-6 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
-              id="btn-add-user"
-            >
-              + Adicionar {roleLabel(tipo)}
-            </button>
           </div>
-        </form>
-      </div>
+        </div>
 
-      {/* Users Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-5 -mb-5">
           <table className="w-full text-left text-xs text-slate-800">
             <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
               <tr>
@@ -473,7 +342,7 @@ export const UtilizadoresView: React.FC<UtilizadoresViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {users.map((u, i) => (
+              {filteredUsers.map((u, i) => (
                 <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3.5 font-mono text-slate-400">{i + 1}</td>
                   <td className="p-3.5 font-semibold text-slate-900">

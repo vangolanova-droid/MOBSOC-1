@@ -3,10 +3,12 @@ import { Building2, Plus, Trash2, UserCheck, MapPin, X, CheckSquare, ListChecks,
 import { Coordination, User } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal } from './ConfirmModal';
+import { NovaCoordenacaoModal } from './NovaCoordenacaoModal';
 
 interface CoordenacoesViewProps {
   coordenacoes: Coordination[];
   users: User[];
+  initialFocusRegister?: boolean;
   onCreateCoordination: (nome: string, coordenador?: string, bairros?: string[]) => Promise<void>;
   onUpdateCoordination?: (id: number, fields: Partial<Coordination>) => Promise<void>;
   onDeleteCoordination: (id: number) => Promise<void>;
@@ -15,15 +17,21 @@ interface CoordenacoesViewProps {
 export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
   coordenacoes,
   users,
+  initialFocusRegister = false,
   onCreateCoordination,
   onUpdateCoordination,
   onDeleteCoordination,
 }) => {
   const { showToast } = useToast();
-  const [nome, setNome] = useState('');
-  const [coordenador, setCoordenador] = useState('');
-  const [bairrosInput, setBairrosInput] = useState('');
+  const [isCadastroModalOpen, setIsCadastroModalOpen] = useState(initialFocusRegister);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (initialFocusRegister) {
+      setIsCadastroModalOpen(true);
+    }
+  }, [initialFocusRegister]);
 
   // Modal Checklist de Bairros
   const [checklistCoordId, setChecklistCoordId] = useState<number | null>(null);
@@ -49,27 +57,15 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
 
   const activeChecklistCoord = coordenacoes.find((c) => c.id === checklistCoordId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nome.trim()) return;
-    setIsSubmitting(true);
-    try {
-      const parsedBairros = bairrosInput
-        .split(',')
-        .map((b) => b.trim())
-        .filter((b) => b.length > 0);
-
-      await onCreateCoordination(nome.trim(), coordenador.trim(), parsedBairros);
-      showToast('Coordenação registada com sucesso!', 'success');
-      setNome('');
-      setCoordenador('');
-      setBairrosInput('');
-    } catch (e: any) {
-      showToast(e.message || 'Erro ao criar coordenação.', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const filteredCoordenacoes = coordenacoes.filter((c) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      c.nome.toLowerCase().includes(q) ||
+      (c.coordenador && c.coordenador.toLowerCase().includes(q)) ||
+      (c.bairros && c.bairros.some((b) => b.toLowerCase().includes(q)))
+    );
+  });
 
   const handleOpenEditModal = (c: Coordination) => {
     setEditingCoord(c);
@@ -198,25 +194,44 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
         onClose={() => setDeletingCoord(null)}
       />
 
+      {/* Nova Coordenacao Modal */}
+      <NovaCoordenacaoModal
+        isOpen={isCadastroModalOpen}
+        onClose={() => setIsCadastroModalOpen(false)}
+        onCreateCoordination={onCreateCoordination}
+      />
+
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900">
-            Gestão de Coordenações & Bairros
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-cyan-600" />
+            <span>Gestão de Coordenações & Bairros</span>
           </h1>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-xs text-slate-500">
             Estruturação de áreas operacionais, pré-registo de bairros e atribuição de Coordenadores Responsáveis
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCoordModalOpen(true)}
-          className="flex h-8.5 items-center justify-center gap-1.5 rounded-xl bg-[#00B2FF] px-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#009ee3] transition active:scale-[0.99]"
-          id="btn-open-cadastrar-coordenador"
-        >
-          <UserCheck className="h-3.5 w-3.5" />
-          <span>+ Cadastrar Coordenador</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsCoordModalOpen(true)}
+            className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition active:scale-[0.99] cursor-pointer"
+            id="btn-open-cadastrar-coordenador"
+          >
+            <UserCheck className="h-4 w-4 text-blue-600" />
+            <span>Atribuir Coordenador</span>
+          </button>
+
+          <button
+            onClick={() => setIsCadastroModalOpen(true)}
+            className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 px-4 text-xs font-bold text-white shadow-md shadow-cyan-600/20 transition active:scale-[0.99] cursor-pointer"
+            id="btn-open-criar-coordenacao"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Criar Nova Coordenação</span>
+          </button>
+        </div>
       </div>
 
       {/* Cadastrar Coordenador Modal */}
@@ -292,74 +307,32 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
         </div>
       )}
 
-      {/* Add Form */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-3">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
-          <Building2 className="h-3.5 w-3.5 text-emerald-600" />
-          <span>Nova Coordenação Operacional & Registo de Bairros</span>
+      {/* List Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden p-5 space-y-4">
+        {/* Table Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span>Coordenações Registadas ({filteredCoordenacoes.length})</span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              Áreas operacionais territoriais e cobertura de bairros cadastrados
+            </p>
+          </div>
+
+          <div className="relative min-w-[240px]">
+            <input
+              type="text"
+              placeholder="Pesquisar coordenação, responsável ou bairro..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-cyan-500 focus:bg-white"
+            />
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Nome da Coordenação <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: Coordenação Zona A"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-coord-nome"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Nome do Coordenador Responsável
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: Dr. António Manuel"
-              value={coordenador}
-              onChange={(e) => setCoordenador(e.target.value)}
-              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-coord-coordenador"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700">
-              Bairros / Comunidades (separados por vírgula)
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: 15 de Março, Chingo, Quissala"
-              value={bairrosInput}
-              onChange={(e) => setBairrosInput(e.target.value)}
-              className="mt-1 h-8.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
-              id="input-coord-bairros"
-            />
-          </div>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="h-8.5 w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#00B2FF] hover:bg-[#009ee3] px-3 text-xs font-bold text-white shadow-xs transition active:scale-[0.99] disabled:opacity-50"
-              id="btn-add-coord"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Adicionar Coordenação</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* List Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-5 -mb-5">
           <table className="w-full text-left text-xs text-slate-800">
             <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
               <tr>
@@ -372,7 +345,7 @@ export const CoordenacoesView: React.FC<CoordenacoesViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {coordenacoes.map((c, i) => {
+              {filteredCoordenacoes.map((c, i) => {
                 const countSups = users.filter(
                   (u) => u.coordId === c.id && u.tipo === 'supervisor'
                 ).length;

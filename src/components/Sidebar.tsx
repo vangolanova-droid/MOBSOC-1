@@ -49,6 +49,7 @@ interface SidebarProps {
   themeConfig?: UserThemeConfig;
   onUpdateThemeConfig?: (config: UserThemeConfig) => void;
   onSelectTab: (tab: string) => void;
+  onOpenHubCadastros?: () => void;
   onOpenNotepad?: () => void;
   onOpenAuditLogs?: () => void;
   onOpenPortalNews?: () => void;
@@ -71,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   themeConfig,
   onUpdateThemeConfig,
   onSelectTab,
+  onOpenHubCadastros,
   onOpenNotepad,
   onOpenAuditLogs,
   onOpenPortalNews,
@@ -400,6 +402,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 iconColor: 'text-sky-400',
                 tooltip: 'Visualiza o painel principal de indicadores e gráficos.',
               })}
+
+              {onOpenHubCadastros &&
+                renderNavItem({
+                  id: 'nav-btn-central-cadastros',
+                  label: 'Central de Cadastros',
+                  icon: Plus,
+                  iconColor: 'text-blue-400',
+                  tooltip: 'Central unificada para novos lançamentos e cadastros do sistema.',
+                  badge: (
+                    <span className="rounded-full bg-blue-500 text-white px-1.5 py-0.2 text-[9px] font-extrabold animate-pulse">
+                      NOVO
+                    </span>
+                  ),
+                  onClick: onOpenHubCadastros,
+                })}
             </div>
           </div>
 
@@ -468,6 +485,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="my-1 border-t border-slate-300/30 dark:border-slate-700/50 mx-2" />
             )}
             <div className="space-y-1">
+              {renderNavItem({
+                id: 'nav-cadastrar-mobilizador',
+                tab: 'cadastrarMobilizador',
+                label: 'Cadastrar Mobilizador',
+                icon: Plus,
+                iconColor: 'text-blue-400',
+                tooltip: 'Abre o formulário para registar um novo mobilizador comunitário.',
+              })}
               {renderNavItem({
                 id: 'nav-mobilizadores',
                 tab: 'mobilizadores',
@@ -610,12 +635,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       ) : undefined,
                   })}
                   {renderNavItem({
+                    id: 'nav-cadastrar-utilizador',
+                    tab: 'cadastrarUtilizador',
+                    label: 'Novo Utilizador',
+                    icon: Plus,
+                    iconColor: 'text-orange-300',
+                    tooltip: 'Abre o formulário de cadastro de novo utilizador.',
+                  })}
+                  {renderNavItem({
                     id: 'nav-coordenacoes',
                     tab: 'coordenacoes',
                     label: 'Coordenações',
                     icon: Building2,
                     iconColor: 'text-cyan-400',
                     tooltip: 'Gere as unidades de coordenação e locais.',
+                  })}
+                  {renderNavItem({
+                    id: 'nav-cadastrar-coordenacao',
+                    tab: 'cadastrarCoordenacao',
+                    label: 'Nova Coordenação',
+                    icon: Plus,
+                    iconColor: 'text-cyan-300',
+                    tooltip: 'Abre o formulário de cadastro de nova unidade de coordenação.',
                   })}
 
                   {onOpenNotepad &&
