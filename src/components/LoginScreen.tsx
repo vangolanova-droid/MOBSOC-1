@@ -290,30 +290,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       </div>
 
       {/* Main Container */}
-      <div className="relative z-10 flex min-h-screen flex-col">
+      <div className="relative z-10 flex min-h-screen flex-col pb-20 sm:pb-6">
         {/* Institutional Header Bar */}
-        <header className="sticky top-0 z-30 border-b border-white/20 bg-slate-900/85 px-2 sm:px-4 py-1.5 sm:py-3 backdrop-blur-md text-white shadow-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-1 sm:gap-4">
+        <header className="sticky top-0 z-30 border-b border-white/20 bg-slate-950/95 px-3 sm:px-6 py-2 sm:py-3.5 backdrop-blur-md text-white shadow-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4">
             {/* Logo & Institution */}
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-              <div className="flex h-8 px-2.5 sm:h-10 sm:px-3 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-xs sm:text-sm text-white shadow-md shadow-blue-500/30 border border-white/30 shrink-0 tracking-tight">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex h-9 px-2.5 sm:h-10 sm:px-3.5 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 font-black text-xs sm:text-sm text-white shadow-md shadow-blue-500/30 border border-white/30 shrink-0 tracking-tight">
                 SirDm
               </div>
-              <div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-sm sm:text-xl font-black tracking-tight text-white">Sistema de Registo de Dados da Mobilização </span>
-                  <span className="hidden sm:inline-flex rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wide whitespace-nowrap">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-xs sm:text-base md:text-xl font-black tracking-tight text-white truncate">
+                    <span className="sm:hidden">SirDm • Mobilização Social</span>
+                    <span className="hidden sm:inline">Sistema de Registo de Dados da Mobilização</span>
+                  </span>
+                  <span className="hidden md:inline-flex rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wide whitespace-nowrap shrink-0">
                     Sumbe • Cuanza Sul
                   </span>
                 </div>
-                <p className="text-[11px] font-medium text-slate-300 hidden md:block">
-                  Inovação e Transformação •
+                <p className="text-[10px] sm:text-[11px] font-medium text-slate-300 truncate hidden xs:block">
+                  Direção Municipal de Saúde • Inovação Digital
                 </p>
               </div>
             </div>
 
             {/* Quick Actions Header */}
-            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="hidden lg:flex items-center gap-2 text-xs text-slate-200 font-extrabold border-r border-white/20 pr-4">
                 <ShieldCheck className="h-4 w-4 text-emerald-400" />
                 <span>Portal Oficial da Mobilização Social | Sumbe</span>
@@ -324,20 +327,117 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   setError('');
                   setShowLoginModal(true);
                 }}
-                className="flex items-center gap-1 sm:gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 px-2.5 sm:px-5 py-1.5 sm:py-2.5 text-[11px] sm:text-xs font-bold text-white shadow-lg shadow-blue-500/30 transition active:scale-95 cursor-pointer border border-blue-400/40 whitespace-nowrap shrink-0"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-black text-slate-950 shadow-lg shadow-emerald-500/30 transition active:scale-95 cursor-pointer border border-emerald-300/50 whitespace-nowrap shrink-0"
                 id="btn-open-login-header"
               >
-                <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span className="hidden sm:inline">Fazer Login</span>
-                <span className="sm:hidden">Login</span>
+                <LogIn className="h-4 w-4 stroke-[2.5] shrink-0" />
+                <span className="font-extrabold">Fazer Login</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-4 py-6 md:py-10">
-          <div className="mx-auto max-w-7xl space-y-8">
+        <main className="flex-1 px-3 sm:px-4 py-4 sm:py-6 md:py-8">
+          <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8">
+            
+            {/* MOBILE DIRECT LOGIN CARD - Ultra-fast access on phones so users don't miss login */}
+            <div className="sm:hidden w-full rounded-2xl border-2 border-emerald-400/50 bg-slate-950/95 p-4 text-white shadow-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 font-black text-slate-950 text-xs shadow">
+                    <LogIn className="h-4 w-4 stroke-[3]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xs font-black text-white uppercase tracking-wide">
+                      Acesso Direto ao Sistema
+                    </h2>
+                    <p className="text-[10px] text-slate-400">Entre com as suas credenciais</p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2 py-0.5 text-[9px] font-bold text-emerald-300 uppercase">
+                  Online
+                </span>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-2.5">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-300 mb-1">
+                    Email / Telefone / Utilizador
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ex: v.angola.nova@gmail.com ou 923591571"
+                    className="w-full h-11 rounded-xl border border-white/20 bg-slate-900 px-3 text-base sm:text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                    id="mobile-quick-login-email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-300 mb-1">
+                    Senha de Acesso
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-11 rounded-xl border border-white/20 bg-slate-900 pl-3 pr-10 text-base sm:text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                      id="mobile-quick-login-senha"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white"
+                      title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="rounded-xl border border-rose-400/40 bg-rose-950/80 p-2.5 text-center text-xs font-bold text-rose-200">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-xs font-black text-slate-950 shadow-lg shadow-emerald-500/25 transition active:scale-98 cursor-pointer uppercase tracking-wide"
+                  id="btn-mobile-quick-login-submit"
+                >
+                  <LogIn className="h-4 w-4 stroke-[3]" />
+                  <span>ENTRAR NO SISTEMA (LOGIN)</span>
+                </button>
+
+                <div className="pt-1 flex items-center justify-between text-[11px] text-slate-300 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegSuccess(false);
+                      setRegError('');
+                      setShowRegisterModal(true);
+                    }}
+                    className="font-bold text-sky-400 hover:underline cursor-pointer"
+                  >
+                    Solicitar Registo de Supervisor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoLogin('v.angola.nova@gmail.com', 'Andre2021')}
+                    className="font-bold text-amber-300 hover:underline cursor-pointer"
+                  >
+                    Entrar como Admin
+                  </button>
+                </div>
+              </form>
+            </div>
             
             {/* CONTINUOUS LIVE MARQUEE TICKER BANNER */}
             <div className="w-full rounded-2xl bg-slate-950/90 border border-sky-500/30 overflow-hidden py-2.5 backdrop-blur-md relative shadow-xl flex items-center">
@@ -691,8 +791,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 MELO TECH • <span className="text-sky-400">Inovação Digital </span>
               </p>
               <p className="text-[11px] text-slate-400">
-                Desenvolvido para a Direção Municipal de Saúde do Cuanza Sul • Município do Sumbe
-                Programa de Mobilização Socil
+                Desenvolvido para a Direção Municipal de Saúde do Cuanza Sul • Município do Sumbe • Programa de Mobilização Social
               </p>
             </div>
 
@@ -701,7 +800,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 href="mailto:v.angola.nova@gmail.com"
                 className="font-bold text-sky-400 hover:underline"
               >
-                Suporte Técnico: v.angola.nova@gmail.com
+                Suporte: v.angola.nova@gmail.com
               </a>
               <span className="text-slate-600">•</span>
               <button
@@ -715,22 +814,50 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </footer>
       </div>
 
+      {/* STICKY BOTTOM ACTION BAR FOR MOBILE (Always accessible, high visibility) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-slate-950/95 border-t border-sky-500/30 p-2.5 backdrop-blur-md flex items-center justify-between gap-2 shadow-2xl pb-[max(env(safe-area-inset-bottom),0.625rem)]">
+        <button
+          onClick={() => {
+            setError('');
+            setShowLoginModal(true);
+          }}
+          className="flex-1 min-h-[44px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-500/30 transition active:scale-95 cursor-pointer border border-emerald-300/50"
+          id="btn-sticky-mobile-login"
+        >
+          <LogIn className="h-4 w-4 stroke-[3] shrink-0" />
+          <span>FAZER LOGIN</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setRegSuccess(false);
+            setRegError('');
+            setShowRegisterModal(true);
+          }}
+          className="min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-3 py-2.5 text-xs font-bold text-sky-300 border border-white/20 transition active:scale-95 cursor-pointer shrink-0"
+          id="btn-sticky-mobile-register"
+        >
+          <UserPlus className="h-4 w-4 text-sky-400 shrink-0" />
+          <span>Registar</span>
+        </button>
+      </div>
+
       {/* MODAL POPUP DE LOGIN */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative my-auto w-full max-w-md max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-3xl border border-white/30 bg-white p-5 sm:p-6 md:p-8 shadow-2xl text-slate-900 space-y-4 sm:space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative my-auto w-full max-w-md max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto rounded-3xl border border-white/30 bg-white p-4 sm:p-6 md:p-8 shadow-2xl text-slate-900 space-y-4">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2.5">
                 <div className="flex h-9 px-3 items-center justify-center rounded-xl bg-blue-600 font-black text-white text-xs shadow-md shrink-0 tracking-tight">
                   SirDm
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase">
-                    Entrar no Sistema de Registo de Dados de Mobilização 
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase">
+                    Entrar no Sistema SirDm
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Inovação Tecnológica
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                    Registo de Dados da Mobilização Social
                   </p>
                 </div>
               </div>
@@ -744,24 +871,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
 
             {/* Login Modal Form */}
-            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email do Utilizador
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Email / Utilizador / Telefone
                 </label>
                 <input
                   type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ex: v.angola.nova@gmail.com ou o seu email"
-                  className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 px-3.5 sm:px-4 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="ex: v.angola.nova@gmail.com ou 923591571"
+                  className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 px-3.5 sm:px-4 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                   id="modal-login-email"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Senha de Acesso
                 </label>
                 <div className="relative">
@@ -771,7 +898,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 sm:pl-4 pr-10 sm:pr-11 text-xs sm:text-sm text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full h-11 sm:h-12 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 sm:pl-4 pr-10 sm:pr-11 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                     id="modal-login-senha"
                   />
                   <button
@@ -786,21 +913,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
 
               {error && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-xs font-bold text-rose-700">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-center text-xs font-bold text-rose-700">
                   {error}
                 </div>
               )}
 
               <button
                 type="submit"
-                className="flex w-full h-11 sm:h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+                className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-xs sm:text-sm font-black text-white shadow-lg shadow-blue-600/30 transition active:scale-95 cursor-pointer uppercase tracking-wide"
                 id="modal-btn-login-submit"
               >
-                <span>Aceder ao Funcionamento do Sistema</span>
+                <LogIn className="h-4 w-4 stroke-[3] shrink-0" />
+                <span>Aceder ao Sistema</span>
                 <ArrowRight className="h-4 w-4 shrink-0" />
               </button>
 
-              <div className="pt-2 text-center border-t border-slate-100">
+              <div className="pt-2 flex flex-col gap-2 border-t border-slate-100 text-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -813,6 +941,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 >
                   Novo Supervisor? Solicite aqui o seu Registo
                 </button>
+
+                <div className="flex items-center justify-center gap-2 text-[11px]">
+                  <span className="text-slate-400">Acesso rápido:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoLogin('v.angola.nova@gmail.com', 'Andre2021')}
+                    className="font-bold text-blue-600 hover:underline"
+                  >
+                    Admin Geral
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -892,7 +1031,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={regNome}
                       onChange={(e) => setRegNome(e.target.value)}
                       placeholder="ex: João Manuel Manuel"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-nome"
                     />
                   </div>
@@ -907,7 +1046,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="joao.norte@sirdm.gov.ao"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-email"
                     />
                   </div>
@@ -922,7 +1061,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={regTelefone}
                       onChange={(e) => setRegTelefone(e.target.value)}
                       placeholder="+244 923 000 000"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-telefone"
                     />
                   </div>
@@ -937,7 +1076,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       value={regMorada}
                       onChange={(e) => setRegMorada(e.target.value)}
                       placeholder="Ex: Bairro Mbumba Kupuco, Rua 4, Casa 12, Sumbe"
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                       id="reg-input-morada"
                     />
                   </div>
@@ -949,7 +1088,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     <select
                       value={regCoordId}
                       onChange={(e) => setRegCoordId(Number(e.target.value))}
-                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3 text-xs text-slate-900 font-bold outline-none transition focus:border-sky-600 focus:bg-white"
+                      className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3 text-base sm:text-xs text-slate-900 font-bold outline-none transition focus:border-sky-600 focus:bg-white"
                       id="reg-select-coord"
                     >
                       {coordenacoes.map((c) => (
@@ -971,7 +1110,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={regSenha}
                         onChange={(e) => setRegSenha(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                         id="reg-input-senha"
                       />
                       <button
@@ -996,7 +1135,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={regConfirmSenha}
                         onChange={(e) => setRegConfirmSenha(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
+                        className="w-full h-11 rounded-xl border border-slate-300 bg-slate-50 pl-3.5 pr-10 text-base sm:text-xs text-slate-900 font-medium placeholder-slate-400 outline-none transition focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-500/20"
                         id="reg-input-confirm-senha"
                       />
                       <button
