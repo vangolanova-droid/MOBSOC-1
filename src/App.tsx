@@ -42,6 +42,7 @@ import { AuditLogsModal } from './components/AuditLogsModal';
 import { GoalManagerModal } from './components/GoalManagerModal';
 import { PortalNewsManagerModal } from './components/PortalNewsManagerModal';
 import { BackupManagerModal } from './components/BackupManagerModal';
+import { NovoRegistoHubModal } from './components/NovoRegistoHubModal';
 import { Footer } from './components/Footer';
 import { PendingFichasAlert } from './components/PendingFichasAlert';
 import { getPendingFichasOver48h } from './utils/fichaUtils';
@@ -79,6 +80,7 @@ export default function App() {
   const [auditLogsOpen, setAuditLogsOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [backupModalOpen, setBackupModalOpen] = useState(false);
+  const [hubCadastrosOpen, setHubCadastrosOpen] = useState(false);
 
   // Alert for Fichas Pendentes (+48h)
   const [pendingAlertDismissed, setPendingAlertDismissed] = useState(false);
@@ -616,6 +618,7 @@ export default function App() {
         themeConfig={themeConfig}
         onUpdateThemeConfig={handleUpdateThemeConfig}
         onSelectTab={setActiveTab}
+        onOpenHubCadastros={() => setHubCadastrosOpen(true)}
         onOpenNotepad={() => setNotepadOpen(true)}
         onOpenAuditLogs={handleOpenAuditLogs}
         onOpenPortalNews={() => setPortalNewsOpen(true)}
@@ -915,6 +918,22 @@ export default function App() {
           users,
           odkSubmissions,
           auditLogs,
+        }}
+      />
+
+      {/* Central Unificada de Cadastros e Lançamentos (Sidebar / Header Trigger) */}
+      <NovoRegistoHubModal
+        isOpen={hubCadastrosOpen}
+        onClose={() => setHubCadastrosOpen(false)}
+        user={currentUser}
+        onSelectAction={(actionKey) => {
+          if (actionKey === 'modalMetas') {
+            setGoalModalOpen(true);
+          } else if (actionKey === 'modalNoticias') {
+            setPortalNewsOpen(true);
+          } else {
+            setActiveTab(actionKey);
+          }
         }}
       />
     </div>

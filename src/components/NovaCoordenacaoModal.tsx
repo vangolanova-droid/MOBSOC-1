@@ -60,6 +60,13 @@ export const NovaCoordenacaoModal: React.FC<NovaCoordenacaoModalProps> = ({
         bairrosList.length > 0 ? bairrosList : undefined
       );
       showToast(`Coordenação "${nome.trim()}" criada com sucesso!`, 'success');
+      
+      // Limpar formulário e fechar modal imediatamente
+      setNome('');
+      setCoordenador('');
+      setBairroInput('');
+      setBairrosList([]);
+      
       onClose();
     } catch (err: any) {
       showToast(err.message || 'Erro ao criar coordenação.', 'error');

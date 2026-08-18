@@ -130,6 +130,15 @@ export const NovoMobilizadorModal: React.FC<NovoMobilizadorModalProps> = ({
       });
 
       showToast(`Mobilizador "${nome.trim()}" registado com sucesso!`, 'success');
+      
+      // Limpar formulário e fechar o painel de cadastro imediatamente
+      setNome('');
+      setMorada('');
+      setTelefone('');
+      setNumeroEquipa('');
+      setRonda(!isAdmin && user.ronda ? user.ronda : '1ª Ronda');
+      setSelectedSupervisorId(null);
+      
       onClose();
     } catch (err: any) {
       showToast(err.message || 'Erro ao registar mobilizador.', 'error');

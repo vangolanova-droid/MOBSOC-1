@@ -101,6 +101,15 @@ export const NovoUtilizadorModal: React.FC<NovoUtilizadorModalProps> = ({
 
       await onCreateUser(newUser);
       showToast(`Utilizador "${nome.trim()}" criado com sucesso!`, 'success');
+      
+      // Limpar campos e fechar modal imediatamente
+      setNome('');
+      setEmail('');
+      setSenha('');
+      setMorada('');
+      setTipo('supervisor');
+      setSelectedCoordIds([]);
+      
       onClose();
     } catch (err: any) {
       showToast(err.message || 'Erro ao criar conta de utilizador.', 'error');
